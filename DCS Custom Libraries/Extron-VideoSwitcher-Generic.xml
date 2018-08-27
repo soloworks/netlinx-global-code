@@ -1,0 +1,113 @@
+<DCS:LibraryDataSet xmlns:DCS="AMX">
+  <dtManufacturer xmlns="AMX">
+    <ID>1</ID>
+    <Name>Extron</Name>
+    <dtDeviceType>
+      <ID>1</ID>
+      <fkManufacturerID>1</fkManufacturerID>
+      <Name>VideoSwitcher</Name>
+      <dtDeviceModel>
+        <ID>1</ID>
+        <fkDeviceTypeID>1</fkDeviceTypeID>
+        <Name>Generic</Name>
+        <CreatedByAMX>false</CreatedByAMX>
+        <LegacyID />
+        <dtRS232>
+          <ID>1</ID>
+          <fkDeviceModelID>1</fkDeviceModelID>
+          <RS232BaudRate>9600</RS232BaudRate>
+          <RS232Parity>None</RS232Parity>
+          <RS232DataBits>8</RS232DataBits>
+          <RS232StopBits>1</RS232StopBits>
+          <RS232FlowControl>None</RS232FlowControl>
+          <RS232DataFormat>HEX</RS232DataFormat>
+          <dtRS232CommandData>
+            <ID>1</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Input 1</Name>
+            <Data>31 21</Data>
+          </dtRS232CommandData>
+          <dtRS232CommandData>
+            <ID>2</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Input 2</Name>
+            <Data>32 21</Data>
+          </dtRS232CommandData>
+          <dtRS232CommandData>
+            <ID>3</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Input 3</Name>
+            <Data>33 21</Data>
+          </dtRS232CommandData>
+          <dtRS232CommandData>
+            <ID>4</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Input 4</Name>
+            <Data>34 21</Data>
+          </dtRS232CommandData>
+          <dtRS232CommandData>
+            <ID>5</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Input 5</Name>
+            <Data>35 21</Data>
+          </dtRS232CommandData>
+          <dtRS232CommandData>
+            <ID>6</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Input 6</Name>
+            <Data>36 21</Data>
+          </dtRS232CommandData>
+          <dtRS232CommandData>
+            <ID>7</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Input 7</Name>
+            <Data>37 21</Data>
+          </dtRS232CommandData>
+          <dtRS232CommandData>
+            <ID>8</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Input 8</Name>
+            <Data>38 21</Data>
+          </dtRS232CommandData>
+          <dtRS232CommandData>
+            <ID>9</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Volume Up</Name>
+            <Data>1B 44 31 2A 32 30 2B 47 52 50 4D 0D</Data>
+          </dtRS232CommandData>
+          <dtRS232CommandData>
+            <ID>10</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Volume Down</Name>
+            <Data>1B 44 31 2A 32 30 2D 47 52 50 4D 0D</Data>
+          </dtRS232CommandData>
+          <dtRS232CommandData>
+            <ID>11</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Volume Mute On</Name>
+            <Data>1B 44 32 2A 31 47 52 50 4D 0D</Data>
+          </dtRS232CommandData>
+          <dtRS232CommandData>
+            <ID>12</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Volume Mute Off</Name>
+            <Data>1B 44 32 2A 30 47 52 50 4D 0D</Data>
+          </dtRS232CommandData>
+        </dtRS232>
+        <dtIR>
+          <ID>1</ID>
+          <fkDeviceModelID>1</fkDeviceModelID>
+          <IRDataFormat>HEX</IRDataFormat>
+          <IRFrequency>NA</IRFrequency>
+          <IRPulsesBit>NA</IRPulsesBit>
+          <IRCarrier>NA</IRCarrier>
+        </dtIR>
+        <dtIP>
+          <ID>1</ID>
+          <fkDeviceModelID>1</fkDeviceModelID>
+          <IPDataFormat>HEX</IPDataFormat>
+        </dtIP>
+      </dtDeviceModel>
+    </dtDeviceType>
+  </dtManufacturer>
+</DCS:LibraryDataSet>

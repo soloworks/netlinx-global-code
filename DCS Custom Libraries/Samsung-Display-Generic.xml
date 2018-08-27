@@ -1,0 +1,239 @@
+<DCS:LibraryDataSet xmlns:DCS="AMX">
+  <dtManufacturer xmlns="AMX">
+    <ID>1</ID>
+    <Name>Samsung</Name>
+    <dtDeviceType>
+      <ID>1</ID>
+      <fkManufacturerID>1</fkManufacturerID>
+      <Name>Display</Name>
+      <dtDeviceModel>
+        <ID>1</ID>
+        <fkDeviceTypeID>1</fkDeviceTypeID>
+        <Name>Generic</Name>
+        <CreatedByAMX>false</CreatedByAMX>
+        <LegacyID />
+        <dtRS232>
+          <ID>1</ID>
+          <fkDeviceModelID>1</fkDeviceModelID>
+          <RS232BaudRate>9600</RS232BaudRate>
+          <RS232Parity>None</RS232Parity>
+          <RS232DataBits>8</RS232DataBits>
+          <RS232StopBits>1</RS232StopBits>
+          <RS232FlowControl>None</RS232FlowControl>
+          <RS232DataFormat>HEX</RS232DataFormat>
+          <dtRS232CommandData>
+            <ID>1</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Power On</Name>
+            <Data>AA 11 FE 01 01 11</Data>
+          </dtRS232CommandData>
+          <dtRS232CommandData>
+            <ID>2</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Power Off</Name>
+            <Data>AA 11 FE 01 00 10</Data>
+          </dtRS232CommandData>
+          <dtRS232CommandData>
+            <ID>3</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Input DVI</Name>
+            <Data>AA 14 FE 01 18 2B</Data>
+          </dtRS232CommandData>
+          <dtRS232CommandData>
+            <ID>4</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Input HDMI1</Name>
+            <Data>AA 14 FE 01 21 34</Data>
+          </dtRS232CommandData>
+          <dtRS232CommandData>
+            <ID>5</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Volume Up</Name>
+            <Data>AA B0 FE 01 07 B6</Data>
+          </dtRS232CommandData>
+          <dtRS232CommandData>
+            <ID>6</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Volume Down</Name>
+            <Data>AA B0 FE 01 0B BA</Data>
+          </dtRS232CommandData>
+          <dtRS232CommandData>
+            <ID>7</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Audio Mute On</Name>
+            <Data>AA 13 FE 01 01 13</Data>
+          </dtRS232CommandData>
+          <dtRS232CommandData>
+            <ID>8</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Audio Mute Off</Name>
+            <Data>AA 13 FE 01 00 12</Data>
+          </dtRS232CommandData>
+          <dtRS232CommandData>
+            <ID>9</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Audio Mute Toggle</Name>
+            <Data>AA B0 FE 01 0F BE</Data>
+          </dtRS232CommandData>
+          <dtRS232CommandData>
+            <ID>10</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Input HDMI2</Name>
+            <Data>AA 14 FE 01 23 36</Data>
+          </dtRS232CommandData>
+          <dtRS232StatusData>
+            <ID>1</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Power Status Request</Name>
+            <Data />
+          </dtRS232StatusData>
+          <dtRS232StatusData>
+            <ID>2</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Power Status On</Name>
+            <Data />
+          </dtRS232StatusData>
+          <dtRS232StatusData>
+            <ID>3</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Power Status Off</Name>
+            <Data />
+          </dtRS232StatusData>
+          <dtRS232StatusData>
+            <ID>4</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Power Status Warming</Name>
+            <Data />
+          </dtRS232StatusData>
+          <dtRS232StatusData>
+            <ID>5</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Power Status Cooling</Name>
+            <Data />
+          </dtRS232StatusData>
+          <dtRS232StatusData>
+            <ID>6</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Input Status Request</Name>
+            <Data />
+          </dtRS232StatusData>
+          <dtRS232StatusData>
+            <ID>7</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Input Status PC1</Name>
+            <Data />
+          </dtRS232StatusData>
+          <dtRS232StatusData>
+            <ID>8</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Input Status PC2</Name>
+            <Data />
+          </dtRS232StatusData>
+          <dtRS232StatusData>
+            <ID>9</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Input Status PC3</Name>
+            <Data />
+          </dtRS232StatusData>
+          <dtRS232StatusData>
+            <ID>10</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Input Status Video 1</Name>
+            <Data />
+          </dtRS232StatusData>
+          <dtRS232StatusData>
+            <ID>11</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Input Status Video 2</Name>
+            <Data />
+          </dtRS232StatusData>
+          <dtRS232StatusData>
+            <ID>12</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Input Status DVI</Name>
+            <Data />
+          </dtRS232StatusData>
+          <dtRS232StatusData>
+            <ID>13</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Input Status Component</Name>
+            <Data />
+          </dtRS232StatusData>
+          <dtRS232StatusData>
+            <ID>14</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Input Status S-Video</Name>
+            <Data />
+          </dtRS232StatusData>
+          <dtRS232StatusData>
+            <ID>15</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Input Status HDMI</Name>
+            <Data />
+          </dtRS232StatusData>
+          <dtRS232StatusData>
+            <ID>16</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Lamp Status Request</Name>
+            <Data />
+          </dtRS232StatusData>
+          <dtRS232StatusData>
+            <ID>17</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Lamp Time Formula</Name>
+            <Data />
+          </dtRS232StatusData>
+          <dtRS232StatusData>
+            <ID>18</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Filter Status Request</Name>
+            <Data />
+          </dtRS232StatusData>
+          <dtRS232StatusData>
+            <ID>19</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Filter Time Formula</Name>
+            <Data />
+          </dtRS232StatusData>
+          <dtRS232StatusData>
+            <ID>20</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Temperature Status Request</Name>
+            <Data />
+          </dtRS232StatusData>
+          <dtRS232StatusData>
+            <ID>21</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Temperature Formula</Name>
+            <Data />
+          </dtRS232StatusData>
+          <dtRS232StatusData>
+            <ID>22</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Volume Formula</Name>
+            <Data />
+          </dtRS232StatusData>
+          <dtRS232StatusData>
+            <ID>23</ID>
+            <fkRS232ID>1</fkRS232ID>
+            <Name>Volume Status Request</Name>
+            <Data />
+          </dtRS232StatusData>
+        </dtRS232>
+        <dtIR>
+          <ID>1</ID>
+          <fkDeviceModelID>1</fkDeviceModelID>
+          <IRDataFormat>HEX</IRDataFormat>
+          <IRFrequency>NA</IRFrequency>
+          <IRPulsesBit>NA</IRPulsesBit>
+          <IRCarrier>NA</IRCarrier>
+        </dtIR>
+        <dtIP>
+          <ID>1</ID>
+          <fkDeviceModelID>1</fkDeviceModelID>
+          <IPDataFormat>HEX</IPDataFormat>
+        </dtIP>
+      </dtDeviceModel>
+    </dtDeviceType>
+  </dtManufacturer>
+</DCS:LibraryDataSet>

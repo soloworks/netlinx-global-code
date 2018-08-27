@@ -1,0 +1,968 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Workspace [
+
+<!-- Common Elements -->
+<!ELEMENT Identifier (#PCDATA)>
+<!ELEMENT Comments (#PCDATA)>
+<!ELEMENT MasterDirectory (#PCDATA)>
+<!ELEMENT CreationDate (#PCDATA)>
+
+<!-- Workspace Elements-->
+<!ELEMENT Workspace ( Identifier,
+               CreateVersion,
+               PJS_File?,
+               PJS_ConvertDate?,
+               PJS_CreateDate?,
+               Comments?,
+               Project*)>
+
+<!ATTLIST Workspace 
+      CurrentVersion CDATA   #REQUIRED> 
+
+<!ELEMENT CreateVersion     (#PCDATA)>
+
+
+<!-- Conversion data only: only included for files converted from the old .pjs database -->
+<!ELEMENT PJS_File (#PCDATA)>
+<!ELEMENT PJS_ConvertDate (#PCDATA)>
+<!ELEMENT PJS_CreateDate (#PCDATA)>
+
+<!ELEMENT Project ( Identifier,
+               Designer?,
+               DealerID?,
+               SalesOrder?,
+               PurchaseOrder?,
+               Comments?,
+               System*)>
+
+<!ELEMENT Designer (#PCDATA)>
+<!ELEMENT DealerID (#PCDATA)>
+<!ELEMENT SalesOrder (#PCDATA)>
+<!ELEMENT PurchaseOrder (#PCDATA)>
+
+
+<!ELEMENT System  (  Identifier,
+                 SysID,
+                 TransTCPIP?,
+                 TransSerial?,
+                 TransTCPIPEx?,
+                 TransSerialEx?,
+                 TransUSBEx?,
+                 TransVNMEx?,
+                 VirtualNetLinxMasterFlag?,
+                 VNMSystemID?,
+                 VNMIPAddress?,
+                 VNMMaskAddress?,
+                 UserName?,
+                 Password?,
+                 Comments?,
+                 File*)>
+
+<!ATTLIST System
+      IsActive   (true | false)   "false"
+      Platform   (Axcess | Netlinx)   "Axcess"
+      Transport   (Serial | Modem | TCPIP) "Serial"
+      TransportEx   (Serial | USB | TCPIP | VNM) "Serial">
+
+<!ELEMENT SysID (#PCDATA)>
+<!ELEMENT TransSerial (#PCDATA)>
+<!ELEMENT TransTCPIP (#PCDATA)>
+<!ELEMENT TransTCPIPEx (#PCDATA)>
+<!ELEMENT TransSerialEx (#PCDATA)>
+<!ELEMENT TransUSBEx (#PCDATA)>
+<!ELEMENT TransVNMEx (#PCDATA)>
+<!ELEMENT VNMSystemID (#PCDATA)>
+<!ELEMENT VNMIPAddress (#PCDATA)>
+<!ELEMENT VNMMaskAddress (#PCDATA)>
+<!ELEMENT VirtualNetLinxMasterFlag (#PCDATA)>
+<!ELEMENT UserName (#PCDATA)>
+<!ELEMENT Password (#PCDATA)>
+
+
+<!ELEMENT File ( Identifier,
+               FilePathName,
+               Comments?,
+               MasterDirectory?,
+               DeviceMap*,
+               IRDB*)>
+
+<!ATTLIST File 
+       Type (Source | MasterSrc | Include | Module | AXB | IR | TPD | TP4 | TP5 | KPD | TKO | AMX_IR_DB | IRN_DB | Other | DUET | TOK | TKN | KPB | XDD ) "Other"
+       CompileType (Axcess | Netlinx | None) "None"> 
+
+<!ELEMENT FilePathName	(#PCDATA)>
+                            
+<!ELEMENT DeviceMap (DevName)>
+       <!ATTLIST DeviceMap DevAddr CDATA #REQUIRED>
+
+       <!ELEMENT DevName (#PCDATA)>
+
+<!ELEMENT IRDB    (Property,
+                 DOSName,
+                 UserDBPathName,
+                 Notes)>
+       <!ATTLIST IRDB DBKey CDATA #REQUIRED>
+
+       <!ELEMENT Property (#PCDATA)>
+       <!ELEMENT DOSName (#PCDATA)>
+       <!ELEMENT UserDBPathName (#PCDATA)>
+       <!ELEMENT Notes (#PCDATA)>
+]>
+
+<Workspace CurrentVersion="4.0"><Identifier>SoloWorksAMX</Identifier>
+<CreateVersion>4.0</CreateVersion>
+<PJS_File></PJS_File>
+<PJS_ConvertDate></PJS_ConvertDate>
+<PJS_CreateDate></PJS_CreateDate>
+<Comments>Modules, Includes and other files which are project independant</Comments>
+<Project><Identifier>Modules</Identifier>
+<Designer></Designer>
+<DealerID></DealerID>
+<SalesOrder></SalesOrder>
+<PurchaseOrder></PurchaseOrder>
+<Comments></Comments>
+<System IsActive="false" Platform="Netlinx" Transport="Serial" TransportEx="TCPIP"><Identifier>Netlinx (Device)</Identifier>
+<SysID>0</SysID>
+<TransTCPIP>0.0.0.0</TransTCPIP>
+<TransSerial>COM1,115200,8,None,1,None</TransSerial>
+<TransTCPIPEx>198.18.0.1|1319|1|ISCLAN||</TransTCPIPEx>
+<TransSerialEx>COM1|38400|8|None|1|None||</TransSerialEx>
+<TransUSBEx>|||||</TransUSBEx>
+<TransVNMEx>10.0.0.1|1|&lt;Default&gt;</TransVNMEx>
+<VirtualNetLinxMasterFlag>false</VirtualNetLinxMasterFlag>
+<VNMSystemID>1</VNMSystemID>
+<VNMIPAddress>10.0.0.1</VNMIPAddress>
+<VNMMaskAddress>255.255.255.0</VNMMaskAddress>
+<UserName></UserName>
+<Password></Password>
+<Comments></Comments>
+<File CompileType="Netlinx" Type="Module"><Identifier>mAnalogWayMidra</Identifier>
+<FilePathName>ModulesNetlinx\mAnalogWayMidra.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mAnthemAVR</Identifier>
+<FilePathName>ModulesNetlinx\mAnthemAVR.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mApartConcept1</Identifier>
+<FilePathName>ModulesNetlinx\mApartConcept1.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mAtlonaCLSO</Identifier>
+<FilePathName>ModulesNetlinx\mAtlonaCLSO.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mAtlonaHDVS</Identifier>
+<FilePathName>ModulesNetlinx\mAtlonaHDVS.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mBacnetIP</Identifier>
+<FilePathName>ModulesNetlinx\mBacnetIP.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mBiampNexia</Identifier>
+<FilePathName>ModulesNetlinx\mBiampNexia.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mBiampTesira</Identifier>
+<FilePathName>ModulesNetlinx\mBiampTesira.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mBlackmagicVideohub</Identifier>
+<FilePathName>ModulesNetlinx\mBlackmagicVideohub.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mBoschCamera</Identifier>
+<FilePathName>ModulesNetlinx\mBoschCamera.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mBoseESP</Identifier>
+<FilePathName>ModulesNetlinx\mBoseESP.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mCanonProj</Identifier>
+<FilePathName>ModulesNetlinx\mCanonProj.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mCasioProjector</Identifier>
+<FilePathName>ModulesNetlinx\mCasioProjector.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mCasioProjectorV02</Identifier>
+<FilePathName>ModulesNetlinx\mCasioProjectorV02.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mCBUS</Identifier>
+<FilePathName>ModulesNetlinx\mCBUS.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mChristieLSeries</Identifier>
+<FilePathName>ModulesNetlinx\mChristieLSeries.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mCiscoISDNLink</Identifier>
+<FilePathName>ModulesNetlinx\mCiscoISDNLink.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mCiscoSX</Identifier>
+<FilePathName>ModulesNetlinx\mCiscoSX.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mClearConnectGateway</Identifier>
+<FilePathName>ModulesNetlinx\mClearConnectGateway.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mClearoneConvergePro</Identifier>
+<FilePathName>ModulesNetlinx\mClearoneConvergePro.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mCleverTouchPro</Identifier>
+<FilePathName>ModulesNetlinx\mCleverTouchPro.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mCloud_CDI-S200</Identifier>
+<FilePathName>ModulesNetlinx\mCloud_CDI-S200.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mCTOUCH</Identifier>
+<FilePathName>ModulesNetlinx\mCTOUCH.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mDataPathFX4</Identifier>
+<FilePathName>ModulesNetlinx\mDataPathFX4.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mDeltaPlayer</Identifier>
+<FilePathName>ModulesNetlinx\mDeltaPlayer.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mDenonAVR</Identifier>
+<FilePathName>ModulesNetlinx\mDenonAVR.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mDenonDVD</Identifier>
+<FilePathName>ModulesNetlinx\mDenonDVD.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mDenonDVDLegacy</Identifier>
+<FilePathName>ModulesNetlinx\mDenonDVDLegacy.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mDGXMatrix</Identifier>
+<FilePathName>ModulesNetlinx\mDGXMatrix.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mDVX</Identifier>
+<FilePathName>ModulesNetlinx\mDVX.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mEmulatorGain</Identifier>
+<FilePathName>ModulesNetlinx\mEmulatorGain.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mEmulatorPhone</Identifier>
+<FilePathName>ModulesNetlinx\mEmulatorPhone.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mEncodedMedia</Identifier>
+<FilePathName>ModulesNetlinx\mEncodedMedia.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mEncodedMediaEncoder</Identifier>
+<FilePathName>ModulesNetlinx\mEncodedMediaEncoder.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mEpsonProjector</Identifier>
+<FilePathName>ModulesNetlinx\mEpsonProjector.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mExterity</Identifier>
+<FilePathName>ModulesNetlinx\mExterity.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mExtronDMP</Identifier>
+<FilePathName>ModulesNetlinx\mExtronDMP.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mExtronDMP44LC</Identifier>
+<FilePathName>ModulesNetlinx\mExtronDMP44LC.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mExtronMatrix</Identifier>
+<FilePathName>ModulesNetlinx\mExtronMatrix.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mExtronMGP</Identifier>
+<FilePathName>ModulesNetlinx\mExtronMGP.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mExtronSMP</Identifier>
+<FilePathName>ModulesNetlinx\mExtronSMP.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mExtronSwitch</Identifier>
+<FilePathName>ModulesNetlinx\mExtronSwitch.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mEyeVis</Identifier>
+<FilePathName>ModulesNetlinx\mEyeVis.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mHelvar</Identifier>
+<FilePathName>ModulesNetlinx\mHelvar.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mHitachiProjector</Identifier>
+<FilePathName>ModulesNetlinx\mHitachiProjector.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mHuddleCam</Identifier>
+<FilePathName>ModulesNetlinx\mHuddleCam.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mHushButton</Identifier>
+<FilePathName>ModulesNetlinx\mHushButton.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>miDRLive</Identifier>
+<FilePathName>ModulesNetlinx\miDRLive.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mIiyamaDisplayRS232</Identifier>
+<FilePathName>ModulesNetlinx\mIiyamaDisplayRS232.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mIiyamaDisplayV01</Identifier>
+<FilePathName>ModulesNetlinx\mIiyamaDisplayV01.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mIiyamaDisplayV02</Identifier>
+<FilePathName>ModulesNetlinx\mIiyamaDisplayV02.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mInFocusProjector</Identifier>
+<FilePathName>ModulesNetlinx\mInFocusProjector.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mInteviIPTV</Identifier>
+<FilePathName>ModulesNetlinx\mInteviIPTV.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mIntuiLab</Identifier>
+<FilePathName>ModulesNetlinx\mIntuiLab.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mInveoNanoOut</Identifier>
+<FilePathName>ModulesNetlinx\mInveoNanoOut.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mJVCProjector</Identifier>
+<FilePathName>ModulesNetlinx\mJVCProjector.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mKMTronic</Identifier>
+<FilePathName>ModulesNetlinx\mKMTronic.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mKramer2000</Identifier>
+<FilePathName>ModulesNetlinx\mKramer2000.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mKramer3000</Identifier>
+<FilePathName>ModulesNetlinx\mKramer3000.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mKramerScaler</Identifier>
+<FilePathName>ModulesNetlinx\mKramerScaler.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mKramerVP</Identifier>
+<FilePathName>ModulesNetlinx\mKramerVP.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mLGDisplay</Identifier>
+<FilePathName>ModulesNetlinx\mLGDisplay.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mLGDisplayWOL</Identifier>
+<FilePathName>ModulesNetlinx\mLGDisplayWOL.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mLGVideoWall</Identifier>
+<FilePathName>ModulesNetlinx\mLGVideoWall.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mLumensCamera</Identifier>
+<FilePathName>ModulesNetlinx\mLumensCamera.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mLutronGRX</Identifier>
+<FilePathName>ModulesNetlinx\mLutronGRX.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mLutronQS</Identifier>
+<FilePathName>ModulesNetlinx\mLutronQS.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mLuxmate</Identifier>
+<FilePathName>ModulesNetlinx\mLuxmate.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mMartinLighting</Identifier>
+<FilePathName>ModulesNetlinx\mMartinLighting.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mMCEControl</Identifier>
+<FilePathName>ModulesNetlinx\mMCEControl.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mMediaStar</Identifier>
+<FilePathName>ModulesNetlinx\mMediaStar.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mMicrosoftSurfaceHub</Identifier>
+<FilePathName>ModulesNetlinx\mMicrosoftSurfaceHub.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mMitsubishiProj</Identifier>
+<FilePathName>ModulesNetlinx\mMitsubishiProj.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mMoogSmartMotor</Identifier>
+<FilePathName>ModulesNetlinx\mMoogSmartMotor.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mMuteEmulator</Identifier>
+<FilePathName>ModulesNetlinx\mMuteEmulator.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mNECDisplay</Identifier>
+<FilePathName>ModulesNetlinx\mNECDisplay.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mNECDisplayE</Identifier>
+<FilePathName>ModulesNetlinx\mNECDisplayE.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mNECProjector</Identifier>
+<FilePathName>ModulesNetlinx\mNECProjector.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mNetioTelnet</Identifier>
+<FilePathName>ModulesNetlinx\mNetioTelnet.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mNewHankBluray</Identifier>
+<FilePathName>ModulesNetlinx\mNewHankBluray.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mOnkyoAVR</Identifier>
+<FilePathName>ModulesNetlinx\mOnkyoAVR.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mOppoDVD</Identifier>
+<FilePathName>ModulesNetlinx\mOppoDVD.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mOptimaProj</Identifier>
+<FilePathName>ModulesNetlinx\mOptimaProj.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mOrionVideoWall</Identifier>
+<FilePathName>ModulesNetlinx\mOrionVideoWall.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mPanasonicAWCamera</Identifier>
+<FilePathName>ModulesNetlinx\mPanasonicAWCamera.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mPanasonicDisplay</Identifier>
+<FilePathName>ModulesNetlinx\mPanasonicDisplay.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mPanasonicProjector</Identifier>
+<FilePathName>ModulesNetlinx\mPanasonicProjector.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mPanasonicProjector_IP</Identifier>
+<FilePathName>ModulesNetlinx\mPanasonicProjector_IP.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mPhilipsDisplay</Identifier>
+<FilePathName>ModulesNetlinx\mPhilipsDisplay.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mPhoneUI</Identifier>
+<FilePathName>ModulesNetlinx\mPhoneUI.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mPinAuth</Identifier>
+<FilePathName>ModulesNetlinx\mPinAuth.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mPJLink</Identifier>
+<FilePathName>ModulesNetlinx\mPJLink.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mPlanarDisplay</Identifier>
+<FilePathName>ModulesNetlinx\mPlanarDisplay.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mPolycomVC</Identifier>
+<FilePathName>ModulesNetlinx\mPolycomVC.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mPowerShellPCMonitor</Identifier>
+<FilePathName>ModulesNetlinx\mPowerShellPCMonitor.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mProjectionDesignF32</Identifier>
+<FilePathName>ModulesNetlinx\mProjectionDesignF32.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mProjectionDesignFxx</Identifier>
+<FilePathName>ModulesNetlinx\mProjectionDesignFxx.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mQConnect</Identifier>
+<FilePathName>ModulesNetlinx\mQConnect.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mQSYS</Identifier>
+<FilePathName>ModulesNetlinx\mQSYS.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mRako</Identifier>
+<FilePathName>ModulesNetlinx\mRako.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mRakoIP</Identifier>
+<FilePathName>ModulesNetlinx\mRakoIP.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mRevolabsElite</Identifier>
+<FilePathName>ModulesNetlinx\mRevolabsElite.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mSamsungDisplay</Identifier>
+<FilePathName>ModulesNetlinx\mSamsungDisplay.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mSamsungVidWall</Identifier>
+<FilePathName>ModulesNetlinx\mSamsungVidWall.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mSanyoProj</Identifier>
+<FilePathName>ModulesNetlinx\mSanyoProj.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mSanyoProjLegacy</Identifier>
+<FilePathName>ModulesNetlinx\mSanyoProjLegacy.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mSharpDisplay</Identifier>
+<FilePathName>ModulesNetlinx\mSharpDisplay.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mShureMicroflex</Identifier>
+<FilePathName>ModulesNetlinx\mShureMicroflex.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mSim2Projector</Identifier>
+<FilePathName>ModulesNetlinx\mSim2Projector.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mSIPDoorEntry</Identifier>
+<FilePathName>ModulesNetlinx\mSIPDoorEntry.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mSIPGateway</Identifier>
+<FilePathName>ModulesNetlinx\mSIPGateway.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mSkyControl</Identifier>
+<FilePathName>ModulesNetlinx\mSkyControl.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mSkyDusky</Identifier>
+<FilePathName>ModulesNetlinx\mSkyDusky.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mSmart</Identifier>
+<FilePathName>ModulesNetlinx\mSmart.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mSolsticeAPI</Identifier>
+<FilePathName>ModulesNetlinx\mSolsticeAPI.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mSolsticeHTML</Identifier>
+<FilePathName>ModulesNetlinx\mSolsticeHTML.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mSonyDisplayRS232</Identifier>
+<FilePathName>ModulesNetlinx\mSonyDisplayRS232.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mSonyDisplaySimpleIP</Identifier>
+<FilePathName>ModulesNetlinx\mSonyDisplaySimpleIP.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mSonyProj</Identifier>
+<FilePathName>ModulesNetlinx\mSonyProj.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mSonyViscaOverIP</Identifier>
+<FilePathName>ModulesNetlinx\mSonyViscaOverIP.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mSoundStructure</Identifier>
+<FilePathName>ModulesNetlinx\mSoundStructure.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mSoundWebLondon</Identifier>
+<FilePathName>ModulesNetlinx\mSoundWebLondon.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mSPECS3</Identifier>
+<FilePathName>ModulesNetlinx\mSPECS3.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mSY_1A_25R</Identifier>
+<FilePathName>ModulesNetlinx\mSY_1A_25R.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mTandbergMXP</Identifier>
+<FilePathName>ModulesNetlinx\mTandbergMXP.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mTascamDVD</Identifier>
+<FilePathName>ModulesNetlinx\mTascamDVD.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mTeradek</Identifier>
+<FilePathName>ModulesNetlinx\mTeradek.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mTimeEvents</Identifier>
+<FilePathName>ModulesNetlinx\mTimeEvents.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mTVOne1TMV</Identifier>
+<FilePathName>ModulesNetlinx\mTVOne1TMV.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mTVOneCORIO</Identifier>
+<FilePathName>ModulesNetlinx\mTVOneCORIO.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mTVOneScaler</Identifier>
+<FilePathName>ModulesNetlinx\mTVOneScaler.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mUnisonLighting</Identifier>
+<FilePathName>ModulesNetlinx\mUnisonLighting.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mUtilDateTime</Identifier>
+<FilePathName>ModulesNetlinx\mUtilDateTime.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mVaddioCamera</Identifier>
+<FilePathName>ModulesNetlinx\mVaddioCamera.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mVbrick</Identifier>
+<FilePathName>ModulesNetlinx\mVbrick.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mWakeOnLan</Identifier>
+<FilePathName>ModulesNetlinx\mWakeOnLan.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mWePresent</Identifier>
+<FilePathName>ModulesNetlinx\mWePresent.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mYahooWeather</Identifier>
+<FilePathName>ModulesNetlinx\mYahooWeather.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mYamahaRX</Identifier>
+<FilePathName>ModulesNetlinx\mYamahaRX.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mZero88ChilliNet</Identifier>
+<FilePathName>ModulesNetlinx\mZero88ChilliNet.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>Pioneer BDP-LX UI</Identifier>
+<FilePathName>ModulesNetlinx\Pioneer BDP-LX UI.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>Pioneer BDP-LX</Identifier>
+<FilePathName>ModulesNetlinx\Pioneer BDP-LX.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="MasterSrc"><Identifier>CompileCheat</Identifier>
+<FilePathName>Source\CompileCheat.axs</FilePathName>
+<Comments></Comments>
+</File>
+</System>
+<System IsActive="false" Platform="Netlinx" Transport="Serial" TransportEx="TCPIP"><Identifier>RMS</Identifier>
+<SysID>0</SysID>
+<TransTCPIP>0.0.0.0</TransTCPIP>
+<TransSerial>COM1,115200,8,None,1,None</TransSerial>
+<TransTCPIPEx>198.18.0.1|1319|1|ISCLAN||</TransTCPIPEx>
+<TransSerialEx>COM1|38400|8|None|1|None||</TransSerialEx>
+<TransUSBEx>|||||</TransUSBEx>
+<TransVNMEx>10.0.0.1|1|&lt;Default&gt;</TransVNMEx>
+<VirtualNetLinxMasterFlag>false</VirtualNetLinxMasterFlag>
+<VNMSystemID>1</VNMSystemID>
+<VNMIPAddress>10.0.0.1</VNMIPAddress>
+<VNMMaskAddress>255.255.255.0</VNMMaskAddress>
+<UserName></UserName>
+<Password></Password>
+<Comments></Comments>
+<File CompileType="Netlinx" Type="Include"><Identifier>RmsApi</Identifier>
+<FilePathName>IncludesRms\RmsApi.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Include"><Identifier>RmsEventListener</Identifier>
+<FilePathName>IncludesRms\RmsEventListener.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Include"><Identifier>RmsGuiApi</Identifier>
+<FilePathName>IncludesRms\RmsGuiApi.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Include"><Identifier>RmsMathUtil</Identifier>
+<FilePathName>IncludesRms\RmsMathUtil.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Include"><Identifier>RmsMonitorCommon</Identifier>
+<FilePathName>IncludesRms\RmsMonitorCommon.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Include"><Identifier>RmsNlSnapiComponents</Identifier>
+<FilePathName>IncludesRms\RmsNlSnapiComponents.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Include"><Identifier>RmsSchedulingApi</Identifier>
+<FilePathName>IncludesRms\RmsSchedulingApi.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Include"><Identifier>RmsSchedulingEventListener</Identifier>
+<FilePathName>IncludesRms\RmsSchedulingEventListener.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mRMSDisplayDeviceMonitor</Identifier>
+<FilePathName>ModulesNetlinxRms\mRMSDisplayDeviceMonitor.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>RmsBiAmpTesiraMonitor</Identifier>
+<FilePathName>ModulesNetlinxRms\RmsBiAmpTesiraMonitor.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>RmsClearoneMonitor</Identifier>
+<FilePathName>ModulesNetlinxRms\RmsClearoneMonitor.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>RmsControlSystemMonitor</Identifier>
+<FilePathName>ModulesNetlinxRms\RmsControlSystemMonitor.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>RmsGenericDeviceMonitor</Identifier>
+<FilePathName>ModulesNetlinxRms\RmsGenericDeviceMonitor.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>RmsGenericNetLinxDeviceMonitor</Identifier>
+<FilePathName>ModulesNetlinxRms\RmsGenericNetLinxDeviceMonitor.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>RmsPCMonitor</Identifier>
+<FilePathName>ModulesNetlinxRms\RmsPCMonitor.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>RmsShureMicroflexMonitor</Identifier>
+<FilePathName>ModulesNetlinxRms\RmsShureMicroflexMonitor.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>RmsSolsticeMonitor</Identifier>
+<FilePathName>ModulesNetlinxRms\RmsSolsticeMonitor.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>RmsSoundStructureMonitor</Identifier>
+<FilePathName>ModulesNetlinxRms\RmsSoundStructureMonitor.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>RmsSourceUsageMonitor</Identifier>
+<FilePathName>ModulesNetlinxRms\RmsSourceUsageMonitor.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>RmsSystemControlMethods</Identifier>
+<FilePathName>ModulesNetlinxRms\RmsSystemControlMethods.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>RmsVCMonitor</Identifier>
+<FilePathName>ModulesNetlinxRms\RmsVCMonitor.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>RmsVideoSwitchMonitor</Identifier>
+<FilePathName>ModulesNetlinxRms\RmsVideoSwitchMonitor.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>RmsVirtualDeviceMonitor</Identifier>
+<FilePathName>ModulesNetlinxRms\RmsVirtualDeviceMonitor.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>RmsWePresentMonitor</Identifier>
+<FilePathName>ModulesNetlinxRms\RmsWePresentMonitor.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>scRMSGenericDeviceMonitor</Identifier>
+<FilePathName>ModulesNetlinxRms\scRMSGenericDeviceMonitor.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>scSchedulingConnectRMS</Identifier>
+<FilePathName>ModulesNetlinxRms\scSchedulingConnectRMS.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>scSchedulingRoomInstance</Identifier>
+<FilePathName>ModulesNetlinxRms\scSchedulingRoomInstance.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="MasterSrc"><Identifier>CompileCheat</Identifier>
+<FilePathName>Source\CompileCheat.axs</FilePathName>
+<Comments></Comments>
+</File>
+</System>
+<System IsActive="false" Platform="Netlinx" Transport="Serial" TransportEx="TCPIP"><Identifier>Duet (ThirdParty)</Identifier>
+<SysID>0</SysID>
+<TransTCPIP>0.0.0.0</TransTCPIP>
+<TransSerial>COM1,115200,8,None,1,None</TransSerial>
+<TransTCPIPEx>198.18.0.1|1319|1|ISCLAN||</TransTCPIPEx>
+<TransSerialEx>COM1|38400|8|None|1|None||</TransSerialEx>
+<TransUSBEx>|||||</TransUSBEx>
+<TransVNMEx>10.0.0.1|1|&lt;Default&gt;</TransVNMEx>
+<VirtualNetLinxMasterFlag>false</VirtualNetLinxMasterFlag>
+<VNMSystemID>1</VNMSystemID>
+<VNMIPAddress>10.0.0.1</VNMIPAddress>
+<VNMMaskAddress>255.255.255.0</VNMMaskAddress>
+<UserName></UserName>
+<Password></Password>
+<Comments></Comments>
+<File CompileType="Netlinx" Type="DUET"><Identifier>AMX_NXBCCG_Comm_dr1_0_0</Identifier>
+<FilePathName>ModulesDuet\AMX_NXBCCG_Comm_dr1_0_0.jar</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="DUET"><Identifier>Polycom_EagleEye_Comm_dr1_0_0</Identifier>
+<FilePathName>ModulesDuet\Polycom_EagleEye_Comm_dr1_0_0.jar</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="DUET"><Identifier>sipdoorphone_dr1_0_0</Identifier>
+<FilePathName>ModulesDuet\sipdoorphone_dr1_0_0.jar</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="MasterSrc"><Identifier>CompileCheat</Identifier>
+<FilePathName>Source\CompileCheat.axs</FilePathName>
+<Comments></Comments>
+</File>
+</System>
+</Project>
+<Project><Identifier>Includes</Identifier>
+<Designer></Designer>
+<DealerID></DealerID>
+<SalesOrder></SalesOrder>
+<PurchaseOrder></PurchaseOrder>
+<Comments></Comments>
+<System IsActive="false" Platform="Netlinx" Transport="Serial" TransportEx="TCPIP"><Identifier>SystemHelpers</Identifier>
+<SysID>0</SysID>
+<TransTCPIP>0.0.0.0</TransTCPIP>
+<TransSerial>COM1,115200,8,None,1,None</TransSerial>
+<TransTCPIPEx>198.18.0.1|1319|1|ISCLAN||</TransTCPIPEx>
+<TransSerialEx>COM1|38400|8|None|1|None||</TransSerialEx>
+<TransUSBEx>|||||</TransUSBEx>
+<TransVNMEx>10.0.0.1|1|&lt;Default&gt;</TransVNMEx>
+<VirtualNetLinxMasterFlag>false</VirtualNetLinxMasterFlag>
+<VNMSystemID>1</VNMSystemID>
+<VNMIPAddress>10.0.0.1</VNMIPAddress>
+<VNMMaskAddress>255.255.255.0</VNMMaskAddress>
+<UserName></UserName>
+<Password></Password>
+<Comments></Comments>
+<File CompileType="Netlinx" Type="Include"><Identifier>StandardCodeAudioControl</Identifier>
+<FilePathName>Includes\StandardCodeAudioControl.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Include"><Identifier>StandardCodeConfigFile</Identifier>
+<FilePathName>Includes\StandardCodeConfigFile.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Include"><Identifier>StandardCodeDiagnostics</Identifier>
+<FilePathName>Includes\StandardCodeDiagnostics.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Include"><Identifier>StandardCodePanels</Identifier>
+<FilePathName>Includes\StandardCodePanels.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="MasterSrc"><Identifier>CompileCheat</Identifier>
+<FilePathName>Source\CompileCheat.axs</FilePathName>
+<Comments></Comments>
+</File>
+</System>
+<System IsActive="false" Platform="Netlinx" Transport="Serial" TransportEx="TCPIP"><Identifier>Utility</Identifier>
+<SysID>0</SysID>
+<TransTCPIP>0.0.0.0</TransTCPIP>
+<TransSerial>COM1,115200,8,None,1,None</TransSerial>
+<TransTCPIPEx>198.18.0.1|1319|1|ISCLAN||</TransTCPIPEx>
+<TransSerialEx>COM1|38400|8|None|1|None||</TransSerialEx>
+<TransUSBEx>|||||</TransUSBEx>
+<TransVNMEx>10.0.0.1|1|&lt;Default&gt;</TransVNMEx>
+<VirtualNetLinxMasterFlag>false</VirtualNetLinxMasterFlag>
+<VNMSystemID>1</VNMSystemID>
+<VNMIPAddress>10.0.0.1</VNMIPAddress>
+<VNMMaskAddress>255.255.255.0</VNMMaskAddress>
+<UserName></UserName>
+<Password></Password>
+<Comments></Comments>
+<File CompileType="Netlinx" Type="Include"><Identifier>AMXDevices</Identifier>
+<FilePathName>Includes\AMXDevices.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Include"><Identifier>CustomFunctions</Identifier>
+<FilePathName>Includes\CustomFunctions.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Include"><Identifier>Debug</Identifier>
+<FilePathName>Includes\Debug.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Include"><Identifier>HTTP</Identifier>
+<FilePathName>Includes\HTTP.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Include"><Identifier>IEEE754</Identifier>
+<FilePathName>Includes\IEEE754.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Include"><Identifier>Math</Identifier>
+<FilePathName>Includes\Math.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Include"><Identifier>md5</Identifier>
+<FilePathName>Includes\md5.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Include"><Identifier>WebSockets</Identifier>
+<FilePathName>Includes\WebSockets.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="MasterSrc"><Identifier>CompileCheat</Identifier>
+<FilePathName>Source\CompileCheat.axs</FilePathName>
+<Comments></Comments>
+</File>
+</System>
+</Project>
+</Workspace>
