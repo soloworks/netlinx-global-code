@@ -14,26 +14,26 @@ All code and modules are used at own risk, we offer no garantee or support beyon
 There are some standard code practices we have developed over time which will be documented here in the near future. Some adhere to a rough version of SNAPI, some are internal convention we have found useful.
 
 Some highlights for now:
-- Modules will only be passed devices, and all communications will be via those
-- Last device in module declaration is always the real world port
-- One virtual device should exist for each logical object, e.g. each gain structure, each display panel, each call
-- Control is always via Commands
-- Feedback is via Strings, Channels, Levels
-- Structures > lots of variables
+* Modules will only be passed devices, and all communications will be via those
+* Last device in module declaration is always the real world port
+* One virtual device should exist for each logical object, e.g. each gain structure, each display panel, each call
+* Control is always via Commands
+* Feedback is via Strings, Channels, Levels
+* Structures > lots of variables
 
 Channels Often Used:
-- 251: High when communication is live with end device, drops when communication lost
-- 252: Follows 251 (Both required for RMS)
-- 199: Mute (Gain)
-- 198: Mute (Mic)
-- 236: Call Incoming
-- 237: Call Outgoing
-- 238: Call Live
+* 251: High when communication is live with end device, drops when communication lost
+* 252: Follows 251 (Both required for RMS)
+* 199: Mute (Gain)
+* 198: Mute (Mic)
+* 236: Call Incoming
+* 237: Call Outgoing
+* 238: Call Live
 
 Levels Often Used:
-- 1: Gain (Native Range)
-- 2: Gain (0-100)
-- 3: Gain (0-255)
+* 1: Gain (Native Range)
+* 2: Gain (0-100)
+* 3: Gain (0-255)
 
 
 ## Use
@@ -65,13 +65,13 @@ bitbucket.org/solo_works/netlinxstudioconfigtool
 
 ### Folders
 
-- Includes            - Include Files
-- ModulesDuet         - AMX Supplied Duet Modules
-- ModulesNetlinx      - Bespoke Netlinx Modules
-- rmsModulesCustom    - Bespoke RMS Netlinx Modules
-- IncludesRms         - Standard AMX Supplied RMS - Includes
-- ModulesDuetRms      - Standard AMX Supplied RMS Modules
-- ModulesNetlinxRms   - Standard and Custom RMS Modules
+* Includes            - Include Files
+* ModulesDuet         - AMX Supplied Duet Modules
+* ModulesNetlinx      - Bespoke Netlinx Modules
+* rmsModulesCustom    - Bespoke RMS Netlinx Modules
+* IncludesRms         - Standard AMX Supplied RMS - Includes
+* ModulesDuetRms      - Standard AMX Supplied RMS Modules
+* ModulesNetlinxRms   - Standard and Custom RMS Modules
 
 
 ## Author
