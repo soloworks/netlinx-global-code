@@ -464,8 +464,8 @@
 <FilePathName>ModulesNetlinx\mOppoDVD.axs</FilePathName>
 <Comments></Comments>
 </File>
-<File CompileType="Netlinx" Type="Module"><Identifier>mOptimaProj</Identifier>
-<FilePathName>ModulesNetlinx\mOptimaProj.axs</FilePathName>
+<File CompileType="Netlinx" Type="Module"><Identifier>mOptomaProj</Identifier>
+<FilePathName>ModulesNetlinx\mOptomaProj.axs</FilePathName>
 <Comments></Comments>
 </File>
 <File CompileType="Netlinx" Type="Module"><Identifier>mOrionVideoWall</Identifier>
