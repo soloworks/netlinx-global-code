@@ -4,15 +4,15 @@ INCLUDE 'CustomFunctions'
 	Basic Optoma Projector Module for RS232 & IP Control
 ******************************************************************************/
 DEFINE_TYPE STRUCTURE uOptomaProj{
-	INTEGER	ID						// Projector ID	
+	INTEGER	ID						// Projector ID
 	CHAR		Tx[500]				// Transmit Buffer
 	CHAR 		Rx[500]				// Recieve Buffer
-	CHAR	 	PENDING_MSG[20]	// Last message send
+	CHAR	 	PENDING_MSG[3]		// Last message send
 	INTEGER	isIP
 	INTEGER 	IP_PORT				// IP Port
 	CHAR		IP_HOST[255]		// IP Host
 	INTEGER 	CONN_STATE			// Current Connection State
-	
+
 	INTEGER  DEBUG					// Debuging ON/OFF
 
 	INTEGER  MODEL_NAME
@@ -54,7 +54,7 @@ VOLATILE uOptomaProj myOptomaProj
 	Module Startup
 ******************************************************************************/
 DEFINE_START{
-	myOptomaProj.ID = 1
+	myOptomaProj.ID = 0
 	myOptomaProj.isIP = !(dvDEVICE.NUMBER)
 	CREATE_BUFFER dvDevice, myOptomaProj.RX
 }
@@ -110,7 +110,12 @@ DEFINE_FUNCTION fnSendFromQueue(){
 }
 
 DEFINE_EVENT TIMELINE_EVENT[TLID_SEND]{
+	fnResetModule()
+}
+
+DEFINE_FUNCTION fnResetModule(){
 	myOptomaProj.Tx = ''
+	myOptomaProj.Rx = ''
 	myOptomaProj.PENDING_MSG = ''
 	IF(myOptomaProj.isIP && myOptomaProj.CONN_STATE != CONN_STATE_OFFLINE){
 		fnCloseTCPConnection()
@@ -171,13 +176,21 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 						CASE 16:{_MSG = 'Too many open Sockets'}			// Too many open sockets
 						CASE 17:{_MSG = 'Local port not Open'}				// Local Port Not Open
 					}
-					fnRetryConnection()
+					fnResetModule()
 				}
 			}
 			fnDebug(DEBUG_ERR,"'Optoma IP Error:[',myOptomaProj.IP_HOST,']'","'[',ITOA(DATA.NUMBER),'][',_MSG,']'")
 		}
 	}
 	STRING:{
+		IF(FIND_STRING(UPPER_STRING(myOptomaProj.Rx),'ERROR',1)){
+			fnResetModule()
+		}
+		ELSE{
+			WHILE(FIND_STRING(myOptomaProj.Rx,"$0D",1)){
+				IF(
+			}
+		}
 		STACK_VAR INTEGER pIsResponse
 		fnDebug(DEBUG_STD,'OPT->',DATA.TEXT)
 		IF(FIND_STRING(DATA.TEXT,'OK',1)){
@@ -187,7 +200,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 			//myOptomaProj.SOURCE_NO 		= ATOI(GET_BUFFER_STRING(DATA.TEXT,2))
 			//myOptomaProj.META_FIRMWARE = GET_BUFFER_STRING(DATA.TEXT,4)
 			//pIsResponse = TRUE
-			
+
 			IF(myOptomaProj.SOURCE_REQUESTED != 0 && myOptomaProj.POWER){
 				fnAddToQueue('12',ITOA(myOptomaProj.SOURCE_REQUESTED))
 				myOptomaProj.SOURCE_REQUESTED = 0
@@ -196,8 +209,8 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 		ELSE IF(DATA.TEXT[1] == 'P' || DATA.TEXT[1] == 'F'){
 			pIsResponse = TRUE
 		}
-		
-		IF(pIsResponse){	
+
+		IF(pIsResponse){
 			// Clear the Pending Message
 			myOptomaProj.PENDING_MSG = ''
 			// Clear the Pending Timeline
@@ -264,6 +277,6 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 DEFINE_PROGRAM{
 	[vdvControl,251] = (TIMELINE_ACTIVE(TLID_COMMS))
 	[vdvControl,252] = (TIMELINE_ACTIVE(TLID_COMMS))
-	
+
 	[vdvControl,255] = (myOptomaProj.POWER)
 }
