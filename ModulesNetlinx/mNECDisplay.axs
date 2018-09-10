@@ -286,6 +286,7 @@ DEFINE_FUNCTION fnBuildMsg(CHAR pType,CHAR pMSG[20]){
 DEFINE_FUNCTION SINTEGER fnTextToInput(CHAR pInput[]){
 	STACK_VAR SINTEGER _INPUT
 	SWITCH(myNECDisplay.MODEL){
+		CASE 'E656':
 		CASE 'E705':
 		CASE 'X651UHD':
 		CASE 'X841UHD-2':{
@@ -322,6 +323,7 @@ DEFINE_FUNCTION SINTEGER fnTextToInput(CHAR pInput[]){
 DEFINE_FUNCTION CHAR[10] fnInputToText(SINTEGER pInput){
 	STACK_VAR CHAR _INPUT[10]
 	SWITCH(myNECDisplay.MODEL){
+		CASE 'E656':
 		CASE 'E705':
 		CASE 'X651UHD':
 		CASE 'X841UHD-2':{
@@ -654,6 +656,10 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 								CASE 'DEV':  myNECDisplay.COMMS.DEBUG = DEBUG_DEV
 								DEFAULT: 	 myNECDisplay.COMMS.DEBUG = DEBUG_ERR
 							}
+						}
+						CASE 'FORCE_MODEL':{
+							#WARN 'Added to force model number from corrupted feedback that needs more work from E656'
+							myNECDisplay.MODEL = DATA.TEXT
 						}
 					}
 				}
