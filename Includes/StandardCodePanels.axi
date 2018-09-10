@@ -153,9 +153,9 @@ DEFINE_FUNCTION fnSetMainMenu(INTEGER pPanel, INTEGER pMenu){
 	}
 
 	mySystem.PANEL[pPanel].MENU = pMENU
-	fnMainMenuChangeCallback(pPanel)
-
-	fnSetupPanel(pPanel)
+	IF(!fnMainMenuChangeCallback(pPanel)){
+		fnSetupPanel(pPanel)
+	}
 }
 
 DEFINE_FUNCTION fnInitMenuTimeout(INTEGER pPanel,INTEGER pActive){
