@@ -119,8 +119,13 @@ DEFINE_FUNCTION fnResetModule(){
 	myOptomaProj.Tx = ''
 	myOptomaProj.Rx = ''
 	myOptomaProj.PENDING_MSG = ''
-	IF(myOptomaProj.isIP && myOptomaProj.CONN_STATE != CONN_STATE_OFFLINE){
-		fnCloseTCPConnection()
+	IF(myOptomaProj.isIP){
+		IF(myOptomaProj.CONN_STATE != CONN_STATE_OFFLINE){
+			fnCloseTCPConnection()
+		}
+		ELSE{
+			fnRetryConnection()
+		}
 	}
 }
 /******************************************************************************
@@ -162,7 +167,7 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[100]){
 		}
 	}
 	ELSE IF(pDATA == 'P'){
-		
+
 		pIsResponse = TRUE
 	}
 	ELSE IF(pDATA == 'F'){
