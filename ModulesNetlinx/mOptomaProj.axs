@@ -20,6 +20,8 @@ DEFINE_TYPE STRUCTURE uOptomaProj{
 	INTEGER	POWER
 	INTEGER 	SOURCE_ACTUAL
 	INTEGER 	SOURCE_REQUESTED
+	INTEGER  LAMP_HOURS
+	CHAR     META_FW[4]
 }
 
 DEFINE_CONSTANT
@@ -139,6 +141,37 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_POLL]{
 }
 
 /******************************************************************************
+	Data Feedback Helper
+******************************************************************************/
+DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[100]){
+	STACK_VAR INTEGER pIsResponse
+	fnDebug(DEBUG_STD,'OPT->',pDATA)
+	IF(UPPER_STRING(LEFT_STRING(pDATA,2)) == 'OK'){
+		// Set this as a Request or Action Reponse
+		pIsResponse = TRUE
+		// Strip the OK part
+		GET_BUFFER_STRING(pDATA,2)	// Strip 'OK'
+		// Handle based on request type
+		SWITCH(myOptomaProj.PENDING_MSG){
+			CASE '150':{
+				myOptomaProj.POWER 			= ATOI("GET_BUFFER_CHAR(pDATA)")
+				myOptomaProj.LAMP_HOURS 	= ATOI(GET_BUFFER_STRING(pDATA,5))
+				myOptomaProj.SOURCE_ACTUAL	= ATOI(GET_BUFFER_STRING(pDATA,2))
+				myOptomaProj.META_FW       = GET_BUFFER_STRING(pDATA,4)
+			}
+		}
+	}
+	ELSE IF(pDATA == 'P'){
+		
+		pIsResponse = TRUE
+	}
+	ELSE IF(pDATA == 'F'){
+		pIsResponse = TRUE
+	}
+
+	RETURN pIsResponse
+}
+/******************************************************************************
 	Physical Device Control
 ******************************************************************************/
 DEFINE_EVENT DATA_EVENT[dvDevice]{
@@ -184,42 +217,23 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 	}
 	STRING:{
 		IF(FIND_STRING(UPPER_STRING(myOptomaProj.Rx),'ERROR',1)){
+			fnDebug(DEBUG_ERR,"'Optoma Error'",myOptomaProj.Rx)
 			fnResetModule()
 		}
 		ELSE{
 			WHILE(FIND_STRING(myOptomaProj.Rx,"$0D",1)){
-				IF(
+				IF(fnProcessFeedback(fnStripCharsRight(REMOVE_STRING(myOptomaProj.Rx,"$0D",1),1))){
+					// Clear the Pending Message
+					myOptomaProj.PENDING_MSG = ''
+					// Clear the Pending Timeline
+					IF(TIMELINE_ACTIVE(TLID_SEND)){TIMELINE_KILL(TLID_SEND)}
+					// Restart the Connectivity Timeline
+					IF(TIMELINE_ACTIVE(TLID_COMMS)){TIMELINE_KILL(TLID_COMMS)}
+					TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
+					// Send next message from Queue
+					fnSendFromQueue()
+				}
 			}
-		}
-		STACK_VAR INTEGER pIsResponse
-		fnDebug(DEBUG_STD,'OPT->',DATA.TEXT)
-		IF(FIND_STRING(DATA.TEXT,'OK',1)){
-			GET_BUFFER_STRING(DATA.TEXT,2)	// Strip 'OK'
-			myOptomaProj.POWER 			= ATOI("GET_BUFFER_CHAR(DATA.TEXT)")
-			//myOptomaProj.LAMP_HOURS 	= GET_BUFFER_STRING(DATA.TEXT,5)
-			//myOptomaProj.SOURCE_NO 		= ATOI(GET_BUFFER_STRING(DATA.TEXT,2))
-			//myOptomaProj.META_FIRMWARE = GET_BUFFER_STRING(DATA.TEXT,4)
-			//pIsResponse = TRUE
-
-			IF(myOptomaProj.SOURCE_REQUESTED != 0 && myOptomaProj.POWER){
-				fnAddToQueue('12',ITOA(myOptomaProj.SOURCE_REQUESTED))
-				myOptomaProj.SOURCE_REQUESTED = 0
-			}
-		}
-		ELSE IF(DATA.TEXT[1] == 'P' || DATA.TEXT[1] == 'F'){
-			pIsResponse = TRUE
-		}
-
-		IF(pIsResponse){
-			// Clear the Pending Message
-			myOptomaProj.PENDING_MSG = ''
-			// Clear the Pending Timeline
-			IF(TIMELINE_ACTIVE(TLID_SEND)){TIMELINE_KILL(TLID_SEND)}
-			// Restart the Connectivity Timeline
-			IF(TIMELINE_ACTIVE(TLID_COMMS)){TIMELINE_KILL(TLID_COMMS)}
-			TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
-			// Send next message from Queue
-			fnSendFromQueue()
 		}
 	}
 }
