@@ -228,6 +228,14 @@
 <FilePathName>ModulesNetlinx\mCTOUCH.axs</FilePathName>
 <Comments></Comments>
 </File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mCYPAmp</Identifier>
+<FilePathName>ModulesNetlinx\mCYPAmp.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mCYPMatrix</Identifier>
+<FilePathName>ModulesNetlinx\mCYPMatrix.axs</FilePathName>
+<Comments></Comments>
+</File>
 <File CompileType="Netlinx" Type="Module"><Identifier>mDataPathFX4</Identifier>
 <FilePathName>ModulesNetlinx\mDataPathFX4.axs</FilePathName>
 <Comments></Comments>
