@@ -66,7 +66,7 @@ VOLATILE uAMP myAMP
 LONG TLT_POWER[]		= {  12000 }
 LONG TLT_POLL[]		= {  15000 }
 LONG TLT_COMMS[]		= { 120000 }
-LONG TLT_TIMEOUT[]	= {   1000 }
+LONG TLT_TIMEOUT[]	= {   3000 }
 LONG TLT_VOL[]			= {    150 }
 /******************************************************************************
 	Comms Rx/Tx Control
@@ -74,16 +74,15 @@ LONG TLT_VOL[]			= {    150 }
 DEFINE_START{
 	myAMP.isIP = !(ipDevice.NUMBER)
 	CREATE_BUFFER ipDevice, myAMP.Rx
+	myAMP.Zone.RANGE[1] = -80
+	myAMP.Zone.RANGE[2] = 0
 }
 
 (** Physical Device Events **)
 DEFINE_EVENT DATA_EVENT[ipDevice]{
 	ONLINE:{
 		myAMP.CONN_STATE = CONN_STATE_CONNECTED
-		IF(myAMP.isIP){
-			fnSendFromQueue()
-		}
-		ELSE{
+		IF(!myAMP.isIP){
 			SEND_COMMAND ipDevice, 'SET MODE DATA' 
 			SEND_COMMAND ipDevice, 'SET BAUD 115200 N 8 1 485 DISABLE'
 			fnPoll()
@@ -124,9 +123,14 @@ DEFINE_EVENT DATA_EVENT[ipDevice]{
 		}
 	}
 	STRING:{
-		fnDebug(DEBUG_STD,'RAW->',DATA.TEXT)
-		WHILE(FIND_STRING(myAMP.Rx,';',1)){
-			fnProcessFeedback(fnStripCharsRight(REMOVE_STRING(myAMP.Rx,';',1),1))
+		fnDebug(DEBUG_STD,'RAW->',fnBytesToString(DATA.TEXT))
+		WHILE(FIND_STRING(myAMP.Rx,"$0A",1)){
+			fnProcessFeedback(fnStripCharsRight(REMOVE_STRING(myAMP.Rx,"$0A",1),1))
+		}
+		IF(FIND_STRING(myAMP.Rx,'telnet->',1)){
+			myAMP.CONN_STATE = CONN_STATE_CONNECTED
+			myAMP.Rx = ''
+			fnSendFromQueue()
 		}
 	}
 }
@@ -212,15 +216,30 @@ DEFINE_FUNCTION fnDebug(INTEGER pLEVEL, CHAR Msg[], CHAR MsgData[]){
 	Process Feedback 
 ******************************************************************************/
 DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
-	fnDebug(DEBUG_DEV,'fnProcessFeedback()',"'pDATA=',pDATA")
-	SWITCH(REMOVE_STRING(pDATA,' ',1)){
-		CASE 'PWR':{
-			myAMP.ZONE.POWER = ATOI(pDATA)
+	pDATA = fnRemoveWhiteSpace(pDATA)
+	IF(LENGTH_ARRAY(pDATA)){
+		IF(pDATA[LENGTH_ARRAY(pDATA)] == $0D){
+			pDATA = fnStripCharsRight(pDATA,1)
+		}
+	}
+	IF(!LENGTH_ARRAY(pDATA)){
+		RETURN
+	}
+	
+	fnDebug(DEBUG_DEV,'fnProcessFeedback()',"'pDATA(str)=',pDATA")
+	SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
+		CASE 'POWER':{
+			SWITCH(pDATA){
+				CASE 'ON':  myAMP.ZONE.POWER = TRUE
+				CASE 'OFF': myAMP.ZONE.POWER = FALSE
+			}
 			IF(myAMP.ZONE.POWER){
 				fnAddToQueue("'VOL S'",TRUE)	// Query Zone 1 Volume
 			}
 		}
-		CASE 'VOL':{
+		CASE 'VOLUME':{
+			REMOVE_STRING(pDATA,' ',1)	// Remove 'Is'
+			pDATA = fnStripCharsRight(pDATA,2)	// Remove dB
 			myAMP.ZONE.CUR_VOL = ATOI(pDATA)
 			// Set up 255 range
 			myAMP.ZONE.CUR_VOL_255 = fnScaleRange(myAMP.ZONE.CUR_VOL,myAMP.ZONE.RANGE[1],myAMP.ZONE.RANGE[2],0,255)
@@ -228,6 +247,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 			fnAddToQueue("'MUTE S'",TRUE)	// Query Zone 1 Mute
 		}
 		CASE 'MUTE':{
+			REMOVE_STRING(pDATA,' ',1)	// Remove 'Is'
 			myAMP.ZONE.MUTE = ATOI(pDATA)
 			fnAddToQueue("'SOURCE S'",TRUE)	// Query Zone 1 Source
 		}
@@ -250,8 +270,8 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 	ONLINE:{
 		SEND_STRING DATA.DEVICE,"'PROPERTY-META,MAKE,CYP'"
 		SEND_STRING DATA.DEVICE,"'PROPERTY-META,MODEL,AU-A300'"
-		SEND_STRING DATA.DEVICE, 'PROPERTIES-0,80'
-		SEND_STRING DATA.DEVICE, 'RANGE-0,80'
+		SEND_STRING DATA.DEVICE, 'PROPERTY-RANGE,-80,0'
+		SEND_STRING DATA.DEVICE, 'RANGE--80,0'
 	}
 	COMMAND:{
 		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
