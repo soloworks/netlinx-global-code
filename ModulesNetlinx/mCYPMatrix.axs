@@ -118,15 +118,15 @@ DEFINE_EVENT DATA_EVENT[ipDevice]{
 	}
 	STRING:{
 		fnDebug(DEBUG_STD,'RAW->',DATA.TEXT)
-		WHILE(FIND_STRING(myMatrix.Rx,';',1)){
-			fnProcessFeedback(fnStripCharsRight(REMOVE_STRING(myMatrix.Rx,';',1),1))
+		WHILE(FIND_STRING(myMatrix.Rx,"$0D,$0A",1)){
+			fnProcessFeedback(fnStripCharsRight(REMOVE_STRING(myMatrix.Rx,"$0D,$0A",1),2))
 		}
 	}
 }
 (** IP Connection Helpers **)
 DEFINE_FUNCTION fnOpenTCPConnection(){
 	IF(!LENGTH_ARRAY(myMatrix.IP_HOST)){
-		fnDebug(DEBUG_ERR,'AMP IP','Not Set')
+		fnDebug(DEBUG_ERR,'CYP IP','Not Set')
 	}
 	ELSE{
 		fnDebug(DEBUG_STD,'Connecting to CYP on ',"myMatrix.IP_HOST,':',ITOA(myMatrix.IP_PORT)")
@@ -149,18 +149,14 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_POLL]{
 	fnPoll()
 }
 DEFINE_FUNCTION fnPoll(){
-	fnAddToQueue('ST',TRUE)	// Query Zone 1 Power
-	fnAddToQueue('R AUDIO MUTE',TRUE)	// Query Zone 1 Power
-	fnAddToQueue('R VOLUME',TRUE)	// Query Zone 1 Power
 	fnAddToQueue('R SOURCE',TRUE)	// Query Zone 1 Power
-	fnAddToQueue('R BYPASS',TRUE)	// Query Zone 1 Power
 }
 /******************************************************************************
 	Data Queue and Sending
 ******************************************************************************/
 DEFINE_FUNCTION fnAddToQueue(CHAR pCMD[], INTEGER isPoll){
 	
-	myMatrix.Tx = "myMatrix.Tx,pCMD,$0D"
+	myMatrix.Tx = "myMatrix.Tx,pCMD,$0D,$0A"
 	
 	fnSendFromQueue()
 	
@@ -174,10 +170,10 @@ DEFINE_FUNCTION fnSendFromQueue(){
 		fnOpenTCPConnection()
 		RETURN
 	}
-	ELSE IF(myMatrix.CONN_STATE == CONN_STATE_CONNECTED && FIND_STRING(myMatrix.Tx,"$0D",1)){
+	ELSE IF(myMatrix.CONN_STATE == CONN_STATE_CONNECTED && FIND_STRING(myMatrix.Tx,"$0D,$0A",1)){
 		STACK_VAR CHAR _ToSend[255]
-		_ToSend = REMOVE_STRING(myMatrix.Tx,"$0D",1)
-		fnDebug(DEBUG_STD,'->AMP',_ToSend);
+		_ToSend = REMOVE_STRING(myMatrix.Tx,"$0D,$0A",1)
+		fnDebug(DEBUG_STD,'->CYP',_ToSend);
 		SEND_STRING ipDevice, _ToSend
 		fnInitTimeout(TRUE)
 	}
@@ -273,8 +269,8 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 				STACK_VAR INTEGER MTX_I
 				MTX_I = ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'*',1),1))
 				SWITCH(ATOI(DATA.TEXT)){
-					CASE 2:fnAddToQueue("'S SOURCE ',ITOA(MTX_I)",FALSE)
-					CASE 1:fnAddToQueue("'S BYPASS ',ITOA(MTX_I)",FALSE)
+					CASE 1:fnAddToQueue("'S SOURCE ',ITOA(MTX_I)",FALSE)
+					CASE 2:fnAddToQueue("'S BYPASS ',ITOA(MTX_I)",FALSE)
 				}
 			}
 			CASE 'MUTE':{
