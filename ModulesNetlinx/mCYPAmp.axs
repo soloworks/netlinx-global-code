@@ -33,10 +33,7 @@ DEFINE_TYPE STRUCTURE uAMP{
 	CHAR 	  	Rx[1000]
 	INTEGER 	DEBUG
 	INTEGER 	CONN_STATE
-	
-	// MetaData 
-	CHAR 	  	MODEL[20]
-	
+		
 	uZone    Zone
 }
 
@@ -325,7 +322,6 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 						}
 					}
 				}
-				myAMP.ZONE.MUTE = FALSE
 			}
 		}
 	}
