@@ -202,6 +202,9 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 			CASE 'INF1':{
 				mySharpDisplay.META_MODEL = pDATA
 				SEND_STRING vdvControl,"'PROPERTY-META,MODEL,',mySharpDisplay.META_MODEL"
+				SWITCH(mySharpDisplay.META_MODEL){
+					CASE 'PN-60TA3':mySharpDisplay.INPUT_CONFIG = 0
+				}
 			}
 			CASE 'SRNO':{
 				mySharpDisplay.META_SN = pDATA
@@ -422,10 +425,14 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 					SWITCH(mySharpDisplay.INPUT_CONFIG){
 						CASE INPUT_CONFIG_01:{
 							SWITCH(DATA.TEXT){
-								CASE 'DVI':		mySharpDisplay.INPUT = '1'
-								CASE 'VIDEO':	mySharpDisplay.INPUT = '4'
-								CASE 'HDMI1':	mySharpDisplay.INPUT = '9'
-								CASE 'HDMI2':	mySharpDisplay.INPUT = '12'
+								CASE 'DVI':			mySharpDisplay.INPUT = '1'
+								CASE 'VIDEO':		mySharpDisplay.INPUT = '4'
+								CASE 'HDMI1':		mySharpDisplay.INPUT = '9'
+								CASE 'HDMI1PC':	mySharpDisplay.INPUT = '10'
+								CASE 'HDMI2':		mySharpDisplay.INPUT = '12'
+								CASE 'HDMI2PC':	mySharpDisplay.INPUT = '13'
+								CASE 'HDMI3':		mySharpDisplay.INPUT = '17'
+								CASE 'HDMI3PC':	mySharpDisplay.INPUT = '18'
 							}
 						}
 						CASE INPUT_CONFIG_02:{
@@ -481,10 +488,10 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_INPUT]{
 ******************************************************************************/
 DEFINE_PROGRAM{
 	IF(!mySharpDisplay.DISABLED){
+		[vdvControl,199] = (mySharpDisplay.MUTE)
 		[vdvControl,251] = TIMELINE_ACTIVE(TLID_COMMS)
 		[vdvControl,252] = TIMELINE_ACTIVE(TLID_COMMS)
 		[vdvControl,255] = (mySharpDisplay.POWER)
 		SEND_LEVEL vdvControl,1,mySharpDisplay.VOLUME
-		[vdvControl,199] = (mySharpDisplay.MUTE)
 	}
 }
