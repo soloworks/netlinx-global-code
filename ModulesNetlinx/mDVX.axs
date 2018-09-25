@@ -258,6 +258,8 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 DEFINE_PROGRAM{
 	SEND_LEVEL vdvControl,1,myMatrix.VOLUME
 	[vdvControl,199] = [dvDVX,199]
+	[vdvControl,251] = (DEVICE_ID(dvDVX))
+	[vdvControl,252] = (DEVICE_ID(dvDVX))
 }
 /******************************************************************************
 	Server Events
