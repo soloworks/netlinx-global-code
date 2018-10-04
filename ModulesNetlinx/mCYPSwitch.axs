@@ -18,6 +18,7 @@ DEFINE_TYPE STRUCTURE uSwitch{
 	CHAR 	  	Rx[1000]
 	INTEGER 	DEBUG
 	INTEGER 	CONN_STATE
+	CHAR     BAUD[10]
 	
 	INTEGER  SOURCE
 }
@@ -66,10 +67,13 @@ DEFINE_EVENT DATA_EVENT[ipDevice]{
 			fnSendFromQueue()
 		}
 		ELSE{
-			SEND_COMMAND ipDevice, 'SET MODE DATA' 
-			SEND_COMMAND ipDevice, 'SET BAUD 9600 N 8 1 485 DISABLE'
-			fnPoll()
-			fnInitPoll()
+			WAIT 20{
+				SEND_COMMAND ipDevice, 'SET MODE DATA' 
+				IF(mySwitch.BAUD == ''){mySwitch.BAUD = '9600'}
+				SEND_COMMAND ipDevice, "'SET BAUD ',mySwitch.BAUD,' N 8 1 485 DISABLE'"
+				fnPoll()
+				fnInitPoll()
+			}
 		}
 	}
 	OFFLINE:{
@@ -233,6 +237,9 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 							mySwitch.IP_PORT = 23
 						}
 						fnPoll()
+					}
+					CASE 'BAUD':{
+						mySwitch.BAUD = DATA.TEXT
 					}
 					CASE 'DEBUG':{
 						SWITCH(DATA.TEXT){
