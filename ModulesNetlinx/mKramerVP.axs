@@ -13,10 +13,10 @@ DEFINE_TYPE STRUCTURE uKramerVP{
 	INTEGER 	IP_PORT
 	INTEGER	CONN_STATE
 	INTEGER	PEND
+	CHAR     PendingTx[25]
 	INTEGER 	DEBUG
 	CHAR 		Tx[500]
 	CHAR 		Rx[500]
-	CHAR     LAST_Tx[25]
 	
 	INTEGER  MAIN_INPUT
 }
@@ -26,9 +26,10 @@ LONG TLID_POLL				= 2
 LONG TLID_COMMS			= 3
 LONG TLID_RETRY 			= 4
 
-INTEGER CONN_STATE_OFFLINE		= 0
-INTEGER CONN_STATE_CONNECTING	= 1
-INTEGER CONN_STATE_CONNECTED	= 2
+INTEGER CONN_STATE_OFFLINE			= 0
+INTEGER CONN_STATE_CONNECTING		= 1
+INTEGER CONN_STATE_NEGOTIATING	= 1
+INTEGER CONN_STATE_CONNECTED		= 2
 
 INTEGER DEBUG_ERR = 0
 INTEGER DEBUG_STD = 1
@@ -55,7 +56,6 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 		CASE CONN_STATE_OFFLINE:{
 			fnDebug(DEBUG_DEV,'fnOpenTCPConnection() Connect->KRA',"myKramerVP.IP_HOST,':',ITOA(myKramerVP.IP_PORT)")
 			myKramerVP.CONN_STATE = CONN_STATE_CONNECTING
-			myKramerVP.PEND = TRUE
 			ip_client_open(dvDevice.port, myKramerVP.IP_HOST, myKramerVP.IP_PORT, IP_TCP)
 		}
 		CASE CONN_STATE_CONNECTING:{
@@ -115,8 +115,8 @@ DEFINE_FUNCTION fnSendFromQueue(){
 		toSend = REMOVE_STRING(myKramerVP.Tx,"$0D",1)
 		fnDebug(FALSE,'->KRA',toSend)
 		SEND_STRING dvDevice, toSend
-		myKramerVP.LAST_Tx = toSend
 		myKramerVP.PEND = TRUE
+		myKramerVP.PendingTx = toSend
 		IF(TIMELINE_ACTIVE(TLID_SEND_TIMEOUT)){ TIMELINE_KILL(TLID_SEND_TIMEOUT) }
 		TIMELINE_CREATE(TLID_SEND_TIMEOUT,TLT_SEND_TIMEOUT,LENGTH_ARRAY(TLT_SEND_TIMEOUT),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 	}
@@ -125,8 +125,8 @@ DEFINE_FUNCTION fnSendFromQueue(){
 DEFINE_EVENT TIMELINE_EVENT[TLID_SEND_TIMEOUT]{
 	fnDebug(DEBUG_DEV,'TLID_SEND_TIMEOUT','Called')
 	myKramerVP.Tx = ''
-	myKramerVP.LAST_Tx = ''
 	myKramerVP.PEND = FALSE
+	myKramerVP.PendingTx = ''
 	IF(myKramerVP.isIP){
 		fnCloseTCPConnection()
 	}
@@ -136,7 +136,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pData[]){
 	fnDebug(DEBUG_STD,'KRA->',pData)
 	IF(LEFT_STRING(pDATA,5) == 'READY'){
 		fnDebug(DEBUG_DEV,'fnProcessFeedback()','"READY" Found')
-		myKramerVP.PEND = FALSE
+		myKramerVP.CONN_STATE = CONN_STATE_CONNECTED
 		fnPoll()
 		fnInitPoll()
 		fnSendFromQueue()
@@ -146,27 +146,30 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pData[]){
 		IF(FIND_STRING(pDATA,',',1)){
 			// Response from Query
 			GET_BUFFER_STRING(pDATA,3)
-			IF(myKramerVP.LAST_tx == 'get main_input'){
+			IF(myKramerVP.PendingTx == 'get main_input'){
 				myKramerVP.MAIN_INPUT = ATOI(pDATA)
 			}
 		}
 		ELSE{
 			// Response from Action
-			IF(LEFT_STRING(myKramerVP.LAST_tx,14) == 'set main_input'){
-				REMOVE_STRING(myKramerVP.LAST_tx,' ',1)	// Pull 'set'
-				REMOVE_STRING(myKramerVP.LAST_tx,' ',1)	// Pull 'main_input'
-				myKramerVP.MAIN_INPUT = ATOI(myKramerVP.LAST_tx)
+			IF(LEFT_STRING(myKramerVP.PendingTx,14) == 'set main_input'){
+				REMOVE_STRING(myKramerVP.PendingTx,' ',1)	// Pull 'set'
+				REMOVE_STRING(myKramerVP.PendingTx,' ',1)	// Pull 'main_input'
+				myKramerVP.MAIN_INPUT = ATOI(myKramerVP.PendingTx)
 			}
 		}
-		myKramerVP.LAST_Tx = ''
+		myKramerVP.PendingTx = ''
 		myKramerVP.PEND = FALSE
 		fnSendFromQueue()
 	}
-	
+	IF((LEFT_STRING(pDATA,5) == 'ERROR')){
+		fnCloseTCPConnection()
+	}
+	ELSE{
+		IF(TIMELINE_ACTIVE(TLID_COMMS)){TIMELINE_KILL(TLID_COMMS)}
+		TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,1,TIMELINE_ABSOLUTE,TIMELINE_ONCE)
+	}
 	IF(TIMELINE_ACTIVE(TLID_SEND_TIMEOUT)){ TIMELINE_KILL(TLID_SEND_TIMEOUT) }
-	
-	IF(TIMELINE_ACTIVE(TLID_COMMS)){TIMELINE_KILL(TLID_COMMS)}
-	TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,1,TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 }
 
 DEFINE_FUNCTION fnDebug(INTEGER bLEVEL, CHAR Msg[], CHAR MsgData[]){
@@ -180,13 +183,14 @@ DEFINE_FUNCTION fnDebug(INTEGER bLEVEL, CHAR Msg[], CHAR MsgData[]){
 
 DEFINE_EVENT DATA_EVENT[dvDevice]{
 	ONLINE:{
-		myKramerVP.CONN_STATE = CONN_STATE_CONNECTED
 		IF(myKramerVP.isIP){
+			myKramerVP.CONN_STATE = CONN_STATE_NEGOTIATING
 			// Do nothing here as waiting for Ready response
 		}
 		ELSE{
 			SEND_COMMAND dvDevice,'SET MODE DATA'
 			SEND_COMMAND dvDevice,'SET BAUD 115200 N 8 1 485 DISABLE'
+			myKramerVP.CONN_STATE = CONN_STATE_CONNECTED
 			fnPoll()
 			fnInitPoll()
 		}
@@ -194,7 +198,9 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 	OFFLINE:{
 		myKramerVP.CONN_STATE = CONN_STATE_OFFLINE
 		myKramerVP.PEND = FALSE
-		fnTryConnection();
+		myKramerVP.PendingTx = ''
+		myKramerVP.Tx = ''
+		fnTryConnection()
 	}
 	ONERROR:{		
 		SWITCH(DATA.NUMBER){
@@ -215,6 +221,9 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 			CASE 14:{}
 			DEFAULT:{
 				myKramerVP.CONN_STATE = CONN_STATE_OFFLINE
+				myKramerVP.PEND = FALSE
+				myKramerVP.PendingTx = ''
+				myKramerVP.Tx = ''
 				fnTryConnection()
 			}
 		}
