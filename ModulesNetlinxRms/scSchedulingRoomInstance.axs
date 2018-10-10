@@ -30,20 +30,8 @@ INTEGER LANG_JPN = 2
 INTEGER LANG_CHN = 3
 INTEGER LANG_KOR = 4
 
-// Date Formats
-INTEGER DATE_FORMAT_UK = 0
-INTEGER DATE_FORMAT_US = 1
-
 // Constant to represent '00:00:00' at end of day (As it appears twice in 24hr clock)
 LONG		MIDNIGHT_SECS	= 24*60*60
-
-// System Messages
-CHAR CREATING[]			= 'Booking Meeting...'
-CHAR CREATE_SUCCESS[]	= 'Booking Successful'
-CHAR CREATE_FAIL[]		= 'Booking Failed'
-CHAR EXTENDING[]			= 'Extending Meeting...'
-CHAR EXTEND_SUCCESS[]	= 'Extend Successful'
-CHAR EXTEND_FAIL[]		= 'Extend Failed'
 
 // Virtual Device Channels
 INTEGER chn_vdv_SensorOnline	    = 1	// External Trigger indicating Sensor is connected
@@ -603,17 +591,19 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 				SWITCH(fnGetCSV(DATA.TEXT,1)){
 					CASE 'EXTEND':pMsg = 'Extend Booking '
 					CASE 'CREATE':pMsg = 'Create Booking '
-					CASE 'CANCEL':pMsg = 'Cancel Booking '
+					CASE 'CANCEL':pMsg = 'Release Room '
 				}
 				SWITCH(fnGetCSV(DATA.TEXT,2)){
 					CASE 'SUCCESS':{
-						pMsg = "pMsg,'Booking Successful'"
+						pMsg = "pMsg,'Successful'"
 					}
 					CASE 'FAILURE':{
-						pMsg = "pMsg,'Booking Not Successful'"
+						pMsg = "pMsg,'Declined'"
 					}
 				}
-				fnDisplayStatusMessage(pMSG,fnGetCSV(DATA.TEXT,3))
+				IF(pMSG != 'Release Room Successful'){
+					fnDisplayStatusMessage(pMSG,fnGetCSV(DATA.TEXT,3))
+				}
 			}
 			CASE 'BOOKING':{
 				STACK_VAR INTEGER b	// Booking Index
@@ -781,7 +771,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_QUICKBOOK_TIMEOUT]{
 		// Check for Room Occupancy
 		IF(![vdvRoom,chn_vdv_RoomOccupied] && [vdvRoom,chn_vdv_SensorOnline]){
 			SEND_COMMAND vdvRoom,"'ACTION-CANCEL,',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].BOOKING_INDEX),',QuickBook Timeout'"
-			fnDisplayStatusMessage('Ending Meeting','Cancelling Meeting...')
+			fnDisplayStatusMessage('Ending Meeting','Room is being released')
 		}
 	}
 }
@@ -800,7 +790,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_NOSHOW_TIMEOUT]{
 		// Check for Room Occupancy
 		IF(![vdvRoom,chn_vdv_RoomOccupied] && [vdvRoom,chn_vdv_SensorOnline]){
 			SEND_COMMAND vdvRoom,"'ACTION-CANCEL,',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].BOOKING_INDEX),',No Show'"
-			fnDisplayStatusMessage('Ending Meeting','Cancelling Meeting...')
+			fnDisplayStatusMessage('Ending Meeting','Room is being released')
 		}
 	}
 }
@@ -817,7 +807,7 @@ DEFINE_EVENT CHANNEL_EVENT[vdvRoom,chn_vdv_RoomOccupied]{
 		fnUpdateLEDs(0)
 		IF(myRoom.SLOTS[myRoom.SLOT_CURRENT].isQUICKBOOK || myRoom.SLOTS[myRoom.SLOT_CURRENT].isAUTOBOOK){
 			SEND_COMMAND vdvRoom,"'ACTION-CANCEL,',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].BOOKING_INDEX),',Unoccupied'"
-			fnDisplayStatusMessage('Ending Meeting','Cancelling Meeting...')
+			fnDisplayStatusMessage('Ending Meeting','Room is being released')
 		}
 	}
 }
@@ -957,7 +947,7 @@ DEFINE_FUNCTION fnDoAutoBook(){
 			pMSG = "pMSG,',',myRoom.QUICKBOOK_END_TIME"
 			SEND_COMMAND vdvRoom,pMSG
 			SEND_STRING vdvRoom, 'MEETING-AUTOBOOK'
-			fnDisplayStatusMessage('Booking','Automatically Booking a meeting')
+			fnDisplayStatusMessage('Booking','Booking Meeting...')
 		}
 	}
 }
@@ -1304,19 +1294,18 @@ DEFINE_FUNCTION fnInitPanel(INTEGER pPanel){
 	// Copy Font to buttons as required by Language from Diagnostics Reference Point
 	IF(1){
 		STACK_VAR CHAR pButtonRange[200]
+		STACK_VAR INTEGER wtf
 
 		pButtonRange = "ITOA(addNowSubject)"
 		pButtonRange = "pButtonRange,'&',ITOA(addNowOrganiser)"
 		pButtonRange = "pButtonRange,'&',ITOA(addNextSubject)"
 		pButtonRange = "pButtonRange,'&',ITOA(addNextOrganiser)"
-		SEND_STRING 0, "'^BMC-',pButtonRange,',0,',ITOA(tp[pPanel].PORT),',',ITOA(lvlLangNowNext),',',ITOA(myRoom.LANGUAGE),',%FT'"
 		SEND_COMMAND tp[pPanel],"'^BMC-',pButtonRange,',0,',ITOA(tp[pPanel].PORT),',',ITOA(lvlLangNowNext),',',ITOA(myRoom.LANGUAGE),',%FT'"
 
-		//pButtonRange = "ITOA(addSlotName+1),'.',ITOA(addSlotName+_MAX_SLOTS)"
-		#WARN 'This Requires Debugging... 200+99=43?!'
-		pButtonRange='201.299'	// Hard fix for 200+99=43
+		// This was added because ITOA(addSlotName+_MAX_SLOTS) returned 43 instead of 299
+		wtf = addSlotName + _MAX_SLOTS
+		pButtonRange = "ITOA(addSlotName+1),'.',ITOA(wtf)"
 		pButtonRange = "pButtonRange,'&',ITOA(addSlotSubject+1),'.',ITOA(addSlotSubject+_MAX_SLOTS)"
-		SEND_STRING 0, "'^BMC-',pButtonRange,',0,',ITOA(tp[pPanel].PORT),',',ITOA(lvlLangSlots),',',ITOA(myRoom.LANGUAGE),',%FT'"
 		SEND_COMMAND tp[pPanel], "'^BMC-',pButtonRange,',0,',ITOA(tp[pPanel].PORT),',',ITOA(lvlLangSlots),',',ITOA(myRoom.LANGUAGE),',%FT'"
 	}
 
