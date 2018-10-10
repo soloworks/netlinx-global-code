@@ -628,7 +628,6 @@ CUSTOM_EVENT[vdvRMSDuet, RMS_CUSTOM_EVENT_ADDRESS_EVENT_BOOKING, RMS_EVENT_BOOKI
 			CASE RMS_EVENT_BOOKING_CREATED_RESPONSE:  EventMessage = "EventMessage,'CREATE'"
 			CASE RMS_EVENT_BOOKING_ENDED_RESPONSE:    EventMessage = "EventMessage,'CANCEL'"
 		}
-		EventMessage = "EventMessage,',',UPPER_STRING(fnGetBooleanString(thisBooking.isSuccessful))"
 		SWITCH(thisBooking.isSuccessful){
 			CASE TRUE:  EventMessage = "EventMessage,',SUCCESS'"
 			CASE FALSE: EventMessage = "EventMessage,',FAILURE,',thisBooking.failureDescription"
