@@ -213,6 +213,9 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMEOUT]{
 	myBiAmp.TxPend = ''
 	myBiAmp.TxCmd 	= ''
 	myBiAmp.TxPoll = ''
+	IF(myBiAmp.isIP){
+		fnCloseTCPConnection()
+	}
 }
 
 /******************************************************************************
@@ -435,8 +438,10 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pFBData[4000]){
 		ELSE IF(pFBData == '+OK'){
 			// Probably a Preset has been called, poll
 			fnPollnonSubscriptions()
+			IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){ TIMELINE_KILL(TLID_TIMEOUT) }
 		}
 		ELSE IF(LEFT_STRING(pFBData,4) == '+OK '){
+			IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){ TIMELINE_KILL(TLID_TIMEOUT) }
 			REMOVE_STRING(pFBData,' ',1)
 			SWITCH(myBiAmp.TxPend){
 				CASE 'DEVICE get serialNumber':{
@@ -662,7 +667,9 @@ DEFINE_EVENT DATA_EVENT[dvBiAmp]{
 	ONLINE:{
 		IF(myBiAmp.isIP){
 			(** Ethernet Communications **)
-			myBiAmp.IP_STATE = IP_STATE_NEGOTIATING;
+			myBiAmp.IP_STATE = IP_STATE_NEGOTIATING
+			IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){ TIMELINE_KILL(TLID_TIMEOUT) }
+			TIMELINE_CREATE(TLID_TIMEOUT,TLT_TIMEOUT,LENGTH_ARRAY(TLT_TIMEOUT),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 		}
 		ELSE{
 			(** RS232 Communications **)
