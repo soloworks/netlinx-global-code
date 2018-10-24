@@ -278,19 +278,19 @@ DEFINE_EVENT DATA_EVENT[ipDevice]{
 		// Report anything except a good request
 		SWITCH(mySolstice.RESPONSE.HTTP_CODE){
 			CASE 200:{
-				fnDebug(DEBUG_STD,'MAR->',"'HTTP Response Code ',ITOA(mySolstice.RESPONSE.HTTP_CODE)")
+				fnDebug(DEBUG_STD,'SOL->',"'HTTP Response Code ',ITOA(mySolstice.RESPONSE.HTTP_CODE)")
 			}
 			DEFAULT:{
-				fnDebug(DEBUG_ERR,'MAR->',"'HTTP Response Code ',ITOA(mySolstice.RESPONSE.HTTP_CODE)")
+				fnDebug(DEBUG_ERR,'SOL->',"'HTTP Response Code ',ITOA(mySolstice.RESPONSE.HTTP_CODE)")
 			}
 		}
 
 		mySolstice.RESPONSE.BUFFER_LENGTH = LENGTH_ARRAY(mySolstice.RESPONSE.Rx)
 
 		// Debug Out
-		fnDebug(DEBUG_DEV,'MAR->',"'HTTP Buff Size [',ITOA(mySolstice.RESPONSE.BUFFER_LENGTH),']'")
-		fnDebug(DEBUG_DEV,'MAR->',"'HTTP Head Size [',ITOA(mySolstice.RESPONSE.HEADER_LENGTH),']'")
-		fnDebug(DEBUG_DEV,'MAR->',"'HTTP Body Size [',ITOA(mySolstice.RESPONSE.BODY_LENGTH),']'")
+		fnDebug(DEBUG_DEV,'SOL->',"'HTTP Buff Size [',ITOA(mySolstice.RESPONSE.BUFFER_LENGTH),']'")
+		fnDebug(DEBUG_DEV,'SOL->',"'HTTP Head Size [',ITOA(mySolstice.RESPONSE.HEADER_LENGTH),']'")
+		fnDebug(DEBUG_DEV,'SOL->',"'HTTP Body Size [',ITOA(mySolstice.RESPONSE.BODY_LENGTH),']'")
 
 		// Process Body
 		IF(mySolstice.RESPONSE.HEADER_PROCESSED && mySolstice.RESPONSE.BUFFER_LENGTH == mySolstice.RESPONSE.BODY_LENGTH){
