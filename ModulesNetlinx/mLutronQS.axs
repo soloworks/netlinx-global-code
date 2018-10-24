@@ -9,7 +9,12 @@ INCLUDE 'CustomFunctions'
 	Structures
 ******************************************************************************/
 DEFINE_CONSTANT
-INTEGER _MAX_GROUPS = 250
+INTEGER _MAX_GROUPS = 24
+
+DEFINE_TYPE STRUCTURE uGroup{
+	INTEGER  ID
+	INTEGER  STATE
+}
 
 DEFINE_TYPE STRUCTURE uDevice{
 	// Integration Data
@@ -22,10 +27,10 @@ DEFINE_TYPE STRUCTURE uDevice{
 	FLOAT 	VALUE_FLOAT
 	INTEGER	LED[20]
 	INTEGER	BTN[20]
-	INTEGER  GROUP_ACTIVE[_MAX_GROUPS]
-	INTEGER  GROUP_STATE[_MAX_GROUPS]
 	INTEGER  AREA
+	uGroup   GROUP[_MAX_GROUPS]
 }
+
 DEFINE_TYPE STRUCTURE uLutronQS{
 	// Communications
 	CHAR 		TX[2000]				// Receieve Buffer
@@ -171,6 +176,11 @@ DEFINE_FUNCTION fnDebug(INTEGER pDEBUG,CHAR Msg[], CHAR MsgData[]){
 DEFINE_FUNCTION fnSendAreaCommand(CHAR pID[10], INTEGER pAction, CHAR _param[]){
 	STACK_VAR CHAR cmd[100]
 	cmd = "'#AREA,',pID,',',ITOA(pAction),',',_param"
+	fnAddToQueue(cmd)
+}
+DEFINE_FUNCTION fnSendAreaQuery(INTEGER pID, INTEGER pAction){
+	STACK_VAR CHAR cmd[100]
+	cmd = "'?AREA,',ITOA(pID),',',ITOA(pAction)"
 	fnAddToQueue(cmd)
 }
 DEFINE_FUNCTION fnSendDeviceCommand(CHAR pID[10], INTEGER pNumber, INTEGER pAction, CHAR _param[]){
@@ -326,16 +336,21 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 				}
 				CASE 'GROUP':{
 					STACK_VAR INTEGER pID
+					STACK_VAR INTEGER pActNo
 					STACK_VAR INTEGER d
-					pID = ATOI(fnStripCharsRight(REMOVE_STRING(pDATA,',',1),1))
-					SWITCH(ATOI(fnStripCharsRight(REMOVE_STRING(pDATA,',',1),1))){
-						CASE 3:{
-							FOR(d = 1; d <= LENGTH_ARRAY(vdvControl); d++){
-								SWITCH(myLutronQS.DEVICE[d].TYPE){
-									CASE TYPE_GROUPS:{
-										SWITCH(ATOI(pDATA)){
-											CASE 3:myLutronQS.DEVICE[d].GROUP_STATE[pID] = TRUE
-											CASE 4:myLutronQS.DEVICE[d].GROUP_STATE[pID] = FALSE
+					pID    = ATOI(fnStripCharsRight(REMOVE_STRING(pDATA,',',1),1))
+					pActNo = ATOI(fnStripCharsRight(REMOVE_STRING(pDATA,',',1),1))
+					FOR(d = 1; d <= LENGTH_ARRAY(vdvControl); d++){
+						IF(myLutronQS.DEVICE[d].TYPE == TYPE_GROUPS){
+							STACK_VAR INTEGER g
+							FOR(g = 1; g <= _MAX_GROUPS; g++){
+								IF(myLutronQS.DEVICE[d].GROUP[g].ID == pID){
+									SWITCH(pActNo){
+										CASE 3:{
+											SWITCH(ATOI(pDATA)){
+												CASE 3:myLutronQS.DEVICE[d].GROUP[g].STATE = TRUE
+												CASE 4:myLutronQS.DEVICE[d].GROUP[g].STATE = FALSE
+											}
 										}
 									}
 								}
@@ -351,6 +366,25 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 								IF(TIMELINE_ACTIVE(TLID_COMMS_00+d)){TIMELINE_KILL(TLID_COMMS_00+d)}
 								TIMELINE_CREATE(TLID_COMMS_00+d,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 							}
+						}
+					}
+				}
+				CASE 'AREA':{
+					STACK_VAR pID[20]
+					STACK_VAR INTEGER d
+					pID = fnStripCharsRight(REMOVE_STRING(pDATA,',',1),1)
+					FOR(d = 1; d <= LENGTH_ARRAY(vdvControl); d++){
+						IF(myLutronQS.DEVICE[d].AREA == pID){
+							SWITCH(ATOI(fnStripCharsRight(REMOVE_STRING(pDATA,',',1),1))){
+								CASE 6:{
+									// Scene
+								}
+								CASE 8:{
+									// Occupancy State
+								}
+							}
+							IF(TIMELINE_ACTIVE(TLID_COMMS_00+d)){TIMELINE_KILL(TLID_COMMS_00+d)}
+							TIMELINE_CREATE(TLID_COMMS_00+d,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 						}
 					}
 				}
@@ -370,8 +404,8 @@ DEFINE_FUNCTION fnInitData(){
 			CASE TYPE_GROUPS:{
 				STACK_VAR INTEGER x
 				FOR(x = 1; x <= _MAX_GROUPS; x++){
-					IF(myLutronQS.DEVICe[d].GROUP_ACTIVE[x]){
-						fnSendGroupQuery(x,3)
+					IF(myLutronQS.DEVICE[d].GROUP[x].ID){
+						fnSendGroupQuery(myLutronQS.DEVICE[d].GROUP[x].ID,3)
 					}
 				}
 			}
@@ -404,7 +438,8 @@ DEFINE_FUNCTION fnPoll(){
 			fnSendEthernetQuery(1)
 		}
 		ELSE IF(myLutronQS.DEVICE[x].TYPE == TYPE_AREA){
-			fnSendEthernetQuery(1)
+			fnSendAreaQuery(myLutronQS.DEVICE[x].AREA,6)
+			fnSendAreaQuery(myLutronQS.DEVICE[x].AREA,8)
 		}
 	}
 }
@@ -583,16 +618,21 @@ DATA_EVENT[vdvControl]{
 						}
 					}
 					CASE 'AREA':{
+						myLutronQS.DEVICE[d].TYPE = TYPE_AREA
 						myLutronQS.DEVICE[d].AREA = ATOI(DATA.TEXT)
 					}
 					CASE 'GROUPS':{
-						STACK_VAR INTEGER pGROUP
+						STACK_VAR INTEGER pGroupID
+						STACK_VAR INTEGER pGroupIndex
 						WHILE(FIND_STRING(DATA.TEXT,',',1)){
-							pGROUP = ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1))
-							IF(pGROUP <= _MAX_GROUPS){ myLutronQS.DEVICE[d].GROUP_ACTIVE[pGROUP] = TRUE }
+							pGroupID = ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1))
+							pGroupIndex++
+							IF(pGroupIndex <= _MAX_GROUPS){
+								myLutronQS.DEVICE[d].GROUP[pGroupIndex].ID = pGroupID 
+							}
 						}
-						pGROUP = ATOI(DATA.TEXT)
-						IF(pGROUP <= _MAX_GROUPS){ myLutronQS.DEVICE[d].GROUP_ACTIVE[pGROUP] = TRUE }
+						pGroupIndex++
+						myLutronQS.DEVICE[d].GROUP[pGroupIndex].ID = ATOI(DATA.TEXT) 
 					}
 				}
 			}
@@ -640,13 +680,13 @@ DEFINE_PROGRAM{
 			}
 			CASE TYPE_GROUPS:{
 				FOR(b = 1; b <= _MAX_GROUPS; b++){	// State Feedback
-					IF(myLutronQS.DEVICE[d].GROUP_ACTIVE[b]){
-						[vdvControl[d],b] = (myLutronQS.DEVICE[d].GROUP_STATE[b])
+					IF(myLutronQS.DEVICE[d].GROUP[b].ID){
+						[vdvControl[d],b] = (myLutronQS.DEVICE[d].GROUP[b].STATE)
 					}
 				}
 			}
 		}
-		[vdvControl[d],251] = (TIMELINE_ACTIVE(TLID_COMMS_00+d))
+		[vdvControl[d],251] = (myLutronQS.IP_STATE == IP_STATE_CONNECTED)
 		[vdvControl[d],252] = (TIMELINE_ACTIVE(TLID_COMMS_00+d))
 	}
 }
