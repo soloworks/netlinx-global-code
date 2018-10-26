@@ -1,36 +1,75 @@
-MODULE_NAME='mCloud_CDI-S200'(DEV vdvControl[], DEV dvRS232)
+MODULE_NAME='mCloud_CDI-S200'(DEV vdvUnit, DEV vdvZones[], DEV dvRS232)
 INCLUDE 'CustomFunctions'
 
-DEFINE_VARIABLE
-INTEGER DEBUG 	= 1
-INTEGER STEP	= 5
+DEFINE_TYPE STRUCTURE uZone{
+	INTEGER MUSIC_LVL
+	INTEGER SOURCE
+	INTEGER MIC[2]
+}
 
-DEFINE_MUTUALLY_EXCLUSIVE
-([vdvControl,1],[vdvControl,2],[vdvControl,3],[vdvControl,4],[vdvControl,5],[vdvControl,6] )
+DEFINE_TYPE STRUCTURE uSystem{
+	uZone   ZONE[3]
+	INTEGER DEBUG
+	INTEGER DEF_STEP
+	CHAR    Rx
+}
+
+DEFINE_CONSTANT
+LONG TLID_POLL  = 1
+LONG TLID_COMMS = 2
+
+DEFINE_VARIABLE
+LONG TLT_POLL[]  = {15000}
+LONG TLT_COMMS[] = {40000}
+uSystem myCDI
+
+DEFINE_START{
+	CREATE_BUFFER dvRS232,myCDI.Rx
+}
 
 DEFINE_EVENT DATA_EVENT[dvRS232]{
 	ONLINE:{
-		//SEND_COMMAND dvRS232, 'SET MODE DATA'
-		//SEND_COMMAND dvRS232, 'SET MODE SERIAL'
+		SEND_COMMAND dvRS232, 'SET MODE DATA'
 		SEND_COMMAND dvRS232, 'SET BAUD 9600 N 8 1 485 DISABLE'
+		fnPoll()
 	}
 }
 
-
-DEFINE_FUNCTION fnSendCommand(CHAR targ[], CHAR cmd[]){
-	SEND_STRING dvRS232, "'<',targ,',',cmd,'/>'"
+DEFINE_FUNCTION fnSendCommand(CHAR targ[], CHAR cmdID,CHAR cmdMod,CHAR cmdVal[]){
+	SEND_STRING dvRS232, "'<',targ,',',cmdID,cmdMOD,cmdVal'/>'"
+	IF(TIMELINE_ACTIVE(TLID_POLL)){TIMELINE_KILL(TLID_POLL)}
+	TIMELINE_CREATE(TLID_POLL,TLT_POLL,LENGTH_ARRAY(TLT_POLL),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
 }
 
-DEFINE_EVENT DATA_EVENT[vdvControl]{
+DEFINE_EVENT TIMELINE_EVENT[TLID_POLL]{
+	fnPoll()
+}
+
+DEFINE_FUNCTION fnPoll(){
+	fnSendCommand('Z1.MU','L','U','0')
+	fnSendCommand('Z2.MU','L','U','0')
+	fnSendCommand('Z3.MU','L','U','0')
+}
+
+DEFINE_EVENT DATA_EVENT[vdvUnit]{
+	COMMAND:{
+		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
+			CASE 'RAW':fnSendCommand(fnGetCSV(DATA.TEXT,1),fnGetCSV(DATA.TEXT,2))
+		}
+	}
+}
+
+DEFINE_EVENT DATA_EVENT[vdvZones]{
 	COMMAND:{
 		STACK_VAR INTEGER iZone
-		iZone = GET_LAST(vdvControl)
+		iZone = GET_LAST(vdvZones)
 		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
 			CASE 'PROPERTY':{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
 					CASE 'STEP':STEP = ATOI(DATA.TEXT)
 				}
 			}
+			CASE 'RAW':fnSendCommand(fnGetCSV(DATA.TEXT,1),fnGetCSV(DATA.TEXT,2))
 			CASE 'VOLUME':{
 				SWITCH(DATA.TEXT){
 					CASE 'INC':		fnSendCommand("'Z',ITOA(iZone),'.MU'","'LU',ITOA(STEP)")
@@ -43,9 +82,9 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 					CASE 'ON':		fnSendCommand("'Z',ITOA(iZone),'.MU'","'M'")
 					CASE 'OFF':		fnSendCommand("'Z',ITOA(iZone),'.MU'","'O'")
 					CASE 'TOGGLE':{
-						SWITCH([vdvControl[iZone],199]){
-							CASE FALSE: SEND_COMMAND vdvControl[iZone], 'MUTE-ON'	
-							CASE TRUE:	SEND_COMMAND vdvControl[iZone], 'MUTE-OFF'
+						SWITCH([vdvZones[iZone],199]){
+							CASE FALSE: SEND_COMMAND vdvZones[iZone], 'MUTE-ON'	
+							CASE TRUE:	SEND_COMMAND vdvZones[iZone], 'MUTE-OFF'
 						}
 					}
 				}
@@ -57,26 +96,36 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 
 DEFINE_EVENT DATA_EVENT[dvRS232]{
 	STRING:{
+		// Eat up garbage
+		WHILE(myCDI.Rx[1] == 'H'){GET_BUFFER_CHAR(myCDI.Rx)}
+		// Process a packet
 		WHILE(FIND_STRING(DATA.TEXT,"'>'",1) > 0){
-			fnProcessFeedback(REMOVE_STRING(DATA.TEXT,"'>'",1));
+			// Clear any other garbage
+			REMOVE_STRING(DATA.TEXT,"'<'",1)
+			// Process
+			fnProcessFeedback(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,"'/>'",1),2))
 		}
 	}
 }
 
-DEFINE_FUNCTION fnProcessFeedback(CHAR _Feedback[]){
-	STACK_VAR CHAR _DEST[10]
-	STACK_VAR CHAR _TYPE
-	STACK_VAR CHAR _PARAM[5]
-	STACK_VAR INTEGER _ZONE
-	GET_BUFFER_CHAR(_Feedback)
-	_DEST = fnStripCharsRight(REMOVE_STRING(_Feedback,',',1),1)
-	_TYPE = GET_BUFFER_CHAR(_Feedback)
-	_Param = fnStripCharsRight(REMOVE_STRING(_Feedback,'/>',1),2)
-	IF(FIND_STRING(_DEST,'.',1)){
-		GET_BUFFER_CHAR(_DEST)
-		_ZONE =ATOI( fnStripCharsRight(REMOVE_STRING(_DEST,'.',1),1) )
+DEFINE_FUNCTION fnProcessFeedback(CHAR pData[]){
+	STACK_VAR CHAR dest[10]
+	STACK_VAR CHAR subDest
+	STACK_VAR CHAR cmdID
+	STACK_VAR CHAR cmdMOD
+	STACK_VAR CHAR cmdVAL[5]
+	
+	dest = fnStripCharsRight(REMOVE_STRING(pData,',',1),1)
+	IF(FIND_STRING(dest,'.',1)){
+		STACK_VAR CHAR d[5]
+		d = fnStripCharsRight(REMOVE_STRING(_DEST,'.',1),1) )
+		subDest = dest
+		dest = d
 	}
-	SWITCH(_DEST){
+	
+	cmdID = GET_BUFFER_CHAR(pData)
+		
+	SWITCH(dest){
 		CASE 'mu':{
 			SWITCH(_TYPE){
 				CASE 'l':{
@@ -95,10 +144,10 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR _Feedback[]){
 						}
 						fnDebug('_fVol',"FTOA(_fVol)")
 						IF(_ZONE){
-							SEND_LEVEL vdvControl[_ZONE], 1, math_round(_fVol)
+							SEND_LEVEL vdvZones[_ZONE], 1, math_round(_fVol)
 						}
 						ELSE{
-							SEND_LEVEL vdvControl, 1, math_round(_fVol)
+							SEND_LEVEL vdvZones, 1, math_round(_fVol)
 						}
 					}
 				}
@@ -106,27 +155,27 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR _Feedback[]){
 					IF(_PARAM[1] == 'a'){
 						GET_BUFFER_CHAR(_PARAM)
 						IF(_ZONE){
-							ON[vdvControl[_ZONE], ATOI(_PARAM)]
+							ON[vdvZones[_ZONE], ATOI(_PARAM)]
 						}
 						ELSE{
-							ON[vdvControl, ATOI(_PARAM)]
+							ON[vdvZones, ATOI(_PARAM)]
 						}
 					}
 				}
 				CASE 'm':{
 					IF(_ZONE){
-						ON[vdvControl[_ZONE],199]
+						ON[vdvZones[_ZONE],199]
 					}
 					ELSE{
-						ON[vdvControl, 199]
+						ON[vdvZones, 199]
 					}
 				}
 				CASE 'o':{
 					IF(_ZONE){
-						OFF[vdvControl[_ZONE],199]
+						OFF[vdvZones[_ZONE],199]
 					}
 					ELSE{
-						OFF[vdvControl, 199]
+						OFF[vdvZones, 199]
 					}
 				}
 			}
@@ -154,6 +203,6 @@ define_function slong math_round(DOUBLE a) {
 
 DEFINE_FUNCTION fnDebug(CHAR Msg[], CHAR MsgData[]){
 	IF(DEBUG = 1)	{
-		SEND_STRING 0:0:0, "ITOA(vdvControl[1].Number),':',Msg, ':', MsgData"
+		SEND_STRING 0:0:0, "ITOA(vdvUnit.Number),':',Msg, ':', MsgData"
 	}
 }
