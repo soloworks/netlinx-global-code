@@ -56,7 +56,7 @@ VOLATILE uOptomaProj myOptomaProj
 	Module Startup
 ******************************************************************************/
 DEFINE_START{
-	myOptomaProj.ID = 0
+	myOptomaProj.ID = 1
 	myOptomaProj.isIP = !(dvDEVICE.NUMBER)
 	CREATE_BUFFER dvDevice, myOptomaProj.RX
 }
@@ -248,6 +248,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 DEFINE_EVENT DATA_EVENT[vdvControl]{
 	COMMAND:{
 		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
+			CASE 'RAW':SEND_STRING dvDevice, "'~',DATA.TEXT,$0D"
 			CASE 'PROPERTY':{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
 					CASE 'DEBUG': 		myOptomaProj.DEBUG 	= (ATOI(DATA.TEXT) || DATA.TEXT == 'TRUE');
