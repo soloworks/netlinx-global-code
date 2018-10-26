@@ -67,6 +67,9 @@ INTEGER IP_STATE_CONNECTED		= 2
 INTEGER OBJ_TYPE_GROUP = 1
 INTEGER OBJ_TYPE_FADER = 2
 
+INTEGER DEBUG_ERR = 0
+INTEGER DEBUG_STD = 1
+INTEGER DEBUG_DEV = 2
 
 DEFINE_VARIABLE
 LONG TLT_COMMS[] 			= { 90000 }
@@ -108,10 +111,9 @@ DEFINE_FUNCTION fnRetryConnection(){
 DEFINE_EVENT TIMELINE_EVENT[TLID_RETRY]{
 	fnOpenTCPConnection()
 }
-
-DEFINE_FUNCTION fnDebug(INTEGER FORCE,CHAR Msg[], CHAR MsgData[]){
-	 IF(myDMP.DEBUG || FORCE){
-		SEND_STRING 0:0:0, "ITOA(vdvControl.Number),':',Msg, ':', MsgData"
+DEFINE_FUNCTION fnDebug(INTEGER pLEVEL, CHAR pMSG[], CHAR pDATA[]){
+	IF(myDMP.DEBUG >= pLEVEL)	{
+		SEND_STRING 0:1:0, "ITOA(vdvControl.Number),':',pMSG, ':', pDATA"
 	}
 }
 DEFINE_FUNCTION fnAddToQueue(CHAR pToSend[255], INTEGER isQuery){
@@ -125,7 +127,7 @@ DEFINE_FUNCTION fnSendFromQueue(){
 	IF(!TIMELINE_ACTIVE(TLID_SEND) && LENGTH_ARRAY(myDMP.Tx)){
 		myDMP.LAST_SENT = fnStripCharsRight(REMOVE_STRING(myDMP.Tx,"$FF",1),1)
 		SEND_STRING dvDevice,myDMP.LAST_SENT
-		fnDebug(FALSE,'AMX->Extron', myDMP.LAST_SENT);
+		fnDebug(DEBUG_STD,'->DMP', myDMP.LAST_SENT);
 		TIMELINE_CREATE(TLID_SEND,TLT_SEND,LENGTH_ARRAY(TLT_SEND),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 	}
 }
@@ -223,13 +225,13 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 
 	STRING:{
 		// Debug Out
-		fnDebug(FALSE,'DMP->', DATA.TEXT);
+		fnDebug(DEBUG_STD,'DMP->', DATA.TEXT);
 
 		// Work through feedback
 		WHILE(FIND_STRING(myDMP.Rx,"$0D,$0A",1)){
 			STACK_VAR CHAR pFB[200]
 			pFB = fnStripCharsRight(REMOVE_STRING(myDMP.Rx,"$0D,$0A",1),2)
-			fnDebug(FALSE,'pFB=', pFB);
+			fnDebug(DEBUG_DEV,'pFB=', pFB);
 
 			SELECT{
 
@@ -298,7 +300,13 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
 			CASE 'PROPERTY':{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
-					CASE 'DEBUG': 		myDMP.DEBUG 	= (ATOI(DATA.TEXT) || DATA.TEXT == 'TRUE');
+					CASE 'DEBUG':{
+						SWITCH(DATA.TEXT){
+							CASE 'TRUE': myDMP.DEBUG = DEBUG_STD
+							CASE 'DEV':  myDMP.DEBUG = DEBUG_DEV
+							DEFAULT: 	 myDMP.DEBUG = DEBUG_ERR
+						}
+					}
 					CASE 'IP':{
 						IF(FIND_STRING(DATA.TEXT,':',1)){
 							myDMP.IP_HOST = fnStripCharsRight(REMOVE_STRING(DATA.TEXT,':',1),1)
@@ -315,7 +323,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 				}
 			}
 			CASE 'PRESET':{
-				fnAddToQueue("DATA.TEXT,'.'",FALSE)
+				fnAddToQueue("ITOA(ATOI(DATA.TEXT)),'.'",FALSE)
 			}
 		}
 	}
