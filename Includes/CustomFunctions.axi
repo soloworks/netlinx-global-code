@@ -527,6 +527,25 @@ DEFINE_FUNCTION SLONG fnScaleRange(SLONG slNum_In, SLONG slMin_In, SLONG slMax_I
         Return slNum_Out
     }
 }
+
+
+define_function char math_is_whole_number(double a) {
+    stack_var slong wholeComponent
+    wholeComponent = type_cast(a)
+    return wholeComponent == a
+}
+
+define_function slong math_floor(double a) {
+    if (a < 0 && !math_is_whole_number(a)) {
+	return type_cast(a - 1.0)
+    } else {
+	return type_cast(a)
+    }
+}
+
+define_function slong math_round(DOUBLE a) {
+    return math_floor(a + 0.5)
+}
 /******************************************************************************
 	EoF
 ******************************************************************************/
