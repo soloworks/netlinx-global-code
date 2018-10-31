@@ -276,13 +276,21 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 				STACK_VAR INTEGER pDest
 				STACK_VAR INTEGER pSrc
 				SWITCH(pCOMMAND){
-					CASE 'INPUT':
 					CASE 'MATRIX':		pTYPE = '12'
+					CASE 'INPUT':
 					CASE 'VMATRIX':	pTYPE = '1'
 					CASE 'AMATRIX':	pTYPE = '2'
 				}
-				pSRC = ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'*',1),1))-1
-				pDest = ATOI(DATA.TEXT)-1
+				SWITCH(pCOMMAND){
+					CASE 'INPUT':{
+						pSrc = ATOI(DATA.TEXT)
+						pDest = 1
+					}
+					DEFAULT:{
+						pSRC = ATOI(fnGetSplitStringValue(DATA.TEXT,'*',1))-1
+						pDest = ATOI(fnGetSplitStringValue(DATA.TEXT,'*',2))-1
+					}
+				}
 				fnAddToQueue('ROUTE',"pTYPE,',',ITOA(pDest),',',ITOA(pSrc)")
 			}
 			CASE 'MUTE':{
