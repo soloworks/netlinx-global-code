@@ -41,7 +41,7 @@ DEFINE_TYPE STRUCTURE uWebSocket{
 }
 
 DEFINE_VARIABLE
-uWebSocket  WS
+VOLATILE uWebSocket  WS
 LONG 			TLT_PING[] 						= {  15000 }
 LONG 			TLT_COMMS[]						= {  45000 }
 LONG 			TLT_RETRY[]						= {  10000 }
