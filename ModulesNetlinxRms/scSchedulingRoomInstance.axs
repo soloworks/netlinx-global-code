@@ -600,7 +600,12 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 					DEFAULT:       pMsg = "pMsg,'Undefined State'"
 				}
 				IF(pMSG != 'Release Room Successful'){
-					fnDisplayStatusMessage(pMSG,fnGetCSV(DATA.TEXT,3))
+					IF(fnGetCSV(DATA.TEXT,3) == ''){
+						fnDisplayStatusMessage(pMSG,pMSG)
+					}
+					ELSE{
+						fnDisplayStatusMessage(pMSG,fnGetCSV(DATA.TEXT,3))
+					}
 				}
 			}
 			CASE 'BOOKING':{
@@ -1378,8 +1383,8 @@ DEFINE_FUNCTION fnInitPanel(INTEGER pPanel){
 			CASE AUTOBOOK_MODE_EVENTS: MSG = 'EVENTS,'
 			CASE AUTOBOOK_MODE_LATCHED:MSG = 'LATCHED,'
 		}
+		MSG = "MSG,ITOA(myRoom.AUTOBOOK_STANDOFF.INIT_VAL),','"
 		MSG = "MSG,ITOA(myRoom.AUTOBOOK_ACTION.INIT_VAL),','"
-		MSG = "MSG,ITOA(myRoom.AUTOBOOK_STANDOFF.COUNTER),','"
 		MSG = "MSG,ITOA(myRoom.AUTOBOOK_EVENTS_THRESHOLD),','"
 		MSG = "MSG,myRoom.AUTOBOOK_SUBJECT"
 
