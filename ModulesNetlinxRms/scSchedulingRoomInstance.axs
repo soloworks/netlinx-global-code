@@ -592,14 +592,12 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 					CASE 'EXTEND':pMsg = 'Extend Booking '
 					CASE 'CREATE':pMsg = 'Create Booking '
 					CASE 'CANCEL':pMsg = 'Release Room '
+					DEFAULT:      pMsg = 'Undefined Action'
 				}
 				SWITCH(fnGetCSV(DATA.TEXT,2)){
-					CASE 'SUCCESS':{
-						pMsg = "pMsg,'Successful'"
-					}
-					CASE 'FAILURE':{
-						pMsg = "pMsg,'Declined'"
-					}
+					CASE 'SUCCESS':pMsg = "pMsg,'Successful'"
+					CASE 'FAILURE':pMsg = "pMsg,'Declined'"
+					DEFAULT:       pMsg = "pMsg,'Undefined State'"
 				}
 				IF(pMSG != 'Release Room Successful'){
 					fnDisplayStatusMessage(pMSG,fnGetCSV(DATA.TEXT,3))
@@ -771,7 +769,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_QUICKBOOK_TIMEOUT]{
 		// Check for Room Occupancy
 		IF(![vdvRoom,chn_vdv_RoomOccupied] && [vdvRoom,chn_vdv_SensorOnline]){
 			SEND_COMMAND vdvRoom,"'ACTION-CANCEL,',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].BOOKING_INDEX),',QuickBook Timeout'"
-			fnDisplayStatusMessage('Ending Meeting','Room is being released')
+			fnDisplayStatusMessage('Ending Meeting','Room is being released...')
 		}
 	}
 }
@@ -790,7 +788,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_NOSHOW_TIMEOUT]{
 		// Check for Room Occupancy
 		IF(![vdvRoom,chn_vdv_RoomOccupied] && [vdvRoom,chn_vdv_SensorOnline]){
 			SEND_COMMAND vdvRoom,"'ACTION-CANCEL,',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].BOOKING_INDEX),',No Show'"
-			fnDisplayStatusMessage('Ending Meeting','Room is being released')
+			fnDisplayStatusMessage('Ending Meeting','Room is being released...')
 		}
 	}
 }
@@ -807,7 +805,7 @@ DEFINE_EVENT CHANNEL_EVENT[vdvRoom,chn_vdv_RoomOccupied]{
 		fnUpdateLEDs(0)
 		IF(myRoom.SLOTS[myRoom.SLOT_CURRENT].isQUICKBOOK || myRoom.SLOTS[myRoom.SLOT_CURRENT].isAUTOBOOK){
 			SEND_COMMAND vdvRoom,"'ACTION-CANCEL,',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].BOOKING_INDEX),',Unoccupied'"
-			fnDisplayStatusMessage('Ending Meeting','Room is being released')
+			fnDisplayStatusMessage('Ending Meeting','Room is being released...')
 		}
 	}
 }
@@ -967,7 +965,9 @@ DEFINE_FUNCTION fnUpdateAutoBookFB(INTEGER pPanel){
 	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(lvlAutoBookActionTimer),',2,',FORMAT('%02d',myRoom.AUTOBOOK_ACTION.COUNTER),' min'"
 
 	// Update Events
-	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addDiagTimeAutoBookEvents),',2,',FORMAT('%02d',myRoom.AUTOBOOK_EVENTS_COUNT),' of ',FORMAT('%02d',myRoom.AUTOBOOK_EVENTS_THRESHOLD),' events'"
+	IF(myRoom.AUTOBOOK_MODE == AUTOBOOK_MODE_EVENTS){
+		SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addDiagTimeAutoBookEvents),',2,',FORMAT('%02d',myRoom.AUTOBOOK_EVENTS_COUNT),' of ',FORMAT('%02d',myRoom.AUTOBOOK_EVENTS_THRESHOLD),' events'"
+	}
 
 	SEND_COMMAND tp[pPanel],txtCommand
 }
@@ -1399,6 +1399,11 @@ DEFINE_FUNCTION fnInitPanel(INTEGER pPanel){
 				SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(lvlNoShowTimer),',2,',FORMAT('%02d',myRoom.NOSHOW_TIMEOUT.COUNTER),' min'"
 			}
 		}
+		SWITCH(myRoom.AUTOBOOK_MODE){
+			CASE AUTOBOOK_MODE_OFF:		 SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addDiagTimeAutoBookEvents),',2,N/A'"
+			CASE AUTOBOOK_MODE_LATCHED: SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addDiagTimeAutoBookEvents),',2,Latched'"
+			CASE AUTOBOOK_MODE_EVENTS:  SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addDiagTimeAutoBookEvents),',2,'"
+		}
 	}
 
 	// Call Next Stage
@@ -1572,7 +1577,7 @@ DEFINE_FUNCTION fnUpdatePanel(INTEGER pPanel){
 	SEND_COMMAND tp[pPanel],"'^BMF-',ITOA(lvlMeetingRemain),',0,%GL0%GH',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].DURATION_MINS)"
 
 	// Send Diagnostics Details - Meeting Remaining Timer Value
-	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(lvlMeetingRemain),',0,',fnSecondsToDurationText(myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_SECS,0)"
+	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(lvlMeetingRemain),',0,',fnSecondsToDurationText(myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_SECS,2)"
 
 	IF(myRoom.SLOTS[myRoom.SLOT_CURRENT+1].END_REF){
 		SEND_COMMAND tp[pPanel],"'^SHO-61.66,1'"
@@ -1710,7 +1715,7 @@ DEFINE_FUNCTION fnSetupOverlay(INTEGER pPanel, INTEGER pOVERLAY){
 }
 
 // updates the booking response pop-up when creating/updating
-DEFINE_FUNCTION fnDisplayStatusMessage(CHAR pMsg[], CHAR pMsgDetail[]){
+DEFINE_FUNCTION fnDisplayStatusMessage(CHAR pMsg[], CHAR pMsgDetail[50]){
 	// Debugging
 	fnDebug(DEBUG_DEV,'fnDisplayStatusMessage','Called',"'pMsg=',pMsg,',pMsgDetail=',pMsgDetail")
 
