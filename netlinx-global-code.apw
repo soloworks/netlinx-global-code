@@ -951,6 +951,10 @@
 <FilePathName>Includes\HTTP.axi</FilePathName>
 <Comments></Comments>
 </File>
+<File CompileType="Netlinx" Type="Include"><Identifier>HTTP2</Identifier>
+<FilePathName>Includes\HTTP2.axi</FilePathName>
+<Comments></Comments>
+</File>
 <File CompileType="Netlinx" Type="Include"><Identifier>IEEE754</Identifier>
 <FilePathName>Includes\IEEE754.axi</FilePathName>
 <Comments></Comments>

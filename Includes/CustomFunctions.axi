@@ -477,7 +477,7 @@ DEFINE_FUNCTION LONG fnBinaryToLong(CHAR pDATA[100]){
 	//SEND_STRING 0,"'fnBinaryToLong::pRETURN[',ITOA(pRETURN),']'"
 	RETURN pRETURN
 }
-DEFINE_FUNCTION CHAR[50] fnLongToByte(LONG pValue){
+DEFINE_FUNCTION CHAR[50] fnLongToByte(LONG pValue, INTEGER pLength){
 	STACK_VAR CHAR pHEX[100]
 	STACK_VAR CHAR pRETURN[50]
 	pHEX = ITOHEX(pVALUE)
@@ -485,10 +485,20 @@ DEFINE_FUNCTION CHAR[50] fnLongToByte(LONG pValue){
 	WHILE(LENGTH_ARRAY(pHEX)){
 		pRETURN = "pRETURN,HEXTOI(GET_BUFFER_STRING(pHEX,2))"
 	}
+	// If length has been set the make sure we return correct array
+	IF(pLength){
+		IF(LENGTH_ARRAY(pRETURN) < pLength){
+			RETURN fnPadLeadingChars(pRETURN,$00,pLength)
+		}
+		IF(LENGTH_ARRAY(pRETURN) > pLength){
+			RIGHT_STRING(pRETURN,pLength)
+		}
+	}
+	// Return Value
 	RETURN pRETURN
 }
 DEFINE_FUNCTION CHAR[50] fnBinaryToByte(CHAR pDATA[]){
-	RETURN fnLongToByte(fnBinaryToLong(pDATA))
+	RETURN fnLongToByte(fnBinaryToLong(pDATA),0)
 }
 (***********************************************************)
 (* FUNCTION:     Scale_Range                               *)
