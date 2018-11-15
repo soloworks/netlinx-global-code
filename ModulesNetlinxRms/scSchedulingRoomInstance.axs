@@ -669,6 +669,7 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 					// If this slot has no meeting, kill the timer(s)
 					IF(myRoom.SLOTS[myRoom.SLOT_CURRENT].BOOKING_INDEX == 0){
 						IF(TIMELINE_ACTIVE(TLID_TIMER_NOSHOW_TIMEOUT)){
+							myRoom.NOSHOW_TIMEOUT.COUNTER = 0
 							TIMELINE_KILL(TLID_TIMER_NOSHOW_TIMEOUT)
 						}
 					}
