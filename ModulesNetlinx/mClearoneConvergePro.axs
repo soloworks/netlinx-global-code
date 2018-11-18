@@ -344,7 +344,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 		IF(!myClearOne.isIP){
 			myClearOne.IP_STATE	= IP_STATE_CONNECTED
 			SEND_COMMAND dvDevice, 'SET BAUD 57600 N 8 1 485 DISABLE'
-			WAIT 5{
+			WAIT 50{
 				fnInitComms()
 			}
 		}
