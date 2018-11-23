@@ -204,6 +204,16 @@ DEFINE_FUNCTION fnPollShort(){
 			CASE MODEL_MPS602:{
 				fnAddToQueue("$1B,'0LS',$0D",TRUE)
 			}
+			CASE MODEL_SW2HD4k:
+			CASE MODEL_SW2HD4kPlus:
+			CASE MODEL_SW4HD4K:
+			CASE MODEL_SW4HD4KPlus:
+			CASE MODEL_SW6:
+			CASE MODEL_SW6HD4k:
+			CASE MODEL_SW8:
+			CASE MODEL_SW8HD4K:{
+				fnAddToQueue("$1B,'LS',$0D",TRUE)
+			}
 		}
 	}
 }
@@ -277,10 +287,10 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 						CASE '60-1603-01':mySwitch.MODEL_ID = MODEL_SW2HD4kPlus
 						CASE '60-1484-01':mySwitch.MODEL_ID = MODEL_SW4HD4k
 						CASE '60-1604-01':mySwitch.MODEL_ID = MODEL_SW4HD4kPlus
-						CASE '60-1485-01':mySwitch.MODEL_ID = MODEL_SW6HD4k
-						CASE '60-1486-01':mySwitch.MODEL_ID = MODEL_SW8HD4k
 						CASE '60-841-03': mySwitch.MODEL_ID = MODEL_SW6
+						CASE '60-1485-01':mySwitch.MODEL_ID = MODEL_SW6HD4k
 						CASE '60-841-04': mySwitch.MODEL_ID = MODEL_SW8
+						CASE '60-1486-01':mySwitch.MODEL_ID = MODEL_SW8HD4k
 						CASE '60-1090-01':mySwitch.MODEL_ID = MODEL_MLAVC10
 						CASE '60-1551-12':mySwitch.MODEL_ID = MODEL_DTPTUSW233
 					}
@@ -293,11 +303,13 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 						CASE MODEL_MPS602:		mySwitch.META_MODEL = 'MPS602'
 						CASE MODEL_SW2USB:		mySwitch.META_MODEL = 'SW2USB'
 						CASE MODEL_SW2HD4k:		mySwitch.META_MODEL = 'SW2HD4K'
+						CASE MODEL_SW2HD4kPlus:	mySwitch.META_MODEL = 'SW2HD4KPlus'
 						CASE MODEL_SW4HD4K:		mySwitch.META_MODEL = 'SW4HD4K'
-						CASE MODEL_SW6HD4K:		mySwitch.META_MODEL = 'SW6HD4K'
-						CASE MODEL_SW8HD4K:		mySwitch.META_MODEL = 'SW8HD4K'
+						CASE MODEL_SW4HD4KPlus:	mySwitch.META_MODEL = 'SW4HD4KPlus'
 						CASE MODEL_SW6:			mySwitch.META_MODEL = 'SW6'
+						CASE MODEL_SW6HD4K:		mySwitch.META_MODEL = 'SW6HD4K'
 						CASE MODEL_SW8:			mySwitch.META_MODEL = 'SW8'
+						CASE MODEL_SW8HD4K:		mySwitch.META_MODEL = 'SW8HD4K'
 						CASE MODEL_MLAVC10:		mySwitch.META_MODEL = 'MLA VC10'
 						DEFAULT:						mySwitch.META_MODEL = 'NOT IMPLEMENTED'
 					}
@@ -381,6 +393,15 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 					}
 					x++
 					mySwitch.SIGNAL[x] = ATOI(fnStripCharsRight(DATA.TEXT,2))
+				}
+				ACTIVE(mySwitch.LAST_SENT == "$1B,'LS',$0D"):{
+					STACK_VAR INTEGER x
+					WHILE(FIND_STRING(DATA.TEXT,' ',1)){
+						x++
+						mySwitch.SIGNAL[x] = ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,' ',1),1))
+					}
+					x++
+					mySwitch.SIGNAL[x] = ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'*',1),1))
 				}
 				ACTIVE(1):{	// Referenced Notifications
 					SELECT{
