@@ -433,6 +433,18 @@ DEFINE_FUNCTION CHAR[255] fnMonthString(SINTEGER pMonth){
 /******************************************************************************
 	Functions for Number Handling
 ******************************************************************************/
+DEFINE_FUNCTION CHAR[10000] fnRemoveNonPrintableChars(CHAR pString[10000]){
+	STACK_VAR CHAR pRETURN[10000]
+	STACK_VAR INTEGER x
+	FOR(x = 1; x <= LENGTH_ARRAY(pString); x++){
+		IF(pString[x] >= $20 && pString[x] <= $FF){
+			pRETURN = "pRETURN,pString[x]"
+		}
+	}
+	RETURN pRETURN
+}
+
+
 DEFINE_FUNCTION CHAR[10000] fnBytesToString(CHAR pString[10000]){
 	STACK_VAR CHAR pRETURN[10000]
 	STACK_VAR INTEGER x
@@ -441,6 +453,16 @@ DEFINE_FUNCTION CHAR[10000] fnBytesToString(CHAR pString[10000]){
 		pReturn = "pReturn,'$',fnPadLeadingChars(ITOHEX(pString[x]),'0',2),','"
 	}
 	RETURN fnStripCharsRight(pRETURN,1)
+}
+
+DEFINE_FUNCTION CHAR[10000] fnHexToString(CHAR pString[10000]){
+	STACK_VAR CHAR pRETURN[10000]
+	STACK_VAR INTEGER x
+	IF(!LENGTH_ARRAY(pString)){RETURN ''}
+	FOR(x = 1; x <= LENGTH_ARRAY(pString); x++){
+		pReturn = "pReturn,FORMAT('%02x',pString[x])"
+	}
+	RETURN pRETURN
 }
 DEFINE_FUNCTION CHAR[800] fnBytesToBinary(CHAR pDATA[]){
 	STACK_VAR CHAR pReturn[800]
