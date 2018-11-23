@@ -46,6 +46,14 @@ DEFINE_TYPE STRUCTURE uPTrack{
 	INTEGER  CameraID
 }
 
+DEFINE_TYPE STRUCTURE uExtSource{
+	INTEGER  CONNECTOR_ID
+	CHAR     NAME[40]
+	CHAR     IDENTIFIER[40]
+	CHAR     TYPE[15]
+	INTEGER  SIGNAL
+}
+
 DEFINE_TYPE STRUCTURE uCamera{
 	INTEGER  CONNECTOR
 	CHAR 		MAKE[20]
@@ -129,7 +137,7 @@ DEFINE_TYPE STRUCTURE uSX{
 	INTEGER 	API_VER
 	INTEGER 	PEND
 	CHAR 	  	Rx[8000]
-	CHAR 	  	Tx[4000]
+	CHAR 	  	Tx[5000]
 	CHAR 		Username[25]
 	CHAR		Password[25]
 	CHAR		BAUD[10]
@@ -139,6 +147,8 @@ DEFINE_TYPE STRUCTURE uSX{
 	uCall		ACTIVE_CALLS[MAX_CALLS]
 	// Directory
 	uDir		DIRECTORY
+	// Touch10
+	uExtSource ExtSources[8]
 }
 
 
@@ -442,7 +452,7 @@ DEFINE_FUNCTION fnCloseTCPConnection(){
 	}
 }
 
-DEFINE_FUNCTION fnQueueTx(CHAR pCommand[255], CHAR pParam[255]){
+DEFINE_FUNCTION fnQueueTx(CHAR pCommand[1000], CHAR pParam[1000]){
 	fnDebug(DEBUG_DEVELOP,'fnQueueTX',"'[',ITOA(LENGTH_ARRAY(mySX.Tx)),']',pCommand,' ', pParam,$0D")
 	mySX.Tx = "mySX.Tx,pCommand,' ', pParam,$0D"
 	fnSendTx()
@@ -452,7 +462,7 @@ DEFINE_FUNCTION fnQueueTx(CHAR pCommand[255], CHAR pParam[255]){
 DEFINE_FUNCTION fnSendTx(){
 	IF((!mySX.isIP || mySX.CONN_STATE == CONN_CONNECTED) && !mySX.PEND){
 		IF(FIND_STRING(mySX.Tx,"$0D",1)){
-			STACK_VAR CHAR toSend[200]
+			STACK_VAR CHAR toSend[1000]
 			toSend = REMOVE_STRING(mySX.Tx,"$0D",1)
 			fnDebug(DEBUG_BASIC,'->VC ',toSend)
 			SEND_STRING dvVC, toSend
@@ -494,11 +504,36 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_POLL]{
 	fnPoll()
 }
 DEFINE_FUNCTION fnPoll(){
+	STACK_VAR CHAR pParams[500]
 	fnQueueTx('xStatus','SystemUnit Uptime')
 	fnQueueTx('xStatus','SystemUnit Hardware Temperature')
+	// Heartbeat AMX as addition to SX
+	pParams = 'HeartBeat'
+	pParams = "pParams,' ID: "',fnHexToString(GET_UNIQUE_ID()),'"'" 
+	fnQueueTx('xCommand Peripherals',pParams)
 }
-DEFINE_FUNCTION fnInitData(){
+DEFINE_FUNCTION fnInitData(){	
+	STACK_VAR CHAR pParams[500]
+	// Populate System Variables
+	STACK_VAR DEV_INFO_STRUCT sDeviceInfo
+	STACK_VAR IP_ADDRESS_STRUCT sNetworkInfo
+	
+	// Turn off Echo
 	fnQueueTx('echo','off')
+	
+	// Register AMX as addition to SX
+	DEVICE_INFO(DATA.DEVICE, sDeviceInfo)
+	GET_IP_ADDRESS(0:1:0,sNetworkInfo)
+	pParams = 'Connect'
+	pParams = "pParams,' ID: "',fnHexToString(GET_UNIQUE_ID()),'"'" 
+	pParams = "pParams,' Name: "AMX Control System"'" 
+	pParams = "pParams,' NetworkAddress: "',sNetworkInfo.IPADDRESS,'"'" 
+	pParams = "pParams,' SerialNumber: "',fnRemoveNonPrintableChars(sDeviceInfo.SERIAL_NUMBER),'"'" 
+	pParams = "pParams,' SoftwareInfo: "',sDeviceInfo.VERSION,'"'" 
+	pParams = "pParams,' HardwareInfo: "',sDeviceInfo.DEVICE_ID_STRING,'"'" 
+	pParams = "pParams,' Type: ControlSystem'"
+	fnQueueTx('xCommand Peripherals',pParams)
+	
 	fnQueueTx('xFeedback deregister','/Status/Diagnostics')
 	fnQueueTx('xFeedback register','/Status/SystemUnit')
 	fnQueueTx('xFeedback register','/Event')
@@ -522,6 +557,23 @@ DEFINE_FUNCTION fnInitData(){
 	fnQueueTx('xStatus','Network')
 	fnQueueTx('xStatus','Standby')
 	fnQueueTx('xStatus','SystemUnit')
+
+	fnQueueTx('xCommand UserInterface Presentation ExternalSource','RemoveAll')
+	// Init GUI bits if required
+	IF(mySX.ExtSources[1].IDENTIFIER != ''){	
+		STACK_VAR INTEGER s
+		FOR(s = 1; s <= 8; s++){
+			IF(mySX.ExtSources[s].IDENTIFIER != ''){
+				pParams = 'Add'
+				pParams = "pParams,' ConnectorId: ',ITOA(mySX.ExtSources[s].CONNECTOR_ID)"
+				pParams = "pParams,' SourceIdentifier: "',mySX.ExtSources[s].IDENTIFIER,'"'"
+				pParams = "pParams,' Name: "',mySX.ExtSources[s].NAME,'"'"
+				pParams = "pParams,' Type: ',mySX.ExtSources[s].TYPE"
+				fnQueueTx('xCommand UserInterface Presentation ExternalSource',pParams)
+			}
+		}
+		fnSetExtSourceSignals(0)
+	}
 
 	fnInitPoll()
 }
@@ -756,9 +808,9 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 									CASE 'Event':{
 										STACK_VAR CHAR pEVENT[100]
 										SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,':',1),1)){
-											CASE 'Pressed Signal':pEVENT = 'INTERFACE_API-PRESS,'
-											CASE 'Clicked Signal':pEVENT = 'INTERFACE_API-CLICK,'
-											CASE 'Released Signal':pEVENT = 'INTERFACE_API-RELEASE,'
+											CASE 'Pressed Signal':  pEVENT = 'INTERFACE_API-PRESS,'
+											CASE 'Clicked Signal':  pEVENT = 'INTERFACE_API-CLICK,'
+											CASE 'Released Signal': pEVENT = 'INTERFACE_API-RELEASE,'
 										}
 
 										pData = fnRemoveWhiteSpace(pData)
@@ -770,6 +822,18 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 											pEVENT = "pEVENT,pDATA,',NONE'"
 										}
 										SEND_STRING vdvControl,pEVENT
+									}
+								}
+							}
+							CASE 'Presentation':{
+								SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
+									CASE 'ExternalSource':{
+										SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
+											CASE 'Selected':{
+												REMOVE_STRING(pDATA,'SourceIdentifier: "',1)
+												SEND_STRING vdvControl,"'INTERFACE_API-EXTSOURCE,',fnStripCharsRight(pDATA,1)"
+											}
+										}
 									}
 								}
 							}
@@ -851,7 +915,7 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 							CASE 'Input':{
 								SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
 									CASE 'MainVideoSource:':{
-										IF(mySX.NEAR_CAMERA != ATOI(pDATA) && !mySX.NEAR_CAMERA_LOCKED){
+										IF(mySX.NEAR_CAMERA != ATOI(pDATA) && !mySX.NEAR_CAMERA_LOCKED && mySX.NEAR_CAMERA){
 											fnQueueTx('xCommand Camera',"'Ramp CameraId:',ITOA(mySX.NEAR_CAMERA),' Pan:Stop'")
 											fnQueueTx('xCommand Camera',"'Ramp CameraId:',ITOA(mySX.NEAR_CAMERA),' Tilt:Stop'")
 											fnQueueTx('xCommand Camera',"'Ramp CameraId:',ITOA(mySX.NEAR_CAMERA),' Zoom:Stop'")
@@ -1605,13 +1669,24 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 					}
 				}
 				CASE 'INTERFACE_API':{
-					SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
+					SWITCH(fnGetCSV(DATA.TEXT,1)){
 						CASE 'SET':{
-							STACK_VAR CHAR pWidget[50]
-							pWidget = fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)
-							SWITCH(DATA.TEXT){
-								CASE 'None':	fnQueueTx("'xCommand UserInterface Extensions Widget SetValue'","'Value: "',DATA.TEXT,'" WidgetId: "',pWidget,'"'")
-								DEFAULT:			fnQueueTx("'xCommand UserInterface Extensions Widget UnsetValue'","'WidgetId: "',pWidget,'"'")
+							SWITCH(fnGetCSV(DATA.TEXT,3)){
+								CASE '':
+								CASE 'None':	fnQueueTx("'xCommand UserInterface Extensions Widget SetValue'","'Value: "',fnGetCSV(DATA.TEXT,3),'" WidgetId: "',fnGetCSV(DATA.TEXT,2),'"'")
+								DEFAULT:			fnQueueTx("'xCommand UserInterface Extensions Widget UnsetValue'","'WidgetId: "',fnGetCSV(DATA.TEXT,2),'"'")
+							}
+						}
+						CASE 'EXTSOURCE':{
+							STACK_VAR INTEGER x
+							FOR(x = 1; x <= 8; x++){
+								IF(mySX.ExtSources[x].IDENTIFIER == ''){
+									mySX.ExtSources[x].CONNECTOR_ID = ATOI(fnGetCSV(DATA.TEXT,2))
+									mySX.ExtSources[x].IDENTIFIER = fnGetCSV(DATA.TEXT,3)
+									mySX.ExtSources[x].NAME = fnGetCSV(DATA.TEXT,4)
+									mySX.ExtSources[x].TYPE = fnGetCSV(DATA.TEXT,5)
+									BREAK
+								}
 							}
 						}
 					}
@@ -2614,6 +2689,44 @@ DEFINE_EVENT BUTTON_EVENT [tp,btnCustomDial]{
 			CASE 3:SEND_COMMAND vdvControl, "'DIAL-CUSTOM,VIDEO,H320,128,#CURRENT'"	// ISDN 2CHN or 128
 			CASE 4:SEND_COMMAND vdvControl, "'DIAL-CUSTOM,AUDIO,H320,#CURRENT'"		// ISDN AUDIO ONLY
 		}
+	}
+}
+/******************************************************************************
+	External Source Control (Touch10)
+******************************************************************************/
+DEFINE_CONSTANT
+INTEGER chnExtSourceSignal[] = {11,12,13,14,15,16,17,18,19,20}
+DEFINE_EVENT CHANNEL_EVENT[vdvControl,chnExtSourceSignal]{
+	ON:{
+		mySX.ExtSources[GET_LAST(chnExtSourceSignal)].SIGNAL = TRUE
+		fnSetExtSourceSignals(GET_LAST(chnExtSourceSignal))
+	}
+	OFF:{
+		mySX.ExtSources[GET_LAST(chnExtSourceSignal)].SIGNAL = FALSE
+		fnSetExtSourceSignals(GET_LAST(chnExtSourceSignal))
+	}
+}
+
+DEFINE_FUNCTION fnSetExtSourceSignals(INTEGER src){
+	
+	STACK_VAR CHAR pParams[500]
+
+	IF(!src){
+		STACK_VAR INTEGER s
+		FOR(s = 1; s <= 8; s++){
+			fnSetExtSourceSignals(s)
+		}
+		RETURN
+	}
+	
+	IF(mySX.ExtSources[src].IDENTIFIER != ''){
+		pParams = 'Set'
+		pParams = "pParams,' SourceIdentifier: "',mySX.ExtSources[src].IDENTIFIER,'"'"
+		SWITCH(mySX.ExtSources[src].SIGNAL){
+			CASE TRUE:  pParams = "pParams,' State: Ready'"
+			CASE FALSE: pParams = "pParams,' State: Hidden'"
+		}
+		fnQueueTx('xCommand UserInterface Presentation ExternalSource State',pParams)
 	}
 }
 /******************************************************************************
