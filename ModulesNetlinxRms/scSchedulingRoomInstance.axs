@@ -589,8 +589,8 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 			CASE 'RESPONSE':{
 				STACK_VAR CHAR pMSG[255]
 				SWITCH(fnGetCSV(DATA.TEXT,1)){
-					CASE 'EXTEND':pMsg = 'Extend Booking '
-					CASE 'CREATE':pMsg = 'Create Booking '
+					CASE 'EXTEND':pMsg = 'Booking '
+					CASE 'CREATE':pMsg = 'Booking '
 					CASE 'CANCEL':pMsg = 'Release Room '
 					DEFAULT:      pMsg = 'Undefined Action'
 				}
