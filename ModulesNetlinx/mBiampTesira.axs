@@ -642,7 +642,7 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 	IF(myBiAmp.IP_HOST == ''){
 		fnDebug(DEBUG_ERR,'Biamp Address Not Set','')
 	}
-	ELSE{
+	ELSE IF(myBiAmp.IP_STATE == IP_STATE_OFFLINE){
 		fnDebug(DEBUG_STD,"'Connecting to Biamp Port ',ITOA(myBiAmp.IP_PORT),' on '",myBiAmp.IP_HOST)
 		myBiAmp.IP_STATE = IP_STATE_CONNECTING
 		ip_client_open(dvBiamp.port, myBiAmp.IP_HOST, myBiAmp.IP_PORT, IP_TCP)
@@ -707,6 +707,7 @@ DEFINE_EVENT DATA_EVENT[dvBiAmp]{
 			myBiAmp.IP_STATE = IP_STATE_OFFLINE
 			myBiAmp.TxCmd = ''
 			myBiAmp.TxPoll = ''
+			myBiAmp.TXPend = ''
 			fnTryConnection()
 		}
 	}
@@ -728,12 +729,12 @@ DEFINE_EVENT DATA_EVENT[dvBiAmp]{
 				CASE 16:{ MSG = 'Too many open Sockets'}			//  Too many open sockets
 				CASE 17:{ MSG = 'Local port not Open'}				//  Local Port Not Open
 			}
-			fnDebug(DEBUG_ERR,"'IP Error:[',myBiAmp.IP_HOST,':',ITOA(myBiAmp.IP_PORT),']'","'[',ITOA(DATA.NUMBER),MSG,']'")
+			fnDebug(DEBUG_ERR,"'IP Error:[',myBiAmp.IP_HOST,':',ITOA(myBiAmp.IP_PORT),']'","'[',ITOA(DATA.NUMBER),'-',MSG,']'")
 			SWITCH(DATA.NUMBER){
 				CASE 14:{}
 				DEFAULT:{
 					myBiAmp.IP_STATE = IP_STATE_OFFLINE
-					fnTryConnection();
+					fnTryConnection()
 				}
 			}
 		}
