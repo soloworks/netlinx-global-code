@@ -170,6 +170,7 @@ DEFINE_TYPE STRUCTURE uSX{
 	uDir		DIRECTORY
 	// Touch10
 	uExtSource   ExtSources[8]
+	INTEGER      ExtSourceHide
 	uPeripherals PERIPHERALS
 }
 
@@ -1738,14 +1739,19 @@ DEFINE_EVENT DATA_EVENT[vdvControl[1]]{
 							}
 						}
 						CASE 'EXTSOURCE':{
-							STACK_VAR INTEGER x
-							FOR(x = 1; x <= 8; x++){
-								IF(mySX.ExtSources[x].IDENTIFIER == ''){
-									mySX.ExtSources[x].CONNECTOR_ID = ATOI(fnGetCSV(DATA.TEXT,2))
-									mySX.ExtSources[x].IDENTIFIER = fnGetCSV(DATA.TEXT,3)
-									mySX.ExtSources[x].NAME = fnGetCSV(DATA.TEXT,4)
-									mySX.ExtSources[x].TYPE = fnGetCSV(DATA.TEXT,5)
-									BREAK
+							IF(fnGetCSV(DATA.TEXT,2) == 'HIDE'){
+								mySX.ExtSourceHide = TRUE
+							}
+							ELSE{
+								STACK_VAR INTEGER x
+								FOR(x = 1; x <= 8; x++){
+									IF(mySX.ExtSources[x].IDENTIFIER == ''){
+										mySX.ExtSources[x].CONNECTOR_ID = ATOI(fnGetCSV(DATA.TEXT,2))
+										mySX.ExtSources[x].IDENTIFIER = fnGetCSV(DATA.TEXT,3)
+										mySX.ExtSources[x].NAME = fnGetCSV(DATA.TEXT,4)
+										mySX.ExtSources[x].TYPE = fnGetCSV(DATA.TEXT,5)
+										BREAK
+									}
 								}
 							}
 						}
@@ -2784,7 +2790,12 @@ DEFINE_FUNCTION fnSetExtSourceSignals(INTEGER src){
 		pParams = "pParams,' SourceIdentifier: "',mySX.ExtSources[src].IDENTIFIER,'"'"
 		SWITCH(mySX.ExtSources[src].SIGNAL){
 			CASE TRUE:  pParams = "pParams,' State: Ready'"
-			CASE FALSE: pParams = "pParams,' State: Hidden'"
+			CASE FALSE:{
+				SWITCH(mySX.ExtSourceHide){
+					CASE TRUE:  pParams = "pParams,' State: Hidden'"
+					CASE FALSE: pParams = "pParams,' State: NotReady'"
+				}
+			}
 		}
 		fnQueueTx('xCommand UserInterface Presentation ExternalSource State',pParams)
 	}
@@ -2889,7 +2900,7 @@ DEFINE_FUNCTION fnSendPeripheralsData(){
 			SEND_STRING vdvControl[d+1],"'PROPERTY-META,SERIALNO,',mySX.PERIPHERALS.Device[d].SerialNumber"
 		}
 		IF(LENGTH_ARRAY(mySX.PERIPHERALS.Device[d].ID)){
-			SEND_STRING vdvControl[d+1],"'PROPERTY-META,DESC,',mySX.PERIPHERALS.Device[d].ID"
+			SEND_STRING vdvControl[d+1],"'PROPERTY-META,PARTNO,',mySX.PERIPHERALS.Device[d].ID"
 		}
 		IF(LENGTH_ARRAY(mySX.PERIPHERALS.Device[d].NetworkAddress)){
 			SEND_STRING vdvControl[d+1],"'PROPERTY-IP,',mySX.PERIPHERALS.Device[d].NetworkAddress"
