@@ -25,7 +25,14 @@ DEFINE_TYPE STRUCTURE uPeripheral{
 	CHAR    NetworkAddress[30]
 	CHAR    SerialNumber[30]
 	CHAR    Type[30]
-	CHAR    Status[30]
+	INTEGER StatusOnline
+}
+
+DEFINE_TYPE STRUCTURE uPeripherals{
+	// Peripherals List
+	INTEGER     LoadingOnline
+	INTEGER     LoadingOffline
+	uPeripheral Device[MAX_PERIPHERAL]
 }
 
 DEFINE_TYPE STRUCTURE uCall{
@@ -162,11 +169,8 @@ DEFINE_TYPE STRUCTURE uSX{
 	// Directory
 	uDir		DIRECTORY
 	// Touch10
-	uExtSource ExtSources[8]
-	// Peripherals List
-	INTEGER     PeripheralLoadingOnline
-	INTEGER     PeripheralLoadingOffline
-	uPeripheral Peripheral[MAX_PERIPHERAL]
+	uExtSource   ExtSources[8]
+	uPeripherals PERIPHERALS
 }
 
 
@@ -564,13 +568,10 @@ DEFINE_FUNCTION fnInitData(){
 	fnQueueTx('xFeedback register','/Status/Conference')
 	fnQueueTx('xFeedback register','/Status/Network')
 	fnQueueTx('xFeedback register','/Status/Standby')
+	fnQueueTx('xFeedback register','/Status/Peripherals')
 
 	fnQueueTx('xConfiguration','Peripherals Profile Touchpanels: 0')
-	// Query and process connected peripherals
-	fnClearPeripherals()
-	fnQueueTx('xCommand peripherals list','Connected: True')
-	fnQueueTx('xCommand peripherals list','Connected: False')
-
+	
 	fnQueueTx('xStatus','Audio')
 	fnQueueTx('xStatus','Call')
 	fnQueueTx('xStatus','Video Input')
@@ -597,6 +598,10 @@ DEFINE_FUNCTION fnInitData(){
 		}
 		fnSetExtSourceSignals(0)
 	}
+	
+	// Query and process connected peripherals
+	fnClearPeripherals()
+	fnQueueTx('xCommand peripherals list','Connected: True')
 
 	fnInitPoll()
 }
@@ -664,13 +669,15 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 			fnInitPanel(0)
 		}
 		// Peripherals
-		IF(mySX.PeripheralLoadingOnline){
-			mySX.PeripheralLoadingOnline = FALSE
-			mySX.PeripheralLoadingOffline = TRUE
+		IF(mySX.Peripherals.LoadingOnline){
+			mySX.Peripherals.LoadingOnline = FALSE
+			mySX.Peripherals.LoadingOffline = TRUE
+			fnQueueTx('xCommand peripherals list','Connected: False')
 		}
 		// 
-		IF(mySX.PeripheralLoadingOffline){
-			mySX.PeripheralLoadingOffline = FALSE
+		ELSE IF(mySX.Peripherals.LoadingOffline){
+			mySX.Peripherals.LoadingOffline = FALSE
+			fnSendPeripheralsData()
 		}
 		RETURN TRUE
 	}
@@ -693,11 +700,11 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 					CASE 'SelfviewSetResult':{
 
 					}
-					CASE 'PeripheralsLisResult':{
+					CASE 'PeripheralsListResult':{
 						// Set status for incoming list
 						IF(FIND_STRING(pDATA,'(status=OK)',1)){
-							IF(!mySX.PeripheralLoadingOnline && !mySX.PeripheralLoadingOffline){
-								mySX.PeripheralLoadingOnline = TRUE
+							IF(!mySX.Peripherals.LoadingOnline && !mySX.Peripherals.LoadingOffline){
+								mySX.Peripherals.LoadingOnline = TRUE
 							}
 						}
 						ELSE{
@@ -2788,48 +2795,114 @@ DEFINE_FUNCTION fnSetExtSourceSignals(INTEGER src){
 DEFINE_FUNCTION fnClearPeripherals(){
 	STACK_VAR INTEGER p
 	STACK_VAR uPeripheral blankPeripheral
+	fnDebug(DEBUG_DEVELOP,'fnClearPeripherals','Called')
 	FOR(p = 1; p <= MAX_PERIPHERAL; p++){
-		mySX.Peripheral[p] = blankPeripheral
+		mySX.Peripherals.Device[p] = blankPeripheral
 	}
+	fnDebug(DEBUG_DEVELOP,'fnClearPeripherals','Ended')
 }
 
 DEFINE_FUNCTION INTEGER fnGetPeripheralSlot(INTEGER pINDEX){
 	STACK_VAR INTEGER p
+	fnDebug(DEBUG_DEVELOP,'fnGetPeripheralSlot',"'pINDEX=',ITOA(pINDEX)")
 	// Get slot if this already exists
 	FOR(p = 1; p <= MAX_PERIPHERAL; p++){
-		IF(mySX.Peripheral[p].INDEX == pINDEX){
+		// This is the slot - return
+		IF(mySX.Peripherals.Device[p].INDEX == pINDEX){
+			RETURN p
+		}
+		// This slot is empty - allocate and return
+		IF(mySX.Peripherals.Device[p].INDEX == 0){
+			mySX.Peripherals.Device[p].INDEX = pINDEX
+			RETURN p
+		}
+		// Check if this slot should be before the next one
+		IF(p < MAX_PERIPHERAL && mySX.Peripherals.Device[p].INDEX > pINDEX){
+			STACK_VAR INTEGER y
+			STACK_VAR uPeripheral blankPeripheral
+			// Move all up by one (last will be knocked off, so list will be accurate but missing more than MAX_PERIPHERALS)
+			FOR(y = MAX_PERIPHERAL; y > p; y--){
+				mySX.Peripherals.Device[y] = mySX.Peripherals.Device[y-1]
+			}
+			// Add this one in, wipe existing data as it has moved up
+			mySX.Peripherals.Device[p] = blankPeripheral
+			mySX.Peripherals.Device[p].INDEX = pINDEX
 			RETURN p
 		}
 	}
-	
-	// There is a slot for this, just find it
-	FOR(p = 1; p <= MAX_PERIPHERAL; p++){
-		IF 
-	}
+	// If here then will return 0
+	fnDebug(DEBUG_DEVELOP,'fnGetPeripheralSlot','Ended')
 }
 
 DEFINE_FUNCTION INTEGER fnStorePeripheralField(CHAR pDATA[]){
 	STACK_VAR INTEGER p
 	STACK_VAR INTEGER pIndex
+	fnDebug(DEBUG_DEVELOP,'fnStorePeripheralField',"'pDATA=',pDATA")
 	
 	// Get this Index
 	pINDEX = ATOI(REMOVE_STRING(pDATA,' ',1))
 	p = fnGetPeripheralSlot(pIndex)
 	
-	// Store Field
-	SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),2)){
-		CASE 'HardwareInfo':   mySX.Peripheral[p].Hardwareinfo = fnRemoveQuotes(pDATA)
-		CASE 'ID':             mySX.Peripheral[p].ID = fnRemoveQuotes(pDATA)
-		CASE 'Name':           mySX.Peripheral[p].Name = fnRemoveQuotes(pDATA)
-		CASE 'NetworkAddress': mySX.Peripheral[p].NetworkAddress = fnRemoveQuotes(pDATA)
-		CASE 'SerialNumber':   mySX.Peripheral[p].SerialNumber = fnRemoveQuotes(pDATA)
-		CASE 'SoftwareInfo':   mySX.Peripheral[p].SoftwareInfo = fnRemoveQuotes(pDATA)
-		CASE 'Type':           mySX.Peripheral[p].Type = fnRemoveQuotes(pDATA)
-		CASE 'Status:':        mySX.Peripheral[p].Status = fnRemoveQuotes(pDATA)
-		CASE 'LastSeen:':      mySX.Peripheral[p].LastSeen = fnRemoveQuotes(pDATA)
+	// Set Status if this is a loading process
+	IF(mySX.Peripherals.LoadingOnline){
+		mySX.Peripherals.Device[p].StatusOnline = TRUE
 	}
+	
+	// Set Status if this is a loading process
+	IF(mySX.Peripherals.LoadingOffline){
+		mySX.Peripherals.Device[p].StatusOnline = FALSE
+	}
+	
+	IF(p){
+		// Store Field
+		SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),2)){
+			CASE 'HardwareInfo':   mySX.Peripherals.Device[p].Hardwareinfo = fnRemoveQuotes(pDATA)
+			CASE 'ID':             mySX.Peripherals.Device[p].ID = fnRemoveQuotes(pDATA)
+			CASE 'Name':           mySX.Peripherals.Device[p].Name = fnRemoveQuotes(pDATA)
+			CASE 'NetworkAddress': mySX.Peripherals.Device[p].NetworkAddress = fnRemoveQuotes(pDATA)
+			CASE 'SerialNumber':   mySX.Peripherals.Device[p].SerialNumber = fnRemoveQuotes(pDATA)
+			CASE 'SoftwareInfo':   mySX.Peripherals.Device[p].SoftwareInfo = fnRemoveQuotes(pDATA)
+			CASE 'Type':           mySX.Peripherals.Device[p].Type = fnRemoveQuotes(pDATA)
+			CASE 'LastSeen':       mySX.Peripherals.Device[p].LastSeen = fnRemoveQuotes(pDATA)
+			CASE 'Status':{
+				mySX.Peripherals.Device[p].StatusOnline = pDATA == 'Connected'
+			}
+		}
+	}
+	fnDebug(DEBUG_DEVELOP,'fnStorePeripheralField','Ended')
 }
 
+DEFINE_FUNCTION fnSendPeripheralsData(){
+	STACK_VAR INTEGER d
+	FOR(d = 1; d < LENGTH_ARRAY(vdvControl); d++){
+		IF(LENGTH_ARRAY(mySX.PERIPHERALS.Device[d].Name)){
+			SEND_STRING vdvControl[d+1],"'PROPERTY-META,NAME,',mySX.PERIPHERALS.Device[d].Name"
+		}
+		IF(LENGTH_ARRAY(mySX.PERIPHERALS.Device[d].Hardwareinfo)){
+			SEND_STRING vdvControl[d+1],"'PROPERTY-META,MAKE,Cisco'"
+			SEND_STRING vdvControl[d+1],"'PROPERTY-META,MODEL,',mySX.PERIPHERALS.Device[d].Hardwareinfo"
+		}
+		IF(LENGTH_ARRAY(mySX.PERIPHERALS.Device[d].SoftwareInfo)){
+			SEND_STRING vdvControl[d+1],"'PROPERTY-META,SWVERSION,',mySX.PERIPHERALS.Device[d].SoftwareInfo"
+		}
+		IF(LENGTH_ARRAY(mySX.PERIPHERALS.Device[d].SerialNumber)){
+			SEND_STRING vdvControl[d+1],"'PROPERTY-META,SERIALNO,',mySX.PERIPHERALS.Device[d].SerialNumber"
+		}
+		IF(LENGTH_ARRAY(mySX.PERIPHERALS.Device[d].ID)){
+			SEND_STRING vdvControl[d+1],"'PROPERTY-META,DESC,',mySX.PERIPHERALS.Device[d].ID"
+		}
+		IF(LENGTH_ARRAY(mySX.PERIPHERALS.Device[d].NetworkAddress)){
+			SEND_STRING vdvControl[d+1],"'PROPERTY-IP,',mySX.PERIPHERALS.Device[d].NetworkAddress"
+		}
+	}
+}
+DEFINE_PROGRAM{
+	STACK_VAR INTEGER d
+	FOR(d = 1; d < LENGTH_ARRAY(vdvControl); d++){
+		[vdvControl[d+1],251] = (mySX.PERIPHERALS.Device[d].StatusOnline)
+		[vdvControl[d+1],252] = (mySX.PERIPHERALS.Device[d].StatusOnline)
+	}
+}
 /******************************************************************************
 	EoF
 ******************************************************************************/
