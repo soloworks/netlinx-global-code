@@ -1,4 +1,4 @@
-MODULE_NAME='mCiscoSX'(DEV vdvControl, DEV vdvCalls[], DEV tp[], DEV dvVC)
+MODULE_NAME='mCiscoSX'(DEV vdvControl[], DEV vdvCalls[], DEV tp[], DEV dvVC)
 #INCLUDE 'CustomFunctions'
 /******************************************************************************
 	Solo Control module for Cisco SX Units
@@ -10,9 +10,30 @@ MODULE_NAME='mCiscoSX'(DEV vdvControl, DEV vdvCalls[], DEV tp[], DEV dvVC)
 	Module Structures
 ******************************************************************************/
 DEFINE_CONSTANT
-INTEGER MAX_CALLS	  = 5
-INTEGER MAX_PRESETS = 15
-INTEGER MAX_CAMERAS = 7
+INTEGER MAX_CALLS	     =  5
+INTEGER MAX_PRESETS    = 15
+INTEGER MAX_CAMERAS    =  7
+INTEGER MAX_PERIPHERAL = 10
+
+DEFINE_TYPE STRUCTURE uPeripheral{
+	INTEGER INDEX		
+	CHAR    ID[30]
+	CHAR    SoftwareInfo[30]
+	CHAR    Hardwareinfo[30]
+	CHAR    LastSeen[30]
+	CHAR    Name[30]
+	CHAR    NetworkAddress[30]
+	CHAR    SerialNumber[30]
+	CHAR    Type[30]
+	INTEGER StatusOnline
+}
+
+DEFINE_TYPE STRUCTURE uPeripherals{
+	// Peripherals List
+	INTEGER     LoadingOnline
+	INTEGER     LoadingOffline
+	uPeripheral Device[MAX_PERIPHERAL]
+}
 
 DEFINE_TYPE STRUCTURE uCall{
 	INTEGER 	ID
@@ -148,7 +169,8 @@ DEFINE_TYPE STRUCTURE uSX{
 	// Directory
 	uDir		DIRECTORY
 	// Touch10
-	uExtSource ExtSources[8]
+	uExtSource   ExtSources[8]
+	uPeripherals PERIPHERALS
 }
 
 
@@ -489,10 +511,10 @@ DEFINE_FUNCTION fnDebug(INTEGER pTYPE,CHAR Msg[], CHAR MsgData[]){
 				msg_ascii = "msg_ascii,fnPadLeadingChars(ITOHEX(MsgData[x]),'0',2),','"
 			}
 			msg_ascii = fnStripCharsRight(msg_ascii,1)
-			SEND_STRING 0:0:0, "ITOA(vdvControl.Number),':',fnPadLeadingChars(Msg,' ',12), ' |', msg_ascii"
+			SEND_STRING 0:0:0, "ITOA(vdvControl[1].Number),':',fnPadLeadingChars(Msg,' ',12), ' |', msg_ascii"
 		}
 		ELSE{
-			SEND_STRING 0:0:0, "ITOA(vdvControl.Number),':',fnPadLeadingChars(Msg,' ',12), ' |', MsgData"
+			SEND_STRING 0:0:0, "ITOA(vdvControl[1].Number),':',fnPadLeadingChars(Msg,' ',12), ' |', MsgData"
 		}
 	}
 }
@@ -546,9 +568,10 @@ DEFINE_FUNCTION fnInitData(){
 	fnQueueTx('xFeedback register','/Status/Conference')
 	fnQueueTx('xFeedback register','/Status/Network')
 	fnQueueTx('xFeedback register','/Status/Standby')
+	fnQueueTx('xFeedback register','/Status/Peripherals')
 
 	fnQueueTx('xConfiguration','Peripherals Profile Touchpanels: 0')
-
+	
 	fnQueueTx('xStatus','Audio')
 	fnQueueTx('xStatus','Call')
 	fnQueueTx('xStatus','Video Input')
@@ -557,6 +580,7 @@ DEFINE_FUNCTION fnInitData(){
 	fnQueueTx('xStatus','Network')
 	fnQueueTx('xStatus','Standby')
 	fnQueueTx('xStatus','SystemUnit')
+	
 
 	fnQueueTx('xCommand UserInterface Presentation ExternalSource','RemoveAll')
 	// Init GUI bits if required
@@ -574,6 +598,10 @@ DEFINE_FUNCTION fnInitData(){
 		}
 		fnSetExtSourceSignals(0)
 	}
+	
+	// Query and process connected peripherals
+	fnClearPeripherals()
+	fnQueueTx('xCommand peripherals list','Connected: True')
 
 	fnInitPoll()
 }
@@ -603,7 +631,7 @@ DEFINE_FUNCTION fnReboot(){
 	TIMELINE_CREATE(TLID_REBOOT,TLT_REBOOT,LENGTH_ARRAY(TLT_REBOOT),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 }
 DEFINE_EVENT TIMELINE_EVENT[TLID_REBOOT]{
-	SEND_STRING vdvControl, 'ACTION-REBOOTING'
+	SEND_STRING vdvControl[1], 'ACTION-REBOOTING'
 	fnQueueTx('xCommand Boot','')
 }
 /******************************************************************************
@@ -640,6 +668,17 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 			mySX.PRESETS_LOADING = FALSE
 			fnInitPanel(0)
 		}
+		// Peripherals
+		IF(mySX.Peripherals.LoadingOnline){
+			mySX.Peripherals.LoadingOnline = FALSE
+			mySX.Peripherals.LoadingOffline = TRUE
+			fnQueueTx('xCommand peripherals list','Connected: False')
+		}
+		// 
+		ELSE IF(mySX.Peripherals.LoadingOffline){
+			mySX.Peripherals.LoadingOffline = FALSE
+			fnSendPeripheralsData()
+		}
 		RETURN TRUE
 	}
 	ELSE IF(pDATA == 'OK' || pDATA == 'ERROR'){
@@ -660,6 +699,20 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 					}
 					CASE 'SelfviewSetResult':{
 
+					}
+					CASE 'PeripheralsListResult':{
+						// Set status for incoming list
+						IF(FIND_STRING(pDATA,'(status=OK)',1)){
+							IF(!mySX.Peripherals.LoadingOnline && !mySX.Peripherals.LoadingOffline){
+								mySX.Peripherals.LoadingOnline = TRUE
+							}
+						}
+						ELSE{
+							STACK_VAR INTEGER ID
+							STACK_VAR INTEGER x
+							REMOVE_STRING(pDATA,' ',1)					// Remove Device
+							fnStorePeripheralField(pDATA)
+						}
 					}
 					CASE 'PresetListResult':{
 						mySX.PRESETS_LOADING = TRUE
@@ -821,7 +874,7 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 										ELSE{
 											pEVENT = "pEVENT,pDATA,',NONE'"
 										}
-										SEND_STRING vdvControl,pEVENT
+										SEND_STRING vdvControl[1],pEVENT
 									}
 								}
 							}
@@ -831,7 +884,7 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 										SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
 											CASE 'Selected':{
 												REMOVE_STRING(pDATA,'SourceIdentifier: "',1)
-												SEND_STRING vdvControl,"'INTERFACE_API-EXTSOURCE,',fnStripCharsRight(pDATA,1)"
+												SEND_STRING vdvControl[1],"'INTERFACE_API-EXTSOURCE,',fnStripCharsRight(pDATA,1)"
 											}
 										}
 									}
@@ -920,7 +973,7 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 											fnQueueTx('xCommand Camera',"'Ramp CameraId:',ITOA(mySX.NEAR_CAMERA),' Tilt:Stop'")
 											fnQueueTx('xCommand Camera',"'Ramp CameraId:',ITOA(mySX.NEAR_CAMERA),' Zoom:Stop'")
 											mySX.NEAR_CAMERA = ATOI(pDATA)
-											SEND_STRING vdvControl,"'CAMERA-CONTROL,',ITOA(mySX.NEAR_CAMERA)"
+											SEND_STRING vdvControl[1],"'CAMERA-CONTROL,',ITOA(mySX.NEAR_CAMERA)"
 										}
 									}
 								}
@@ -1053,48 +1106,55 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 										fnQueueTx('xCommand','Camera Preset List')
 									}
 								}
-								SEND_STRING vdvControl, "'PROPERTY-META,SOFTWARE,',mySX.META_SW_VER"
+								SEND_STRING vdvControl[1], "'PROPERTY-META,SOFTWARE,',mySX.META_SW_VER"
 							}
 							CASE 'ProductPlatform':{
 								mySX.META_MODEL   = fnRemoveQuotes( fnRemoveWhiteSpace( pDATA ) )
-								SEND_STRING vdvControl, "'PROPERTY-META,TYPE,VideoConferencer'"
-								SEND_STRING vdvControl, "'PROPERTY-META,MAKE,Cisco'"
-								SEND_STRING vdvControl, "'PROPERTY-META,MODEL,',mySX.META_MODEL"
+								SEND_STRING vdvControl[1], "'PROPERTY-META,TYPE,VideoConferencer'"
+								SEND_STRING vdvControl[1], "'PROPERTY-META,MAKE,Cisco'"
+								SEND_STRING vdvControl[1], "'PROPERTY-META,MODEL,',mySX.META_MODEL"
 							}
 							CASE 'Hardware Module SerialNumber':{
 								mySX.META_SN   = fnRemoveQuotes( fnRemoveWhiteSpace( pDATA ) )
-								SEND_STRING vdvControl, "'PROPERTY-META,SN,',mySX.META_SN"
+								SEND_STRING vdvControl[1], "'PROPERTY-META,SN,',mySX.META_SN"
 							}
 							CASE 'Software Application':{
 								mySX.META_SW_APP = fnRemoveQuotes( fnRemoveWhiteSpace( pDATA ) )
-								SEND_STRING vdvControl, "'PROPERTY-META,APPLICATION,',mySX.META_SW_APP"
+								SEND_STRING vdvControl[1], "'PROPERTY-META,APPLICATION,',mySX.META_SW_APP"
 							}
 							CASE 'Software ReleaseDate':{
 								mySX.META_SW_RELEASE = fnRemoveQuotes( fnRemoveWhiteSpace( pDATA ) )
-								SEND_STRING vdvControl, "'PROPERTY-META,RELEASE,',mySX.META_SW_VER"
+								SEND_STRING vdvControl[1], "'PROPERTY-META,RELEASE,',mySX.META_SW_VER"
 							}
 							CASE 'ContactInfo':{
 								mySX.META_SYS_NAME = fnRemoveQuotes( fnRemoveWhiteSpace( pDATA ) )
-								SEND_STRING vdvControl, "'PROPERTY-META,DESC,',mySX.META_SYS_NAME"
+								SEND_STRING vdvControl[1], "'PROPERTY-META,DESC,',mySX.META_SYS_NAME"
 							}
 							CASE 'Hardware TemperatureThreshold':{
 								IF(mySX.SYS_MAX_TEMP != ATOI(fnRemoveQuotes( fnRemoveWhiteSpace( pDATA ) ))){
 									mySX.SYS_MAX_TEMP = ATOI(fnRemoveQuotes( fnRemoveWhiteSpace( pDATA ) ))
-									SEND_STRING vdvControl, "'PROPERTY-META,MAX_TEMP,',ITOA(mySX.SYS_MAX_TEMP)"
+									SEND_STRING vdvControl[1], "'PROPERTY-META,MAX_TEMP,',ITOA(mySX.SYS_MAX_TEMP)"
 								}
 							}
 							CASE 'Hardware Temperature':{
 								IF(mySX.SYS_TEMP != ATOF(fnRemoveQuotes( fnRemoveWhiteSpace( pDATA ) ))){
 									mySX.SYS_TEMP = ATOF(fnRemoveQuotes( fnRemoveWhiteSpace( pDATA ) ))
-									SEND_STRING vdvControl, "'PROPERTY-STATE,TEMP,',FTOA(mySX.SYS_TEMP)"
+									SEND_STRING vdvControl[1], "'PROPERTY-STATE,TEMP,',FTOA(mySX.SYS_TEMP)"
 								}
 								IF(mySX.META_SN == ''){ fnInitData() }
 							}
 							CASE 'Uptime':{
 								IF(mySX.SYS_UPTIME != ATOI(fnRemoveQuotes( fnRemoveWhiteSpace( pDATA ) ))){
 									mySX.SYS_UPTIME = ATOI(fnRemoveQuotes( fnRemoveWhiteSpace( pDATA ) ) )
-									SEND_STRING vdvControl, "'PROPERTY-STATE,UPTIME,',ITOA(mySX.SYS_UPTIME)"
+									SEND_STRING vdvControl[1], "'PROPERTY-STATE,UPTIME,',ITOA(mySX.SYS_UPTIME)"
 								}
+							}
+						}
+					}
+					CASE 'Peripherals':{
+						SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
+							CASE 'ConnectedDevice':{
+								fnStorePeripheralField(pDATA)
 							}
 						}
 					}
@@ -1161,9 +1221,9 @@ DEFINE_PROGRAM{
 			ACTIVE (TRUE):{					SEND_LEVEL vdvCalls[c],1,0		}
 		}
 	}
-	[vdvControl,236] = CALL_RINGING
-	[vdvControl,237] = CALL_DIALLING
-	[vdvControl,238] = CALL_CONNECTED
+	[vdvControl[1],236] = CALL_RINGING
+	[vdvControl[1],237] = CALL_DIALLING
+	[vdvControl[1],238] = CALL_CONNECTED
 
 }
 
@@ -1336,7 +1396,7 @@ DEFINE_FUNCTION fnRecallPreset(INTEGER pPresetID){
 /******************************************************************************
 	Control Events
 ******************************************************************************/
-DEFINE_EVENT DATA_EVENT[vdvControl]{
+DEFINE_EVENT DATA_EVENT[vdvControl[1]]{
 	ONLINE:{
 		SEND_STRING DATA.DEVICE,'RANGE-0,100'
 	}
@@ -1721,18 +1781,18 @@ DEFINE_PROGRAM{
 		FOR(c = 1; c <= LENGTH_ARRAY(vdvCalls); c++){
 			[vdvCalls[c],198] = (mySX.ACTIVE_CALLS[c].isMUTED)
 		}
-		[vdvControl,198] = (mySX.MIC_MUTE)
-		[vdvControl,199] = (mySX.VOL_MUTE)
-		SEND_LEVEL vdvControl,1,mySX.VOL
-		[vdvControl,241] = (mySX.ContentTx)
-		[vdvControl,242] = (mySX.ContentRx)
-		[vdvControl,247] = (mySX.PRESENTERTRACK.TRACKING && mySX.PRESENTERTRACK.ENABLED)
-		[vdvControl,248] = (mySX.SpeakerTracking && mySX.hasSpeakerTrack)
-		[vdvControl,249] = (mySX.hasSpeakerTrack)
-		[vdvControl,250] = (mySX.PRESENTERTRACK.ENABLED)
-		[vdvControl,251] = (TIMELINE_ACTIVE(TLID_COMMS))
-		[vdvControl,252] = (TIMELINE_ACTIVE(TLID_COMMS))
-		//[vdvControl,253] = (mySX.CONN_STATE == CONN_SECURITY)
+		[vdvControl[1],198] = (mySX.MIC_MUTE)
+		[vdvControl[1],199] = (mySX.VOL_MUTE)
+		SEND_LEVEL vdvControl[1],1,mySX.VOL
+		[vdvControl[1],241] = (mySX.ContentTx)
+		[vdvControl[1],242] = (mySX.ContentRx)
+		[vdvControl[1],247] = (mySX.PRESENTERTRACK.TRACKING && mySX.PRESENTERTRACK.ENABLED)
+		[vdvControl[1],248] = (mySX.SpeakerTracking && mySX.hasSpeakerTrack)
+		[vdvControl[1],249] = (mySX.hasSpeakerTrack)
+		[vdvControl[1],250] = (mySX.PRESENTERTRACK.ENABLED)
+		[vdvControl[1],251] = (TIMELINE_ACTIVE(TLID_COMMS))
+		[vdvControl[1],252] = (TIMELINE_ACTIVE(TLID_COMMS))
+		//[vdvControl[1],253] = (mySX.CONN_STATE == CONN_SECURITY)
 	}
 }
 
@@ -2086,10 +2146,10 @@ DEFINE_EVENT BUTTON_EVENT[tp,btnCamNearSelect]{
 }
 DEFINE_EVENT BUTTON_EVENT[tp,btnCamNearControl]{
 	PUSH:{
-		TO[vdvControl,chnNearCam[GET_LAST(btnCamNearControl)]]
+		TO[vdvControl[1],chnNearCam[GET_LAST(btnCamNearControl)]]
 	}
 }
-DEFINE_EVENT CHANNEL_EVENT[vdvControl,chnNearCam]{
+DEFINE_EVENT CHANNEL_EVENT[vdvControl[1],chnNearCam]{
 	ON:{
 		STACK_VAR CHAR _VAL[255]
 		IF(mySX.NEAR_CAMERA == 0){
@@ -2130,10 +2190,10 @@ DEFINE_EVENT BUTTON_EVENT[tp,btnCamFarCallSelect]{
 }
 DEFINE_EVENT BUTTON_EVENT[tp,btnCamFarControl]{
 	PUSH:{
-		TO[vdvControl,chnFarCam[GET_LAST(btnCamFarControl)]]
+		TO[vdvControl[1],chnFarCam[GET_LAST(btnCamFarControl)]]
 	}
 }
-DEFINE_EVENT CHANNEL_EVENT[vdvControl,chnFarCam]{
+DEFINE_EVENT CHANNEL_EVENT[vdvControl[1],chnFarCam]{
 	ON:{
 		STACK_VAR CHAR _VAL[255]
 		IF(mySX.FAR_CAMERA == 0){
@@ -2684,10 +2744,10 @@ DEFINE_PROGRAM{
 DEFINE_EVENT BUTTON_EVENT [tp,btnCustomDial]{
 	PUSH:{
 		SWITCH(GET_LAST(btnCustomDial)){
-			CASE 1:SEND_COMMAND vdvControl, "'DIAL-CUSTOM,VIDEO,H323,#CURRENT'"		// IP
-			CASE 2:SEND_COMMAND vdvControl, "'DIAL-CUSTOM,VIDEO,H320,#CURRENT'"		// ISDN FULL or AUTO
-			CASE 3:SEND_COMMAND vdvControl, "'DIAL-CUSTOM,VIDEO,H320,128,#CURRENT'"	// ISDN 2CHN or 128
-			CASE 4:SEND_COMMAND vdvControl, "'DIAL-CUSTOM,AUDIO,H320,#CURRENT'"		// ISDN AUDIO ONLY
+			CASE 1:SEND_COMMAND vdvControl[1], "'DIAL-CUSTOM,VIDEO,H323,#CURRENT'"		// IP
+			CASE 2:SEND_COMMAND vdvControl[1], "'DIAL-CUSTOM,VIDEO,H320,#CURRENT'"		// ISDN FULL or AUTO
+			CASE 3:SEND_COMMAND vdvControl[1], "'DIAL-CUSTOM,VIDEO,H320,128,#CURRENT'"	// ISDN 2CHN or 128
+			CASE 4:SEND_COMMAND vdvControl[1], "'DIAL-CUSTOM,AUDIO,H320,#CURRENT'"		// ISDN AUDIO ONLY
 		}
 	}
 }
@@ -2696,7 +2756,7 @@ DEFINE_EVENT BUTTON_EVENT [tp,btnCustomDial]{
 ******************************************************************************/
 DEFINE_CONSTANT
 INTEGER chnExtSourceSignal[] = {11,12,13,14,15,16,17,18,19,20}
-DEFINE_EVENT CHANNEL_EVENT[vdvControl,chnExtSourceSignal]{
+DEFINE_EVENT CHANNEL_EVENT[vdvControl[1],chnExtSourceSignal]{
 	ON:{
 		mySX.ExtSources[GET_LAST(chnExtSourceSignal)].SIGNAL = TRUE
 		fnSetExtSourceSignals(GET_LAST(chnExtSourceSignal))
@@ -2727,6 +2787,120 @@ DEFINE_FUNCTION fnSetExtSourceSignals(INTEGER src){
 			CASE FALSE: pParams = "pParams,' State: Hidden'"
 		}
 		fnQueueTx('xCommand UserInterface Presentation ExternalSource State',pParams)
+	}
+}
+/******************************************************************************
+	Peripheral Monitoring
+******************************************************************************/
+DEFINE_FUNCTION fnClearPeripherals(){
+	STACK_VAR INTEGER p
+	STACK_VAR uPeripheral blankPeripheral
+	fnDebug(DEBUG_DEVELOP,'fnClearPeripherals','Called')
+	FOR(p = 1; p <= MAX_PERIPHERAL; p++){
+		mySX.Peripherals.Device[p] = blankPeripheral
+	}
+	fnDebug(DEBUG_DEVELOP,'fnClearPeripherals','Ended')
+}
+
+DEFINE_FUNCTION INTEGER fnGetPeripheralSlot(INTEGER pINDEX){
+	STACK_VAR INTEGER p
+	fnDebug(DEBUG_DEVELOP,'fnGetPeripheralSlot',"'pINDEX=',ITOA(pINDEX)")
+	// Get slot if this already exists
+	FOR(p = 1; p <= MAX_PERIPHERAL; p++){
+		// This is the slot - return
+		IF(mySX.Peripherals.Device[p].INDEX == pINDEX){
+			RETURN p
+		}
+		// This slot is empty - allocate and return
+		IF(mySX.Peripherals.Device[p].INDEX == 0){
+			mySX.Peripherals.Device[p].INDEX = pINDEX
+			RETURN p
+		}
+		// Check if this slot should be before the next one
+		IF(p < MAX_PERIPHERAL && mySX.Peripherals.Device[p].INDEX > pINDEX){
+			STACK_VAR INTEGER y
+			STACK_VAR uPeripheral blankPeripheral
+			// Move all up by one (last will be knocked off, so list will be accurate but missing more than MAX_PERIPHERALS)
+			FOR(y = MAX_PERIPHERAL; y > p; y--){
+				mySX.Peripherals.Device[y] = mySX.Peripherals.Device[y-1]
+			}
+			// Add this one in, wipe existing data as it has moved up
+			mySX.Peripherals.Device[p] = blankPeripheral
+			mySX.Peripherals.Device[p].INDEX = pINDEX
+			RETURN p
+		}
+	}
+	// If here then will return 0
+	fnDebug(DEBUG_DEVELOP,'fnGetPeripheralSlot','Ended')
+}
+
+DEFINE_FUNCTION INTEGER fnStorePeripheralField(CHAR pDATA[]){
+	STACK_VAR INTEGER p
+	STACK_VAR INTEGER pIndex
+	fnDebug(DEBUG_DEVELOP,'fnStorePeripheralField',"'pDATA=',pDATA")
+	
+	// Get this Index
+	pINDEX = ATOI(REMOVE_STRING(pDATA,' ',1))
+	p = fnGetPeripheralSlot(pIndex)
+	
+	// Set Status if this is a loading process
+	IF(mySX.Peripherals.LoadingOnline){
+		mySX.Peripherals.Device[p].StatusOnline = TRUE
+	}
+	
+	// Set Status if this is a loading process
+	IF(mySX.Peripherals.LoadingOffline){
+		mySX.Peripherals.Device[p].StatusOnline = FALSE
+	}
+	
+	IF(p){
+		// Store Field
+		SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),2)){
+			CASE 'HardwareInfo':   mySX.Peripherals.Device[p].Hardwareinfo = fnRemoveQuotes(pDATA)
+			CASE 'ID':             mySX.Peripherals.Device[p].ID = fnRemoveQuotes(pDATA)
+			CASE 'Name':           mySX.Peripherals.Device[p].Name = fnRemoveQuotes(pDATA)
+			CASE 'NetworkAddress': mySX.Peripherals.Device[p].NetworkAddress = fnRemoveQuotes(pDATA)
+			CASE 'SerialNumber':   mySX.Peripherals.Device[p].SerialNumber = fnRemoveQuotes(pDATA)
+			CASE 'SoftwareInfo':   mySX.Peripherals.Device[p].SoftwareInfo = fnRemoveQuotes(pDATA)
+			CASE 'Type':           mySX.Peripherals.Device[p].Type = fnRemoveQuotes(pDATA)
+			CASE 'LastSeen':       mySX.Peripherals.Device[p].LastSeen = fnRemoveQuotes(pDATA)
+			CASE 'Status':{
+				mySX.Peripherals.Device[p].StatusOnline = pDATA == 'Connected'
+			}
+		}
+	}
+	fnDebug(DEBUG_DEVELOP,'fnStorePeripheralField','Ended')
+}
+
+DEFINE_FUNCTION fnSendPeripheralsData(){
+	STACK_VAR INTEGER d
+	FOR(d = 1; d < LENGTH_ARRAY(vdvControl); d++){
+		IF(LENGTH_ARRAY(mySX.PERIPHERALS.Device[d].Name)){
+			SEND_STRING vdvControl[d+1],"'PROPERTY-META,NAME,',mySX.PERIPHERALS.Device[d].Name"
+		}
+		IF(LENGTH_ARRAY(mySX.PERIPHERALS.Device[d].Hardwareinfo)){
+			SEND_STRING vdvControl[d+1],"'PROPERTY-META,MAKE,Cisco'"
+			SEND_STRING vdvControl[d+1],"'PROPERTY-META,MODEL,',mySX.PERIPHERALS.Device[d].Hardwareinfo"
+		}
+		IF(LENGTH_ARRAY(mySX.PERIPHERALS.Device[d].SoftwareInfo)){
+			SEND_STRING vdvControl[d+1],"'PROPERTY-META,SWVERSION,',mySX.PERIPHERALS.Device[d].SoftwareInfo"
+		}
+		IF(LENGTH_ARRAY(mySX.PERIPHERALS.Device[d].SerialNumber)){
+			SEND_STRING vdvControl[d+1],"'PROPERTY-META,SERIALNO,',mySX.PERIPHERALS.Device[d].SerialNumber"
+		}
+		IF(LENGTH_ARRAY(mySX.PERIPHERALS.Device[d].ID)){
+			SEND_STRING vdvControl[d+1],"'PROPERTY-META,DESC,',mySX.PERIPHERALS.Device[d].ID"
+		}
+		IF(LENGTH_ARRAY(mySX.PERIPHERALS.Device[d].NetworkAddress)){
+			SEND_STRING vdvControl[d+1],"'PROPERTY-IP,',mySX.PERIPHERALS.Device[d].NetworkAddress"
+		}
+	}
+}
+DEFINE_PROGRAM{
+	STACK_VAR INTEGER d
+	FOR(d = 1; d < LENGTH_ARRAY(vdvControl); d++){
+		[vdvControl[d+1],251] = (mySX.PERIPHERALS.Device[d].StatusOnline)
+		[vdvControl[d+1],252] = (mySX.PERIPHERALS.Device[d].StatusOnline)
 	}
 }
 /******************************************************************************
