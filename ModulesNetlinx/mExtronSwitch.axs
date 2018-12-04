@@ -198,6 +198,7 @@ DEFINE_FUNCTION fnPollFull(){
 DEFINE_FUNCTION fnPollShort(){
 	IF(!mySwitch.NOPOLL){
 		SWITCH(mySwitch.MODEL_ID){
+			CASE MODEL_IN1604:
 			CASE MODEL_IN1606:
 			CASE MODEL_IN1608:
 			CASE MODEL_MPS601:
@@ -387,12 +388,20 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 				}
 				ACTIVE(mySwitch.LAST_SENT == "$1B,'0LS',$0D"):{
 					STACK_VAR INTEGER x
-					WHILE(FIND_STRING(DATA.TEXT,'*',1)){
-						x++
-						mySwitch.SIGNAL[x] = ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'*',1),1))
+					IF(mySwitch.MODEL_ID == MODEL_IN1604){
+						mySwitch.SIGNAL[1] = ATOI("DATA.TEXT[1]")
+						mySwitch.SIGNAL[2] = ATOI("DATA.TEXT[2]")
+						mySwitch.SIGNAL[3] = ATOI("DATA.TEXT[3]")
+						mySwitch.SIGNAL[4] = ATOI("DATA.TEXT[4]")
 					}
-					x++
-					mySwitch.SIGNAL[x] = ATOI(fnStripCharsRight(DATA.TEXT,2))
+					ELSE{
+						WHILE(FIND_STRING(DATA.TEXT,'*',1)){
+							x++
+							mySwitch.SIGNAL[x] = ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'*',1),1))
+						}
+						x++
+						mySwitch.SIGNAL[x] = ATOI(fnStripCharsRight(DATA.TEXT,2))
+					}
 				}
 				ACTIVE(mySwitch.LAST_SENT == "$1B,'LS',$0D"):{
 					STACK_VAR INTEGER x
