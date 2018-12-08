@@ -395,6 +395,10 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 						mySwitch.SIGNAL[4] = ATOI("DATA.TEXT[4]")
 					}
 					ELSE{
+						// Strip off possible leading
+						IF(LEFT_STRING(DATA.TEXT,5) == 'In00 '){
+							GET_BUFFER_STRING(DATA.TEXT,5)
+						}
 						WHILE(FIND_STRING(DATA.TEXT,'*',1)){
 							x++
 							mySwitch.SIGNAL[x] = ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'*',1),1))
