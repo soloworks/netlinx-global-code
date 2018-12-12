@@ -47,6 +47,7 @@ DEFINE_TYPE STRUCTURE uCall{
 }
 
 DEFINE_TYPE STRUCTURE uDirEntry{
+	INTEGER  INDEX		// API Index for reference as we pull out records
 	INTEGER 	FOLDER
 	CHAR 		RefID[20]
 	CHAR 		NAME[75]
@@ -97,7 +98,6 @@ DEFINE_TYPE STRUCTURE uDir{
 	INTEGER	PAGESIZE				// Interface Page Size
 	INTEGER	SELECTED_RECORD
 	INTEGER	SELECTED_METHOD
-	INTEGER	CURRENT_RECORD		// Work out current record index - Folders and Contacts in same list don't list properly
 	INTEGER	RECORDCOUNT
 	uDirEntry	RECORDS[20]			// Directory Size
 	uDirEntry	TRAIL[8]				// Breadcrumb Trail
@@ -378,8 +378,9 @@ INTEGER DIR_STATE_PEND	= 1
 INTEGER DIR_STATE_LOAD	= 2
 INTEGER DIR_STATE_SHOW	= 3
 
-INTEGER API_TC	= 1
-INTEGER API_CE	= 2
+INTEGER API_TC7	= 1
+INTEGER API_CE8	= 2
+INTEGER API_CE9	= 3
 
 INTEGER DEBUG_ERROR		= 0	// Only Errors Reported
 INTEGER DEBUG_BASIC		= 1	// General Debugging
@@ -658,7 +659,13 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 		// Directory End
 		IF(mySX.DIRECTORY.STATE == DIR_STATE_LOAD){
 			IF(mySX.DIRECTORY.IGNORE_TOTALROWS){
-				IF(mySX.DIRECTORY.CURRENT_RECORD < mySX.DIRECTORY.PAGESIZE){
+				STACK_VAR INTEGER x
+				FOR(x = 1; x <= mySX.DIRECTORY.PAGESIZE; x++){
+					IF(mySX.DIRECTORY.RECORDS[x].INDEX == 0){
+						BREAK
+					}
+				}
+				IF(x < mySX.DIRECTORY.PAGESIZE){
 					mySX.DIRECTORY.NO_MORE_ENTRIES = TRUE
 				}
 			}
@@ -766,30 +773,29 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 										}
 									}
 									mySX.DIRECTORY.NO_MORE_ENTRIES = FALSE
-									mySX.DIRECTORY.CURRENT_RECORD = 0
 								}
 								CASE 'Folder':{
 									STACK_VAR INTEGER x
-									mySX.DIRECTORY.CURRENT_RECORD = ATOI(REMOVE_STRING(pDATA,' ',1))
+									x = fnGetDirSlot(TRUE,ATOI(REMOVE_STRING(pDATA,' ',1)))
 									SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
 										CASE 'Name:':{
-											mySX.DIRECTORY.RECORDS[mySX.DIRECTORY.CURRENT_RECORD].NAME  = fnRemoveQuotes(fnRemoveWhiteSpace(pDATA))
+											mySX.DIRECTORY.RECORDS[x].NAME  = fnRemoveQuotes(fnRemoveWhiteSpace(pDATA))
 										}
 										CASE 'FolderId:':{
-											mySX.DIRECTORY.RECORDS[mySX.DIRECTORY.CURRENT_RECORD].FOLDER = TRUE
-											mySX.DIRECTORY.RECORDS[mySX.DIRECTORY.CURRENT_RECORD].RefID  = fnRemoveQuotes(fnRemoveWhiteSpace(pDATA))
+											mySX.DIRECTORY.RECORDS[x].FOLDER = TRUE
+											mySX.DIRECTORY.RECORDS[x].RefID  = fnRemoveQuotes(fnRemoveWhiteSpace(pDATA))
 										}
 									}
 								}
 								CASE 'Contact':{
 									STACK_VAR INTEGER x
-									mySX.DIRECTORY.CURRENT_RECORD = ATOI(REMOVE_STRING(pDATA,' ',1))
+									x = fnGetDirSlot(FALSE,ATOI(REMOVE_STRING(pDATA,' ',1)))
 									SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
 										CASE 'Name:':{
-											mySX.DIRECTORY.RECORDS[mySX.DIRECTORY.CURRENT_RECORD].NAME  = fnRemoveQuotes(fnRemoveWhiteSpace(pDATA))
+											mySX.DIRECTORY.RECORDS[x].NAME  = fnRemoveQuotes(fnRemoveWhiteSpace(pDATA))
 										}
 										CASE 'ContactId:':{
-											mySX.DIRECTORY.RECORDS[mySX.DIRECTORY.CURRENT_RECORD].RefID = fnRemoveQuotes(fnRemoveWhiteSpace(pDATA))
+											mySX.DIRECTORY.RECORDS[x].RefID = fnRemoveQuotes(fnRemoveWhiteSpace(pDATA))
 										}
 										CASE 'ContactMethod':{
 											STACK_VAR INTEGER y
@@ -797,10 +803,10 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 											SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
 												CASE 'Number:':{
 													pDATA = fnRemoveQuotes(fnRemoveWhiteSpace(pDATA))
-													mySX.DIRECTORY.RECORDS[mySX.DIRECTORY.CURRENT_RECORD].METHOD_NUMBER[y] = pDATA
+													mySX.DIRECTORY.RECORDS[x].METHOD_NUMBER[y] = pDATA
 												}
 												CASE 'Protocol:':{
-													mySX.DIRECTORY.RECORDS[mySX.DIRECTORY.CURRENT_RECORD].METHOD_PROTOCOL[y] = pDATA
+													mySX.DIRECTORY.RECORDS[x].METHOD_PROTOCOL[y] = pDATA
 												}
 											}
 										}
@@ -835,11 +841,12 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 						// Variable to hold this call ID once found
 						STACK_VAR INTEGER pCallID
 						SWITCH(mySX.API_VER){
-							CASE API_TC:{
+							CASE API_TC7:{
 								REMOVE_STRING(pDATA,'CallId: ',1)
 								pCallID = ATOI(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1))
 							}
-							CASE API_CE:{
+							CASE API_CE8:
+							CASE API_CE9:{
 								IF(FIND_STRING(pDATA,'CallId: ',1)){
 									REMOVE_STRING(pDATA,'CallId: ',1)
 									pCallID = ATOI(pDATA)
@@ -1006,8 +1013,11 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 										mySX.SpeakerTracking = (pDATA == 'Active')
 										IF(!mySX.SpeakerTracking){
 											SWITCH(mySX.API_VER){
-												CASE API_TC:	fnQueueTx('xCommand Preset',"'Activate PresetId: ', ITOA(1)")
-												CASE API_CE:	fnQueueTx('xCommand Camera Preset',"'Activate PresetId: ', ITOA(1)")
+												CASE API_TC7:	fnQueueTx('xCommand Preset',"'Activate PresetId: ', ITOA(1)")
+												CASE API_CE8:
+												CASE API_CE9:{
+													fnQueueTx('xCommand Camera Preset',"'Activate PresetId: ', ITOA(1)")
+												}
 											}
 										}
 									}
@@ -1094,15 +1104,21 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 							CASE 'Software Version':{
 								mySX.META_SW_VER = fnRemoveQuotes( fnRemoveWhiteSpace( pDATA ) )
 								SWITCH(UPPER_STRING(LEFT_STRING(mySX.META_SW_VER,2))){
-									CASE 'TC':mySX.API_VER = API_TC
-									CASE 'CE':mySX.API_VER = API_CE
+									CASE 'TC':mySX.API_VER = API_TC7
+									CASE 'CE':{
+										SWITCH(UPPER_STRING(MID_STRING(mySX.META_SW_VER,3,1))){
+											CASE '8':mySX.API_VER = API_CE8
+											CASE '9':mySX.API_VER = API_CE9
+										}
+									}
 								}
 								SWITCH(mySX.API_VER){
-									CASE API_TC:{
+									CASE API_TC7:{
 										fnQueueTx('xStatus','Camera')
 										fnQueueTx('xStatus','Preset')
 									}
-									CASE API_CE:{
+									CASE API_CE8:
+									CASE API_CE9:{
 										fnQueueTx('xStatus','Cameras')
 										fnQueueTx('xCommand','Camera Preset List')
 									}
@@ -1373,22 +1389,28 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_CALL_EVENT]{
 DEFINE_FUNCTION fnRecallPreset(INTEGER pPresetID){
 	// Switch the Camera
 	SWITCH(mySX.API_VER){
-		CASE API_CE: fnQueueTx('xCommand',"'Camera Preset',' Activate PresetId: ', ITOA(pPresetID)")
-		CASE API_TC: fnQueueTx('xCommand',"'Preset Activate PresetId: ', ITOA(pPresetID)")
+		CASE API_TC7: fnQueueTx('xCommand',"'Preset Activate PresetId: ', ITOA(pPresetID)")
+		CASE API_CE8:
+		CASE API_CE9:{
+			fnQueueTx('xCommand',"'Camera Preset',' Activate PresetId: ', ITOA(pPresetID)")
+		}
 	}
 	// Set Video (Cisco removed this from presets around 8.2.2 and it's caused many issues)
-	IF(mySX.API_VER == API_CE){
-		STACK_VAR INTEGER p
-		FOR(p = 1; p <= MAX_PRESETS; p++){
-			IF(mySX.PRESET[p].PresetID == pPresetID && mySX.PRESET[p].CameraID){
-				IF(mySX.CAMERA[mySX.PRESET[p].CameraID].CONNECTOR_OVERRIDE){
-					fnQueueTx("'xCommand Video Input'","' SetMainVideoSource ConnectorId: ', ITOA(mySX.CAMERA[mySX.PRESET[p].CameraID].CONNECTOR_OVERRIDE)")
-				}
-				ELSE IF(mySX.CAMERA[mySX.PRESET[p].CameraID].Connector){
-					fnQueueTx("'xCommand Video Input'","' SetMainVideoSource ConnectorId: ', ITOA(mySX.CAMERA[mySX.PRESET[p].CameraID].Connector)")
-				}
-				ELSE{
-					SEND_STRING 0,'SX ERROR - CONNECTORID NOT SET'
+	SWITCH(mySX.API_VER){
+		CASE API_CE8:
+		CASE API_CE9:{
+			STACK_VAR INTEGER p
+			FOR(p = 1; p <= MAX_PRESETS; p++){
+				IF(mySX.PRESET[p].PresetID == pPresetID && mySX.PRESET[p].CameraID){
+					IF(mySX.CAMERA[mySX.PRESET[p].CameraID].CONNECTOR_OVERRIDE){
+						fnQueueTx("'xCommand Video Input'","' SetMainVideoSource ConnectorId: ', ITOA(mySX.CAMERA[mySX.PRESET[p].CameraID].CONNECTOR_OVERRIDE)")
+					}
+					ELSE IF(mySX.CAMERA[mySX.PRESET[p].CameraID].Connector){
+						fnQueueTx("'xCommand Video Input'","' SetMainVideoSource ConnectorId: ', ITOA(mySX.CAMERA[mySX.PRESET[p].CameraID].Connector)")
+					}
+					ELSE{
+						SEND_STRING 0,'SX ERROR - CONNECTORID NOT SET'
+					}
 				}
 			}
 		}
@@ -1452,8 +1474,11 @@ DEFINE_EVENT DATA_EVENT[vdvControl[1]]{
 						}
 						CASE 'HANGUP':{
 							SWITCH(mySX.API_VER){
-								CASE API_TC:fnQueueTx('xCommand Call','DisconnectAll')
-								CASE API_CE:fnQueueTx('xCommand Call','Disconnect')
+								CASE API_TC7:fnQueueTx('xCommand Call','DisconnectAll')
+								CASE API_CE8:
+								CASE API_CE9:{
+									fnQueueTx('xCommand Call','Disconnect')
+								}
 							}
 						}
 						CASE 'REBOOT':{ 	 	fnReboot() }
@@ -1564,8 +1589,11 @@ DEFINE_EVENT DATA_EVENT[vdvControl[1]]{
 				CASE 'PRESET':{
 					STACK_VAR CHAR PRESET_STRING[30]
 					SWITCH(mySX.API_VER){
-						CASE API_CE:PRESET_STRING = 'Camera Preset'
-						CASE API_TC:PRESET_STRING = 'Preset'
+						CASE API_TC7:PRESET_STRING = 'Preset'
+						CASE API_CE8:
+						CASE API_CE9:{
+							PRESET_STRING = 'Camera Preset'
+						}
 					}
 					SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
 						CASE 'RECALL':{
@@ -1575,8 +1603,11 @@ DEFINE_EVENT DATA_EVENT[vdvControl[1]]{
 								}
 								CASE 'FAR':{
 									SWITCH(mySX.API_VER){
-										CASE API_CE: fnQueueTx('xCommand FarEndControl',"'Camera Preset',' Activate PresetId: ', DATA.TEXT")
-										CASE API_TC: fnQueueTx('xCommand FarEndControl',"'Preset Activate PresetId: ', DATA.TEXT")
+										CASE API_TC7: fnQueueTx('xCommand FarEndControl',"'Preset Activate PresetId: ', DATA.TEXT")
+										CASE API_CE8:
+										CASE API_CE9:{
+											fnQueueTx('xCommand FarEndControl',"'Camera Preset',' Activate PresetId: ', DATA.TEXT")
+										}
 									}
 								}
 							}
@@ -1585,12 +1616,13 @@ DEFINE_EVENT DATA_EVENT[vdvControl[1]]{
 							SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
 								CASE 'NEAR':{
 									SWITCH(mySX.API_VER){
-										CASE API_CE:{
+										CASE API_CE8:
+										CASE API_CE9:{
 											// Not finished, and probably never used
 											fnQueueTx('xCommand','Preset Store')
 											fnQueueTx('xCommand','Camera Preset List')
 										}
-										CASE API_TC:{
+										CASE API_TC7:{
 											fnQueueTx('xCommand', "'Preset Store PresetId: ', fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1),' Type:All Description:"',DATA.TEXT,'"'")
 											fnQueueTx('xStatus','Preset')
 										}
@@ -1637,8 +1669,9 @@ DEFINE_EVENT DATA_EVENT[vdvControl[1]]{
 				}
 				CASE 'DTMF':{
 					SWITCH(mySX.API_VER){
-						CASE API_TC:fnQueueTx('xCommand DTMFSend',"'DTMFString:',DATA.TEXT")
-						CASE API_CE:fnQueueTx('xCommand Call DTMFSend',"'DTMFString:',DATA.TEXT")
+						CASE API_TC7:fnQueueTx('xCommand DTMFSend',"'DTMFString:',DATA.TEXT")
+						CASE API_CE8:
+						CASE API_CE9:fnQueueTx('xCommand Call DTMFSend',"'DTMFString:',DATA.TEXT")
 					}
 				}
 				CASE 'SELFVIEW':{
@@ -1936,8 +1969,9 @@ DEFINE_EVENT BUTTON_EVENT[tp,btnDTMF]{
 			DEFAULT:cButtonCmd = ITOA(GET_LAST(btnDTMF) - 1);
 		}
 		SWITCH(mySX.API_VER){
-			CASE API_TC:fnQueueTx('xCommand DTMFSend',"'DTMFString:',cButtonCmd")
-			CASE API_CE:fnQueueTx('xCommand Call DTMFSend',"'DTMFString:',cButtonCmd")
+			CASE API_TC7:fnQueueTx('xCommand DTMFSend',"'DTMFString:',cButtonCmd")
+			CASE API_CE8:
+			CASE API_CE9:fnQueueTx('xCommand Call DTMFSend',"'DTMFString:',cButtonCmd")
 		}
 	}
 }
@@ -2026,18 +2060,16 @@ DEFINE_EVENT BUTTON_EVENT[tp,btnPresets]{
 	}
 	HOLD[75]:{
 		SWITCH(mySX.API_VER){
-			CASE API_TC:	fnQueueTx('xCommand Preset',"'Store PresetId: ', ITOA(GET_LAST(btnPresets)),' Type:All Description:"Preset ',ITOA(GET_LAST(btnPresets)),'"'")
-			CASE API_CE:{
-				fnQueueTx('xCommand Camera Preset',"'Store CameraId: ',ITOA(mySX.NEAR_CAMERA),' PresetID: ', ITOA(GET_LAST(btnPresets))")
-			}
+			CASE API_TC7:	fnQueueTx('xCommand Preset',"'Store PresetId: ', ITOA(GET_LAST(btnPresets)),' Type:All Description:"Preset ',ITOA(GET_LAST(btnPresets)),'"'")
+			CASE API_CE8:
+			CASE API_CE9:fnQueueTx('xCommand Camera Preset',"'Store CameraId: ',ITOA(mySX.NEAR_CAMERA),' PresetID: ', ITOA(GET_LAST(btnPresets))")
 		}
 	}
 	RELEASE:{
 		SWITCH(mySX.API_VER){
-			CASE API_TC:	fnQueueTx('xCommand Preset',"'Activate PresetId: ', ITOA(GET_LAST(btnPresets))")
-			CASE API_CE:{
-				fnQueueTx('xCommand Camera Preset',"'Activate PresetId: ', ITOA(GET_LAST(btnPresets))")
-			}
+			CASE API_TC7:	fnQueueTx('xCommand Preset',"'Activate PresetId: ', ITOA(GET_LAST(btnPresets))")
+			CASE API_CE8:
+			CASE API_CE9:	fnQueueTx('xCommand Camera Preset',"'Activate PresetId: ', ITOA(GET_LAST(btnPresets))")
 		}
 	}
 }
@@ -2048,8 +2080,9 @@ DEFINE_EVENT BUTTON_EVENT[tp,btnHangup]{
 		SWITCH(GET_LAST(btnHangup)){
 			CASE 1:{
 				SWITCH(mySX.API_VER){
-					CASE API_TC:fnQueueTx('xCommand Call','DisconnectAll')
-					CASE API_CE:fnQueueTx('xCommand Call','Disconnect')
+					CASE API_TC7:fnQueueTx('xCommand Call','DisconnectAll')
+					CASE API_CE8:
+					CASE API_CE9:fnQueueTx('xCommand Call','Disconnect')
 				}
 			}
 			DEFAULT:{
@@ -2112,14 +2145,15 @@ DEFINE_FUNCTION fnSetupPresetButtons(INTEGER pPanel){
 
 		FOR(b = 1; b <= LENGTH_ARRAY(btnCamNearPreset); b++){
 			SWITCH(mySX.API_VER){
-				CASE API_TC:{	// Flag if a preset is found
+				CASE API_TC7:{	// Flag if a preset is found
 					IF(mySX.PRESET[b].DEFINED){
 						y = TRUE
 						SEND_COMMAND tp[pPanel],"'^SHO-',ITOA(btnCamNearPreset[b]),',1'"
 						SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(btnCamNearPreset[b]),',0,',mySX.PRESET[b].NAME"
 					}
 				}
-				CASE API_CE:{
+				CASE API_CE8:
+				CASE API_CE9:{
 					STACK_VAR pPreset
 					FOR(pPreset = 1; pPreset <= MAX_PRESETS; pPreset++){
 						IF(b == mySX.PRESET[pPreset].PresetID){
@@ -2314,6 +2348,19 @@ DEFINE_PROGRAM{
 /******************************************************************************
 	Directory Interface
 ******************************************************************************/
+DEFINE_FUNCTION INTEGER fnGetDirSlot(INTEGER isFolder, INTEGER Index){
+	STACK_VAR INTEGER x
+	FOR(x = 1; x <= mySX.DIRECTORY.PAGESIZE; x++){
+		IF(isFolder == mySX.DIRECTORY.RECORDS[x].FOLDER && Index == mySX.DIRECTORY.RECORDS[x].INDEX){
+			RETURN x
+		}
+		ELSE IF(mySX.DIRECTORY.RECORDS[x].INDEX == 0){
+			mySX.DIRECTORY.RECORDS[x].FOLDER = isFolder
+			mySX.DIRECTORY.RECORDS[x].INDEX = Index
+			RETURN x	
+		}
+	}
+}
 DEFINE_FUNCTION fnClearDirectory(){
 	STACK_VAR INTEGER x
 	FOR(x = 1; x <= 20; x++){
@@ -2359,6 +2406,14 @@ DEFINE_FUNCTION fnLoadDirectory(){
 	// If there is a search string in play, use that
 	IF(LENGTH_ARRAY(mySX.DIRECTORY.SEARCH1)){
 		toSend = "toSend, ' SearchString:',mySX.DIRECTORY.SEARCH1"
+	}
+	// If there is a search string in play, use that
+	SWITCH(mySX.API_VER){
+		CASE API_CE9:{
+			IF(!mySX.DIRECTORY.CORPORATE){
+				toSend = "toSend, ' Recursive: False'"
+			}
+		}
 	}
 	// Send the request and lock out the system until processed
 	mySX.DIRECTORY.STATE = DIR_STATE_PEND;
