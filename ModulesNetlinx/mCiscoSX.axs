@@ -2941,11 +2941,14 @@ DEFINE_FUNCTION INTEGER fnStorePeripheralField(CHAR pDATA[]){
 DEFINE_FUNCTION fnSendPeripheralsData(){
 	STACK_VAR INTEGER d
 	FOR(d = 1; d < LENGTH_ARRAY(vdvControl); d++){
+		SEND_STRING vdvControl[d+1],"'PROPERTY-META,MAKE,CiscoPeripheral'"
 		IF(LENGTH_ARRAY(mySX.PERIPHERALS.Device[d].Name)){
 			SEND_STRING vdvControl[d+1],"'PROPERTY-META,NAME,',mySX.PERIPHERALS.Device[d].Name"
 		}
+		ELSE{
+			SEND_STRING vdvControl[d+1],"'PROPERTY-META,NAME,NotDefined'"
+		}
 		IF(LENGTH_ARRAY(mySX.PERIPHERALS.Device[d].Hardwareinfo)){
-			SEND_STRING vdvControl[d+1],"'PROPERTY-META,MAKE,Cisco'"
 			SEND_STRING vdvControl[d+1],"'PROPERTY-META,MODEL,',mySX.PERIPHERALS.Device[d].Hardwareinfo"
 		}
 		IF(LENGTH_ARRAY(mySX.PERIPHERALS.Device[d].SoftwareInfo)){
