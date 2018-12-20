@@ -260,6 +260,10 @@
 <FilePathName>ModulesNetlinx\mDGXMatrix.axs</FilePathName>
 <Comments></Comments>
 </File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mDraperMotor</Identifier>
+<FilePathName>ModulesNetlinx\mDraperMotor.axs</FilePathName>
+<Comments></Comments>
+</File>
 <File CompileType="Netlinx" Type="Module"><Identifier>mDVX</Identifier>
 <FilePathName>ModulesNetlinx\mDVX.axs</FilePathName>
 <Comments></Comments>
