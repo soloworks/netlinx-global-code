@@ -358,7 +358,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 					IF(LEFT_STRING(mySwitch.META_FIRMWARE,3) == 'Ver'){
 						GET_BUFFER_STRING(mySwitch.META_FIRMWARE,3)
 					}
-					SEND_STRING vdvControl,"'PROPERTY-META,FW1,',mySwitch.META_FIRMWARE"
+					SEND_STRING vdvControl,"'PROPERTY-META,FW1,',fnRemoveNonPrintableChars(mySwitch.META_FIRMWARE)"
 				}
 				ACTIVE(mySwitch.LAST_SENT == '*Q'):{
 					mySwitch.META_FIRMWARE_FULL = fnStripCharsRight(DATA.TEXT,2)
@@ -368,16 +368,16 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 					IF(LEFT_STRING(mySwitch.META_FIRMWARE_FULL,6) == 'Ver*0 '){
 						GET_BUFFER_STRING(mySwitch.META_FIRMWARE_FULL,6)
 					}
-					SEND_STRING vdvControl,"'PROPERTY-META,FW2,',mySwitch.META_FIRMWARE_FULL"
+					SEND_STRING vdvControl,"'PROPERTY-META,FW2,',fnRemoveNonPrintableChars(mySwitch.META_FIRMWARE_FULL)"
 				}
 				ACTIVE(mySwitch.LAST_SENT == "$1B,'CH',$0D"):{
 					mySwitch.META_MAC = fnStripCharsRight(DATA.TEXT,2)
-					SEND_STRING vdvControl,"'PROPERTY-META,NET_MAC,',mySwitch.META_MAC"
+					SEND_STRING vdvControl,"'PROPERTY-META,NET_MAC,',fnRemoveNonPrintableChars(mySwitch.META_MAC)"
 				}
 				ACTIVE(mySwitch.LAST_SENT == "$1B,'CI',$0D"):{
 					IF(mySwitch.META_IP != fnStripCharsRight(DATA.TEXT,2)){
 						mySwitch.META_IP = fnStripCharsRight(DATA.TEXT,2)
-						SEND_STRING vdvControl,"'PROPERTY-STATE,NET_IP,',mySwitch.META_IP"
+						SEND_STRING vdvControl,"'PROPERTY-STATE,NET_IP,',fnRemoveNonPrintableChars(mySwitch.META_IP)"
 					}
 				}
 				ACTIVE(mySwitch.LAST_SENT == "$1B,'20STAT',$0D"):{
@@ -450,7 +450,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_COMMS]{
 	mySwitch.HAS_AUDIO 			= FALSE
 	mySwitch.HAS_NETWORK 		= FALSE
 	mySwitch.LAST_GAIN			= 0
-	mySwitch.LAST_SENT			= 0
+	mySwitch.LAST_SENT			= ''
 	mySwitch.META_FIRMWARE		= ''
 	mySwitch.META_FIRMWARE_FULL= ''
 	mySwitch.META_IP				= ''
