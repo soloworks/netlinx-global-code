@@ -12,7 +12,7 @@ LONG TLT_POLL[] = {15000}
 LONG TLT_COMMS[] = {45000}
 
 DEFINE_FUNCTION fnSendCommand(CHAR pDATA[]){
-	SEND_COMMAND dvDevice,pDATA
+	SEND_STRING dvDevice,pDATA
 	fnInitPoll()
 }
 
@@ -32,7 +32,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_POLL]{
 DEFINE_EVENT DATA_EVENT[dvDevice]{
 	ONLINE:{
 		SEND_COMMAND DATA.DEVICE, 'SET MODE DATA'
-		SEND_COMMAND DATA.DEVICE, 'SET BAUD 9600 N 8 1 485 DISABLE'
+		SEND_COMMAND DATA.DEVICE, 'SET BAUD 2400 N 8 1 485 DISABLE'
 		fnPoll()
 	}
 	STRING:{
@@ -47,8 +47,8 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 			CASE 'MOTOR':{
 				SWITCH(DATA.TEXT){
 					CASE 'UP':		fnSendCommand("$9A,$01,$01,$00,$0A,$DD,$D7")
-					CASE 'DOWN':	fnSendCommand("$9A,$01,$01,$00,$0A,$CC,$C6")
-					CASE 'STOP':	fnSendCommand("$9A,$01,$01,$00,$0A,$EE,$E4")
+					CASE 'STOP':	fnSendCommand("$9A,$01,$01,$00,$0A,$CC,$C6")
+					CASE 'DOWN':	fnSendCommand("$9A,$01,$01,$00,$0A,$EE,$E4")
 				}
 			}
 		}
