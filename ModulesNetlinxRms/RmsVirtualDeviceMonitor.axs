@@ -57,7 +57,7 @@ CHAR MONITOR_VERSION[]    = '4.3.25';
 DEFINE_VARIABLE
 CHAR MONITOR_ASSET_NAME[25]
 CHAR MONITOR_ASSET_DESC[50]
-CHAR MONITOR_ASSET_TYPE[50] = 'Unknown';
+CHAR MONITOR_ASSET_TYPE[50] = 'Virtual';
 
 INTEGER DISABLED
 
@@ -98,9 +98,9 @@ DEFINE_FUNCTION RegisterAsset(RmsAsset asset)
   asset.name = MONITOR_ASSET_NAME;
   asset.description = MONITOR_ASSET_DESC;
   asset.assetType = MONITOR_ASSET_TYPE;
-  asset.manufacturerName = '';
+  asset.manufacturerName = 'AMX';
   asset.manufacturerUrl = '';
-  asset.modelName = '';
+  asset.modelName = 'VirtualDevice';
   asset.modelUrl = '';
 	
   // register the virtual device

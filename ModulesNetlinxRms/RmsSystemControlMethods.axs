@@ -57,7 +57,7 @@ DEFINE_CONSTANT
 CHAR MONITOR_NAME[]       = 'RMS Virtual Control Methods';
 CHAR MONITOR_DEBUG_NAME[] = 'RmsVirtualControl';
 CHAR MONITOR_VERSION[]    = '4.3.25';
-CHAR MONITOR_ASSET_TYPE[] = 'Virtual Source';
+CHAR MONITOR_ASSET_TYPE[] = 'Virtual';
 
 DEFINE_TYPE STRUCTURE uSysConMethods{
 	CHAR ACTIVITY[20][25]	// Number of Activities matches Source Index (20 now)
