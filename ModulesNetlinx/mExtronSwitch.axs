@@ -146,8 +146,8 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_POLL]{
 
 DEFINE_FUNCTION fnPollFull(){
 	IF(!mySwitch.NOPOLL){
+		fnAddToQueue('N',TRUE)
 		IF(!LENGTH_ARRAY(mySwitch.META_PART_NUMBER)){
-			fnAddToQueue('N',TRUE)
 			fnAddToQueue('Q',TRUE)
 			fnAddToQueue('*Q',TRUE)
 			IF(mySwitch.HAS_NETWORK){
@@ -270,73 +270,82 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 			fnDebug(FALSE,'Extron->AMX', DATA.TEXT);
 			SELECT{
 				ACTIVE(mySwitch.LAST_SENT == 'N'):{
+					STACK_VAR CHAR PartNo[30]
+					
 					mySwitch.META_PART_NUMBER = fnStripCharsRight(DATA.TEXT,2)
 					IF(LEFT_STRING(mySwitch.META_PART_NUMBER,3) == 'Pno'){
 						GET_BUFFER_STRING(mySwitch.META_PART_NUMBER,3)
 					}
-					SEND_STRING vdvControl,"'PROPERTY-META,PART,',mySwitch.META_PART_NUMBER"
-					SWITCH(mySwitch.META_PART_NUMBER){
-						CASE '60-1457-01':
-						CASE '60-1457-02':mySwitch.MODEL_ID = MODEL_IN1604
-						CASE '60-1081-01':mySwitch.MODEL_ID = MODEL_IN1606
-						CASE '60-1238-51':
-						CASE '60-1238-71':mySwitch.MODEL_ID = MODEL_IN1608
-						CASE '60-1377-01':mySwitch.MODEL_ID = MODEL_MPS601
-						CASE '60-1313-01':mySwitch.MODEL_ID = MODEL_MPS602
-						CASE '60-952-02': mySwitch.MODEL_ID = MODEL_SW2USB
-						CASE '60-1483-01':mySwitch.MODEL_ID = MODEL_SW2HD4k
-						CASE '60-1603-01':mySwitch.MODEL_ID = MODEL_SW2HD4kPlus
-						CASE '60-1484-01':mySwitch.MODEL_ID = MODEL_SW4HD4k
-						CASE '60-1604-01':mySwitch.MODEL_ID = MODEL_SW4HD4kPlus
-						CASE '60-841-03': mySwitch.MODEL_ID = MODEL_SW6
-						CASE '60-1485-01':mySwitch.MODEL_ID = MODEL_SW6HD4k
-						CASE '60-841-04': mySwitch.MODEL_ID = MODEL_SW8
-						CASE '60-1486-01':mySwitch.MODEL_ID = MODEL_SW8HD4k
-						CASE '60-1090-01':mySwitch.MODEL_ID = MODEL_MLAVC10
-						CASE '60-1551-12':mySwitch.MODEL_ID = MODEL_DTPTUSW233
+					IF(mySwitch.META_PART_NUMBER != Partno){
+						mySwitch.META_PART_NUMBER = Partno
+						SEND_STRING vdvControl,"'PROPERTY-META,PART,',mySwitch.META_PART_NUMBER"
+						fnResetModule()
+						fnPollFull()
 					}
-					SWITCH(mySwitch.MODEL_ID){
-						CASE MODEL_DTPTUSW233:	mySwitch.META_MODEL = 'DTP-T USW 233'
-						CASE MODEL_IN1604:		mySwitch.META_MODEL = 'IN1604'
-						CASE MODEL_IN1606:		mySwitch.META_MODEL = 'IN1606'
-						CASE MODEL_IN1608:		mySwitch.META_MODEL = 'IN1608'
-						CASE MODEL_MPS601:		mySwitch.META_MODEL = 'MPS601'
-						CASE MODEL_MPS602:		mySwitch.META_MODEL = 'MPS602'
-						CASE MODEL_SW2USB:		mySwitch.META_MODEL = 'SW2USB'
-						CASE MODEL_SW2HD4k:		mySwitch.META_MODEL = 'SW2HD4K'
-						CASE MODEL_SW2HD4kPlus:	mySwitch.META_MODEL = 'SW2HD4KPlus'
-						CASE MODEL_SW4HD4K:		mySwitch.META_MODEL = 'SW4HD4K'
-						CASE MODEL_SW4HD4KPlus:	mySwitch.META_MODEL = 'SW4HD4KPlus'
-						CASE MODEL_SW6:			mySwitch.META_MODEL = 'SW6'
-						CASE MODEL_SW6HD4K:		mySwitch.META_MODEL = 'SW6HD4K'
-						CASE MODEL_SW8:			mySwitch.META_MODEL = 'SW8'
-						CASE MODEL_SW8HD4K:		mySwitch.META_MODEL = 'SW8HD4K'
-						CASE MODEL_MLAVC10:		mySwitch.META_MODEL = 'MLA VC10'
-						DEFAULT:						mySwitch.META_MODEL = 'NOT IMPLEMENTED'
-					}
-					SWITCH(mySwitch.MODEL_ID){
-						CASE MODEL_IN1606:
-						CASE MODEL_IN1608:mySwitch.HAS_NETWORK = TRUE
-						DEFAULT:				mySwitch.HAS_NETWORK = FALSE
-					}
-					SWITCH(mySwitch.MODEL_ID){
-						CASE MODEL_MLAVC10:
-						CASE MODEL_IN1604:
-						CASE MODEL_IN1606:
-						CASE MODEL_IN1608:{
-							mySwitch.HAS_AUDIO 	= TRUE
-							SEND_STRING vdvControl, 'RANGE-0,100'
+					ELSE{
+						SWITCH(mySwitch.META_PART_NUMBER){
+							CASE '60-1457-01':
+							CASE '60-1457-02':mySwitch.MODEL_ID = MODEL_IN1604
+							CASE '60-1081-01':mySwitch.MODEL_ID = MODEL_IN1606
+							CASE '60-1238-51':
+							CASE '60-1238-71':mySwitch.MODEL_ID = MODEL_IN1608
+							CASE '60-1377-01':mySwitch.MODEL_ID = MODEL_MPS601
+							CASE '60-1313-01':mySwitch.MODEL_ID = MODEL_MPS602
+							CASE '60-952-02': mySwitch.MODEL_ID = MODEL_SW2USB
+							CASE '60-1483-01':mySwitch.MODEL_ID = MODEL_SW2HD4k
+							CASE '60-1603-01':mySwitch.MODEL_ID = MODEL_SW2HD4kPlus
+							CASE '60-1484-01':mySwitch.MODEL_ID = MODEL_SW4HD4k
+							CASE '60-1604-01':mySwitch.MODEL_ID = MODEL_SW4HD4kPlus
+							CASE '60-841-03': mySwitch.MODEL_ID = MODEL_SW6
+							CASE '60-1485-01':mySwitch.MODEL_ID = MODEL_SW6HD4k
+							CASE '60-841-04': mySwitch.MODEL_ID = MODEL_SW8
+							CASE '60-1486-01':mySwitch.MODEL_ID = MODEL_SW8HD4k
+							CASE '60-1090-01':mySwitch.MODEL_ID = MODEL_MLAVC10
+							CASE '60-1551-12':mySwitch.MODEL_ID = MODEL_DTPTUSW233
 						}
-						DEFAULT:				mySwitch.HAS_AUDIO 	= FALSE
+						SWITCH(mySwitch.MODEL_ID){
+							CASE MODEL_DTPTUSW233:	mySwitch.META_MODEL = 'DTP-T USW 233'
+							CASE MODEL_IN1604:		mySwitch.META_MODEL = 'IN1604'
+							CASE MODEL_IN1606:		mySwitch.META_MODEL = 'IN1606'
+							CASE MODEL_IN1608:		mySwitch.META_MODEL = 'IN1608'
+							CASE MODEL_MPS601:		mySwitch.META_MODEL = 'MPS601'
+							CASE MODEL_MPS602:		mySwitch.META_MODEL = 'MPS602'
+							CASE MODEL_SW2USB:		mySwitch.META_MODEL = 'SW2USB'
+							CASE MODEL_SW2HD4k:		mySwitch.META_MODEL = 'SW2HD4K'
+							CASE MODEL_SW2HD4kPlus:	mySwitch.META_MODEL = 'SW2HD4KPlus'
+							CASE MODEL_SW4HD4K:		mySwitch.META_MODEL = 'SW4HD4K'
+							CASE MODEL_SW4HD4KPlus:	mySwitch.META_MODEL = 'SW4HD4KPlus'
+							CASE MODEL_SW6:			mySwitch.META_MODEL = 'SW6'
+							CASE MODEL_SW6HD4K:		mySwitch.META_MODEL = 'SW6HD4K'
+							CASE MODEL_SW8:			mySwitch.META_MODEL = 'SW8'
+							CASE MODEL_SW8HD4K:		mySwitch.META_MODEL = 'SW8HD4K'
+							CASE MODEL_MLAVC10:		mySwitch.META_MODEL = 'MLA VC10'
+							DEFAULT:						mySwitch.META_MODEL = 'NOT IMPLEMENTED'
+						}
+						SWITCH(mySwitch.MODEL_ID){
+							CASE MODEL_IN1606:
+							CASE MODEL_IN1608:mySwitch.HAS_NETWORK = TRUE
+							DEFAULT:				mySwitch.HAS_NETWORK = FALSE
+						}
+						SWITCH(mySwitch.MODEL_ID){
+							CASE MODEL_MLAVC10:
+							CASE MODEL_IN1604:
+							CASE MODEL_IN1606:
+							CASE MODEL_IN1608:{
+								mySwitch.HAS_AUDIO 	= TRUE
+								SEND_STRING vdvControl, 'RANGE-0,100'
+							}
+							DEFAULT:				mySwitch.HAS_AUDIO 	= FALSE
+						}
+						SEND_STRING vdvControl,"'PROPERTY-META,TYPE,VideoSwitch'"
+						SEND_STRING vdvControl,"'PROPERTY-META,MAKE,Extron'"
+						SEND_STRING vdvControl,"'PROPERTY-META,MODEL,',mySwitch.META_MODEL"
+						IF(!mySwitch.HAS_NETWORK){
+							SEND_STRING vdvControl,"'PROPERTY-META,NET_MAC,N/A'"
+							SEND_STRING vdvControl,"'PROPERTY-STATE,NET_IP,N/A'"
+						}
+						fnPollFull()
 					}
-					SEND_STRING vdvControl,"'PROPERTY-META,TYPE,VideoSwitch'"
-					SEND_STRING vdvControl,"'PROPERTY-META,MAKE,Extron'"
-					SEND_STRING vdvControl,"'PROPERTY-META,MODEL,',mySwitch.META_MODEL"
-					IF(!mySwitch.HAS_NETWORK){
-						SEND_STRING vdvControl,"'PROPERTY-META,NET_MAC,N/A'"
-						SEND_STRING vdvControl,"'PROPERTY-STATE,NET_IP,N/A'"
-					}
-					fnPollFull()
 				}
 				ACTIVE(mySwitch.LAST_SENT == 'V'):{
 					SWITCH(mySwitch.MODEL_ID){
@@ -445,27 +454,33 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 	}
 }
 DEFINE_EVENT TIMELINE_EVENT[TLID_COMMS]{
+	mySwitch.META_PART_NUMBER	= ''
+	fnResetModule()
+}
+
+DEFINE_FUNCTION fnResetModule(){
+	mySwitch.Tx 					= ''
+	mySwitch.LAST_SENT			= ''
 	mySwitch.DIAG_INT_TEMP 		= ''
 	mySwitch.GAIN 					= 0
 	mySwitch.HAS_AUDIO 			= FALSE
 	mySwitch.HAS_NETWORK 		= FALSE
 	mySwitch.LAST_GAIN			= 0
-	mySwitch.LAST_SENT			= ''
 	mySwitch.META_FIRMWARE		= ''
 	mySwitch.META_FIRMWARE_FULL= ''
 	mySwitch.META_IP				= ''
 	mySwitch.META_MAC				= ''
 	mySwitch.META_MODEL			= ''
-	mySwitch.META_PART_NUMBER	= ''
 	mySwitch.MODEL_ID 			= 0
 	mySwitch.MUTE 					= FALSE
-	mySwitch.Tx 					= ''
 	mySwitch.SIGNAL[1]			= FALSE
 	mySwitch.SIGNAL[2]			= FALSE
 	mySwitch.SIGNAL[3]			= FALSE
 	mySwitch.SIGNAL[4]			= FALSE
 	mySwitch.SIGNAL[5]			= FALSE
 	mySwitch.SIGNAL[6]			= FALSE
+	mySwitch.SIGNAL[7]			= FALSE
+	mySwitch.SIGNAL[8]			= FALSE
 }
 
 /******************************************************************************
