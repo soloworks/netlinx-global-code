@@ -136,6 +136,7 @@ DEFINE_TYPE STRUCTURE uSX{
 	uPTrack  PRESENTERTRACK
 	INTEGER  CONTENT_PIP_POS
 	INTEGER  CONTENT_PIP_FULL
+	INTEGER  POWER
 
 	// Vol Helpers
 	INTEGER	VOL_PEND
@@ -904,6 +905,16 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 			}
 			CASE '*s':{	// Status Response
 				SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
+					CASE 'Standby':{
+						SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
+							CASE 'State:':{
+								SWITCH(fnRemoveWhiteSpace(pDATA)){
+									CASE 'Standby': mySX.POWER = FALSE
+									CASE 'Off':     mySX.POWER = TRUE 
+								}
+							}
+						}
+					}
 					CASE 'Preset':{
 						STACK_VAR INTEGER Preset
 						Preset = ATOI(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1))
@@ -1831,7 +1842,7 @@ DEFINE_PROGRAM{
 		[vdvControl[1],250] = (mySX.PRESENTERTRACK.ENABLED)
 		[vdvControl[1],251] = (TIMELINE_ACTIVE(TLID_COMMS))
 		[vdvControl[1],252] = (TIMELINE_ACTIVE(TLID_COMMS))
-		//[vdvControl[1],253] = (mySX.CONN_STATE == CONN_SECURITY)
+		[vdvControl[1],255] = (mySX.POWER)
 	}
 }
 
