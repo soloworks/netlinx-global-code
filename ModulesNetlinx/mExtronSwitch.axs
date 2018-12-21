@@ -272,9 +272,9 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 				ACTIVE(mySwitch.LAST_SENT == 'N'):{
 					STACK_VAR CHAR PartNo[30]
 					
-					mySwitch.META_PART_NUMBER = fnStripCharsRight(DATA.TEXT,2)
-					IF(LEFT_STRING(mySwitch.META_PART_NUMBER,3) == 'Pno'){
-						GET_BUFFER_STRING(mySwitch.META_PART_NUMBER,3)
+					PartNo = fnStripCharsRight(DATA.TEXT,2)
+					IF(LEFT_STRING(PartNo,3) == 'Pno'){
+						GET_BUFFER_STRING(PartNo,3)
 					}
 					IF(mySwitch.META_PART_NUMBER != Partno){
 						mySwitch.META_PART_NUMBER = Partno
