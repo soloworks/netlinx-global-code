@@ -344,7 +344,6 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 							SEND_STRING vdvControl,"'PROPERTY-META,NET_MAC,N/A'"
 							SEND_STRING vdvControl,"'PROPERTY-STATE,NET_IP,N/A'"
 						}
-						fnPollFull()
 					}
 				}
 				ACTIVE(mySwitch.LAST_SENT == 'V'):{
@@ -453,6 +452,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 		}
 	}
 }
+
 DEFINE_EVENT TIMELINE_EVENT[TLID_COMMS]{
 	mySwitch.META_PART_NUMBER	= ''
 	fnResetModule()
