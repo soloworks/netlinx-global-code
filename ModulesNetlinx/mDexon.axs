@@ -1,4 +1,4 @@
-MODULE_NAME='mDexon'(DEV vdvControl, DEV tp, DEV dvIP)
+MODULE_NAME='mDexon'(DEV vdvControl, DEV dvIP)
 (***********************************************************)
 (*  FILE_LAST_MODIFIED_ON: 10/06/2013  AT: 23:17:06        *)
 (***********************************************************)
@@ -366,49 +366,4 @@ DATA_EVENT[dvIP]{
 DEFINE_PROGRAM{
 	[vdvControl, 251] = TIMELINE_ACTIVE(TLID_COMMS)
 	[vdvControl, 252] = TIMELINE_ACTIVE(TLID_COMMS)
-}/*
-/************************************
-	User Interface
-************************************/
-DEFINE_CONSTANT 
-INTEGER btnScene[] = {10,11,12,13,14,15,16,17,18,19}
-INTEGER btnWindows[] = {31,32,33,34,35,36,37}
-INTEGER btnSources[] = {51,52,53,54,55,56,57,58,59}
-INTEGER addDest	= 100
-DEFINE_VARIABLE
-INTEGER iselWindow
-DEFINE_EVENT BUTTON_EVENT[tp,btnScene]{
-	PUSH:SEND_COMMAND vdvControl,"'RECALL-',ITOA(GET_LAST(btnScene)-1)"
 }
-DEFINE_EVENT BUTTON_EVENT[tp,btnWindows]{
-	PUSH:{
-		iselWindow = GET_LAST(btnWindows)
-		SEND_COMMAND tp,"'^TXT-',ITOA(addDest),',0,',myDexon.cWindowName[iselWindow]"
-		SEND_COMMAND tp,'@PPN-Sources'
-	}
-}
-DEFINE_EVENT BUTTON_EVENT[tp,btnSources]{
-	PUSH:{
-		SEND_COMMAND vdvControl, "'CREATE-',ITOA(GET_LAST(btnSources)),',',ITOA(myDexon.cWindowLEFT[iselWindow]),',',ITOA(myDexon.cWindowTOP[iselWindow])"
-		SEND_COMMAND tp,'@PPF-Sources'
-	}
-}
-DEFINE_EVENT DATA_EVENT[tp]{
-	ONLINE:fnPopulateInterface()
-}
-/****************************
-	Interface Events
-***************************/
-DEFINE_FUNCTION fnPopulateInterface(){
-	STACK_VAR INTEGER b;
-	FOR(b = 1; b <= LENGTH_ARRAY(btnWindows);b++){
-		SEND_COMMAND tp,"'^TXT-',ITOA(btnWindows[b]),',0,',myDexon.cWindowName[b]"
-	}
-	FOR(b = 1; b <= LENGTH_ARRAY(btnSources);b++){
-		SEND_COMMAND tp,"'^TXT-',ITOA(btnSources[b]),',0,',myDexon.cSourceName[b]"
-	}
-	SEND_COMMAND tp,"'^TXT-',ITOA(btnScene[1]),',0,Clear'"
-	FOR(b = 2; b <= LENGTH_ARRAY(btnScene);b++){
-		SEND_COMMAND tp,"'^TXT-',ITOA(btnScene[b]),',0,',myDexon.cScenarioName[b-1]"
-	}
-}*/
