@@ -47,6 +47,7 @@ INTEGER IP_STATE_OFFLINE		= 0
 INTEGER IP_STATE_CONNECTING	= 1
 INTEGER IP_STATE_CONNECTED		= 2
 
+INTEGER MODEL_NA           = 00
 INTEGER MODEL_IN1604			= 01
 INTEGER MODEL_IN1606 		= 02
 INTEGER MODEL_IN1608 		= 03
@@ -147,13 +148,18 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_POLL]{
 DEFINE_FUNCTION fnPollFull(){
 	IF(!mySwitch.NOPOLL){
 		fnAddToQueue('N',TRUE)
-		IF(!LENGTH_ARRAY(mySwitch.META_PART_NUMBER)){
+		IF(!LENGTH_ARRAY(mySwitch.META_FIRMWARE)){
 			fnAddToQueue('Q',TRUE)
+		}
+		IF(!LENGTH_ARRAY(mySwitch.META_FIRMWARE_FULL)){
 			fnAddToQueue('*Q',TRUE)
-			IF(mySwitch.HAS_NETWORK){
-				fnAddToQueue("$1B,'1CV',$0D",TRUE)
+		}
+		IF(mySwitch.HAS_NETWORK){
+			fnAddToQueue("$1B,'1CV',$0D",TRUE)
+			IF(!LENGTH_ARRAY(mySwitch.META_MAC)){
 				fnAddToQueue("$1B,'CH',$0D",TRUE)
 			}
+			fnAddToQueue("$1B,'CI',$0D",TRUE)
 		}
 		ELSE{
 			fnPollShort()
@@ -174,9 +180,6 @@ DEFINE_FUNCTION fnPollFull(){
 					fnAddToQueue('I',TRUE)
 				}
 				DEFAULT:	fnAddToQueue("$1B,'20STAT',$0D",TRUE)
-			}
-			IF(mySwitch.HAS_NETWORK){
-				fnAddToQueue("$1B,'CI',$0D",TRUE)
 			}
 			IF(mySwitch.HAS_AUDIO){
 				SWITCH(mySwitch.MODEL_ID){
@@ -230,6 +233,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 		   SEND_COMMAND dvDevice, 'SET FAULT DETECT OFF'
 		}
 		WAIT 10{
+			fnPollFull()
 			fnInitPoll()
 		}
 	}
@@ -282,7 +286,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 						fnResetModule()
 						fnPollFull()
 					}
-					ELSE{
+					ELSE IF(mySwitch.MODEL_ID == MODEL_NA){
 						SWITCH(mySwitch.META_PART_NUMBER){
 							CASE '60-1457-01':
 							CASE '60-1457-02':mySwitch.MODEL_ID = MODEL_IN1604
@@ -343,6 +347,14 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 						IF(!mySwitch.HAS_NETWORK){
 							SEND_STRING vdvControl,"'PROPERTY-META,NET_MAC,N/A'"
 							SEND_STRING vdvControl,"'PROPERTY-STATE,NET_IP,N/A'"
+						}
+						ELSE{
+							IF(mySwitch.HAS_NETWORK){
+								IF(!LENGTH_ARRAY(mySwitch.META_MAC)){
+									fnAddToQueue("$1B,'CH',$0D",TRUE)
+								}
+								fnAddToQueue("$1B,'CI',$0D",TRUE)
+							}
 						}
 					}
 				}
