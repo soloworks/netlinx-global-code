@@ -188,6 +188,9 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 					}
 				}
 			}
+			CASE 'RAW':{
+				SEND_STRING dvDevice,"$02,DATA.TEXT,$03"
+			}
 			CASE 'RAWIN':{
 				fnSendCommand(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,':',1),1),DATA.TEXT)
 			}
