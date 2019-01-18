@@ -155,7 +155,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 		}
 		ELSE{
 			SEND_COMMAND DATA.DEVICE,'SET MODE DATA'
-			SEND_COMMAND DATA.DEVICE,'SET BAUD 115200 N,8,2 485 DISABLE'
+			SEND_COMMAND DATA.DEVICE,'SET BAUD 115200 N,8,1 485 DISABLE'
 			fnPoll()
 			fnInitPoll()
 		}
@@ -209,7 +209,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{	// Control Events
 					}
 				}
 			}
-			CASE 'RAW':fnAddToQueue(DATA.TEXT)
+			CASE 'RAW':SEND_STRING dvDevice, "'(',DATA.TEXT,')'"
 
 			CASE 'INPUT':{
 				myChristieProj.desInput = fnGetInputString(DATA.TEXT)
@@ -218,17 +218,17 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{	// Control Events
 					fnAddToQueue("'INPUT=',myChristieProj.desInput")
 				}
 				ELSE{
-					fnAddToQueue("'POWER=ON'")
+					fnAddToQueue("'PWR 1'")
 				}
 			}
 
 			CASE 'POWER':{
 				SWITCH(DATA.TEXT){
 					CASE 'ON':{
-						fnAddToQueue("'POWER=ON'")
+						fnAddToQueue("'PWR 1'")
 					}
 					CASE 'OFF':{
-						fnAddToQueue("'POWER=OFF'")
+						fnAddToQueue("'PWR 0'")
 					}
 				}
 			}
