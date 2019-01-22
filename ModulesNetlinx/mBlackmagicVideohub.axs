@@ -143,22 +143,22 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 			IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){ TIMELINE_KILL(TLID_TIMEOUT) }
 			fnSendFromQueue()
 		}
-		CASE 'VIDEO OUTPUT ROUTING:': myBMVidHub.RxFbType = FB_TYPE_ROUTE
-		CASE 'PROTOCOL PREAMBLE:': 	myBMVidHub.RxFbType = FB_TYPE_PREAMBLE
-		CASE 'VIDEOHUB DEVICE:':		myBMVidHub.RxFbType = FB_TYPE_META
+		CASE 'VIDEO OUTPUT ROUTING:':     myBMVidHub.RxFbType = FB_TYPE_ROUTE
+		CASE 'PROTOCOL PREAMBLE:': 	    myBMVidHub.RxFbType = FB_TYPE_PREAMBLE
+		CASE 'VIDEOHUB DEVICE:':		    myBMVidHub.RxFbType = FB_TYPE_META
 		DEFAULT:{
 			SWITCH(myBMVidHub.RxFbType){
 				CASE FB_TYPE_PREAMBLE:{
 					SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,':',1),1)){
-						CASE 'Version':myBMVidHub.PROTOCOL_VER = fnRemoveWhiteSpace(pDATA)
+						CASE 'Version':       myBMVidHub.PROTOCOL_VER = fnRemoveWhiteSpace(pDATA)
 					}
 				}
 				CASE FB_TYPE_META:{
 					SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,':',1),1)){
-						CASE 'Unique ID':myBMVidHub.MODEL = fnRemoveWhiteSpace(pDATA)
-						CASE 'Model Name':myBMVidHub.MODEL = fnRemoveWhiteSpace(pDATA)
-						CASE 'Video inputs':myBMVidHub.IO[1] = ATOI(pDATA)
-						CASE 'Video outputs':myBMVidHub.IO[2] = ATOI(pDATA)
+						CASE 'Unique ID':     myBMVidHub.UID   = fnRemoveWhiteSpace(pDATA)
+						CASE 'Model Name':    myBMVidHub.MODEL = fnRemoveWhiteSpace(pDATA)
+						CASE 'Video inputs':  myBMVidHub.IO[1] = ATOI(pDATA)
+						CASE 'Video outputs': myBMVidHub.IO[2] = ATOI(pDATA)
 					}
 				}
 				CASE FB_TYPE_ROUTE:{
