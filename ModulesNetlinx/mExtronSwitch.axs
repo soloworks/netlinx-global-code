@@ -570,7 +570,8 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 							}
 						}
 						CASE MODEL_IN1606:
-						CASE MODEL_IN1608:{
+						CASE MODEL_IN1608:
+						CASE MODEL_IN1608xi:{
 							SWITCH(DATA.TEXT){
 								CASE 'INC':	fnAddToQueue("$1B,'D1*20+GRPM',$0D",FALSE)
 								CASE 'DEC':	fnAddToQueue("$1B,'D1*20-GRPM',$0D",FALSE)
