@@ -325,10 +325,9 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pFBData[4000]){
 		STACK_VAR INTEGER o
 		STACK_VAR CHAR TOKEN[50]
 		fnDebug(DEBUG_DEV,'fnProcessFeedback','Token Response')
-		//SEND_STRING 0, '1'
 		REMOVE_STRING(pFBData,':"',1)
 		TOKEN = fnRemoveQuotes(fnStripCharsRight(REMOVE_STRING(pFBData,'"',1),1))
-		//SEND_STRING 0, TOKEN
+		
 		FOR(o=1; o<=LENGTH_ARRAY(vdvObjects); o++){
 			STACK_VAR CHAR pDATA[4000]
 			pDATA = pFBData
@@ -684,18 +683,20 @@ DEFINE_EVENT DATA_EVENT[dvBiAmp]{
 	STRING:{
 		//fnDebug(DEBUG_DEV,'RAW->',DATA.TEXT)
 		// Telnet Negotiation
-		WHILE(myBiAmp.Rx[1] == $FF && LENGTH_ARRAY(myBiAmp.Rx) >= 3){
-			STACK_VAR CHAR NEG_PACKET[3]
-			NEG_PACKET = GET_BUFFER_STRING(myBiAmp.Rx,3)
-			fnDebug(DEBUG_DEV,'BiAmp.Telnet->',NEG_PACKET)
-			SWITCH(NEG_PACKET[2]){
-				CASE $FB:
-				CASE $FC:NEG_PACKET[2] = $FE
-				CASE $FD:
-				CASE $FE:NEG_PACKET[2] = $FC
+		IF(myBiAmp.isIP){
+			WHILE(myBiAmp.Rx[1] == $FF && LENGTH_ARRAY(myBiAmp.Rx) >= 3){
+				STACK_VAR CHAR NEG_PACKET[3]
+				NEG_PACKET = GET_BUFFER_STRING(myBiAmp.Rx,3)
+				fnDebug(DEBUG_DEV,'BiAmp.Telnet->',NEG_PACKET)
+				SWITCH(NEG_PACKET[2]){
+					CASE $FB:
+					CASE $FC:NEG_PACKET[2] = $FE
+					CASE $FD:
+					CASE $FE:NEG_PACKET[2] = $FC
+				}
+				fnDebug(DEBUG_DEV,'->BiAmp.Telnet',NEG_PACKET)
+				SEND_STRING DATA.DEVICE,NEG_PACKET
 			}
-			fnDebug(DEBUG_DEV,'->BiAmp.Telnet',NEG_PACKET)
-			SEND_STRING DATA.DEVICE,NEG_PACKET
 		}
 		WHILE(FIND_STRING(myBiAmp.Rx,"$0D,$0A",1)){
 			fnProcessFeedback(fnStripCharsRight(REMOVE_STRING(myBiAmp.Rx,"$0D,$0A",1),2))
