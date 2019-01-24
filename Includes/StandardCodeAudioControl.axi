@@ -20,6 +20,7 @@ DEFINE_TYPE STRUCTURE uGain{
 	SINTEGER VALUE_100
 	SINTEGER VALUE_255
 	SINTEGER RANGE[2]
+	CHAR     NAME[30]
 }
 DEFINE_TYPE STRUCTURE uAudioPanel{
 	INTEGER	GAIN_UNDER_CONTROL		// High when User is controlling Audio Value
@@ -56,6 +57,8 @@ DEFINE_FUNCTION INTEGER fnGetLinkedObject(INTEGER pPanel,INTEGER pLevel){
 }
 DEFINE_FUNCTION fnLinkAudioObject(INTEGER pPanel,INTEGER pLvl, INTEGER pGain){
 	myAudioPanels[pPanel].GAIN_OBJECT_LINK[pLvl] = pGain
+	fnSetGainScales(pPanel,pGain)
+	fnSetGainNames(pPanel,pGain)
 }
 /******************************************************************************
 	Standard Audio - Sending values to Panels
@@ -85,9 +88,35 @@ DEFINE_FUNCTION fnSetGainScales(INTEGER pPanel, INTEGER pGain){
 	}
 }
 
+DEFINE_FUNCTION fnSetGainNames(INTEGER pPanel, INTEGER pGain){
+	IF(pPanel == 0){
+		STACK_VAR INTEGER p
+		FOR(p = 1; p <= LENGTH_ARRAY(tpMain); p++){
+			fnSetGainNames(p,pGain)
+		}
+		RETURN
+	}
+	IF(pGain == 0){
+		STACK_VAR INTEGER g
+		FOR(g = 1; g <= LENGTH_ARRAY(vdvGains); g++){
+			fnSetGainNames(pPanel,g)
+		}
+		RETURN
+	}
+	IF(1){
+		STACK_VAR INTEGER l
+		FOR(l = 1; l <= LENGTH_ARRAY(addGainName); l++){
+			IF(myAudioPanels[pPanel].GAIN_OBJECT_LINK[l] == pGain){
+				SEND_COMMAND tpMain[pPanel],"'^TXT-',ITOA(addGainName[l]),',0,',myGains[pGain].NAME"
+			}
+		}
+	}
+}
+
 DEFINE_EVENT DATA_EVENT[tpMain]{
 	ONLINE:{
 		fnSetGainScales(GET_LAST(tpMain),0)
+		fnSetGainNames(GET_LAST(tpMain),0)
 	}
 	OFFLINE:{
 		myAudioPanels[GET_LAST(tpMain)].GAIN_UNDER_CONTROL = FALSE
@@ -151,27 +180,31 @@ DEFINE_EVENT LEVEL_EVENT[tpMain,lvlGain]{
 /******************************************************************************
 	Standard Audio - Buttons Handling
 ******************************************************************************/
-DEFINE_EVENT BUTTON_EVENT[tpMain,btnVolINC]{
+#IF_DEFINED btnGainINC
+DEFINE_EVENT BUTTON_EVENT[tpMain,btnGainINC]{
 	PUSH:{
-		SEND_COMMAND vdvGains[fnGetLinkedObject(GET_LAST(tpMain),GET_LAST(btnVolINC))],'VOLUME-INC'
+		SEND_COMMAND vdvGains[fnGetLinkedObject(GET_LAST(tpMain),GET_LAST(btnGainINC))],'VOLUME-INC'
 	}
 	HOLD[2,REPEAT]:{
-		SEND_COMMAND vdvGains[fnGetLinkedObject(GET_LAST(tpMain),GET_LAST(btnVolINC))],'VOLUME-INC'
+		SEND_COMMAND vdvGains[fnGetLinkedObject(GET_LAST(tpMain),GET_LAST(btnGainINC))],'VOLUME-INC'
 	}
 }
+#END_IF
 
-DEFINE_EVENT BUTTON_EVENT[tpMain,btnVolDEC]{
-	PUSH:{
-		SEND_COMMAND vdvGains[fnGetLinkedObject(GET_LAST(tpMain),GET_LAST(btnVolDEC))],'VOLUME-DEC'
+#IF_DEFINED btnGainDEC
+DEFINE_EVENT BUTTON_EVENT[tpMain,btnGainDEC]{
+	PUSH:{dd
+		SEND_COMMAND vdvGains[fnGetLinkedObject(GET_LAST(tpMain),GET_LAST(btnGainDEC))],'VOLUME-DEC'
 	}
 	HOLD[2,REPEAT]:{
-		SEND_COMMAND vdvGains[fnGetLinkedObject(GET_LAST(tpMain),GET_LAST(btnVolDEC))],'VOLUME-DEC'
+		SEND_COMMAND vdvGains[fnGetLinkedObject(GET_LAST(tpMain),GET_LAST(btnGainDEC))],'VOLUME-DEC'
 	}
 }
+#END_IF
 
-DEFINE_EVENT BUTTON_EVENT[tpMain,btnMute]{
+DEFINE_EVENT BUTTON_EVENT[tpMain,btnGainMute]{
 	PUSH:{
-		SEND_COMMAND vdvGains[fnGetLinkedObject(GET_LAST(tpMain),GET_LAST(btnMute))],'MUTE-TOGGLE'
+		SEND_COMMAND vdvGains[fnGetLinkedObject(GET_LAST(tpMain),GET_LAST(btnGainMute))],'MUTE-TOGGLE'
 	}
 }
 
@@ -187,7 +220,7 @@ DEFINE_PROGRAM{
 				IF(!myAudioPanels[p].GAIN_UNDER_CONTROL){
 					SEND_LEVEL tpMain[p],lvlGain[g],myGains[fnGetLinkedObject(p,g)].VALUE
 				}
-				[tpMain[p],btnMute[g]] 			= [vdvGains[fnGetLinkedObject(p,g)],199]
+				[tpMain[p],btnGainMute[g]] 			= [vdvGains[fnGetLinkedObject(p,g)],199]
 			}
 		}
 	}
