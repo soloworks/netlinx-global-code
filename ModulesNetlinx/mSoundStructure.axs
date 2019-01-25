@@ -11,7 +11,7 @@ INCLUDE 'CustomFunctions'
 	Module Structures
 ******************************************************************************/
 DEFINE_CONSTANT
-INTEGER _MAX_OBJECTS = 25
+INTEGER _MAX_OBJECTS = 40
 INTEGER _MAX_DEVICES = 8
 // Object Types
 INTEGER OBJ_TYPE_FADER			= 1
