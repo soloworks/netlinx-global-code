@@ -16,7 +16,7 @@ INTEGER MAX_CAMERAS    =  7
 INTEGER MAX_PERIPHERAL = 10
 
 DEFINE_TYPE STRUCTURE uPeripheral{
-	INTEGER INDEX		
+	INTEGER INDEX
 	CHAR    ID[30]
 	CHAR    SoftwareInfo[30]
 	CHAR    Hardwareinfo[30]
@@ -534,31 +534,31 @@ DEFINE_FUNCTION fnPoll(){
 	fnQueueTx('xStatus','SystemUnit Hardware Temperature')
 	// Heartbeat AMX as addition to SX
 	pParams = 'HeartBeat'
-	pParams = "pParams,' ID: "',fnHexToString(GET_UNIQUE_ID()),'"'" 
+	pParams = "pParams,' ID: "',fnHexToString(GET_UNIQUE_ID()),'"'"
 	fnQueueTx('xCommand Peripherals',pParams)
 }
-DEFINE_FUNCTION fnInitData(){	
+DEFINE_FUNCTION fnInitData(){
 	STACK_VAR CHAR pParams[500]
 	// Populate System Variables
 	STACK_VAR DEV_INFO_STRUCT sDeviceInfo
 	STACK_VAR IP_ADDRESS_STRUCT sNetworkInfo
-	
+
 	// Turn off Echo
 	fnQueueTx('echo','off')
-	
+
 	// Register AMX as addition to SX
 	DEVICE_INFO(DATA.DEVICE, sDeviceInfo)
 	GET_IP_ADDRESS(0:1:0,sNetworkInfo)
 	pParams = 'Connect'
-	pParams = "pParams,' ID: "',fnHexToString(GET_UNIQUE_ID()),'"'" 
-	pParams = "pParams,' Name: "AMX Control System"'" 
-	pParams = "pParams,' NetworkAddress: "',sNetworkInfo.IPADDRESS,'"'" 
-	pParams = "pParams,' SerialNumber: "',fnRemoveNonPrintableChars(sDeviceInfo.SERIAL_NUMBER),'"'" 
-	pParams = "pParams,' SoftwareInfo: "',sDeviceInfo.VERSION,'"'" 
-	pParams = "pParams,' HardwareInfo: "',sDeviceInfo.DEVICE_ID_STRING,'"'" 
+	pParams = "pParams,' ID: "',fnHexToString(GET_UNIQUE_ID()),'"'"
+	pParams = "pParams,' Name: "AMX Control System"'"
+	pParams = "pParams,' NetworkAddress: "',sNetworkInfo.IPADDRESS,'"'"
+	pParams = "pParams,' SerialNumber: "',fnRemoveNonPrintableChars(sDeviceInfo.SERIAL_NUMBER),'"'"
+	pParams = "pParams,' SoftwareInfo: "',sDeviceInfo.VERSION,'"'"
+	pParams = "pParams,' HardwareInfo: "',sDeviceInfo.DEVICE_ID_STRING,'"'"
 	pParams = "pParams,' Type: ControlSystem'"
 	fnQueueTx('xCommand Peripherals',pParams)
-	
+
 	fnQueueTx('xFeedback deregister','/Status/Diagnostics')
 	fnQueueTx('xFeedback register','/Status/SystemUnit')
 	fnQueueTx('xFeedback register','/Event')
@@ -574,7 +574,7 @@ DEFINE_FUNCTION fnInitData(){
 	fnQueueTx('xFeedback register','/Status/Peripherals')
 
 	fnQueueTx('xConfiguration','Peripherals Profile Touchpanels: 0')
-	
+
 	fnQueueTx('xStatus','Audio')
 	fnQueueTx('xStatus','Call')
 	fnQueueTx('xStatus','Video Input')
@@ -583,11 +583,11 @@ DEFINE_FUNCTION fnInitData(){
 	fnQueueTx('xStatus','Network')
 	fnQueueTx('xStatus','Standby')
 	fnQueueTx('xStatus','SystemUnit')
-	
+
 
 	fnQueueTx('xCommand UserInterface Presentation ExternalSource','RemoveAll')
 	// Init GUI bits if required
-	IF(mySX.ExtSources[1].IDENTIFIER != ''){	
+	IF(mySX.ExtSources[1].IDENTIFIER != ''){
 		STACK_VAR INTEGER s
 		FOR(s = 1; s <= 8; s++){
 			IF(mySX.ExtSources[s].IDENTIFIER != ''){
@@ -601,7 +601,7 @@ DEFINE_FUNCTION fnInitData(){
 		}
 		fnSetExtSourceSignals(0)
 	}
-	
+
 	// Query and process connected peripherals
 	fnClearPeripherals()
 	fnQueueTx('xCommand peripherals list','Connected: True')
@@ -683,7 +683,7 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 			mySX.Peripherals.LoadingOffline = TRUE
 			fnQueueTx('xCommand peripherals list','Connected: False')
 		}
-		// 
+		//
 		ELSE IF(mySX.Peripherals.LoadingOffline){
 			mySX.Peripherals.LoadingOffline = FALSE
 			fnSendPeripheralsData()
@@ -910,7 +910,7 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 							CASE 'State:':{
 								SWITCH(fnRemoveWhiteSpace(pDATA)){
 									CASE 'Standby': mySX.POWER = FALSE
-									CASE 'Off':     mySX.POWER = TRUE 
+									CASE 'Off':     mySX.POWER = TRUE
 								}
 							}
 						}
@@ -1440,7 +1440,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl[1]]{
 		}
 		IF(!mySX.DISABLED){
 			SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
-				CASE 'CARRIER':{	
+				CASE 'CARRIER':{
 					SWITCH(DATA.TEXT){
 						CASE 'INIT':{
 							mySX.CARRIER_ENABLED = TRUE
@@ -1530,7 +1530,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl[1]]{
 								mySX.IP_HOST = DATA.TEXT
 								mySX.IP_PORT = 22
 							}
-							fnReTryTCPConnection()
+							IF(mySX.isIP){fnReTryTCPConnection()}
 						}
 						CASE 'PRESENTERCAM':{
 							mySX.PRESENTERTRACK.CameraID = ATOI(DATA.TEXT)
@@ -2368,7 +2368,7 @@ DEFINE_FUNCTION INTEGER fnGetDirSlot(INTEGER isFolder, INTEGER Index){
 		ELSE IF(mySX.DIRECTORY.RECORDS[x].INDEX == 0){
 			mySX.DIRECTORY.RECORDS[x].FOLDER = isFolder
 			mySX.DIRECTORY.RECORDS[x].INDEX = Index
-			RETURN x	
+			RETURN x
 		}
 	}
 }
@@ -2840,7 +2840,7 @@ DEFINE_EVENT CHANNEL_EVENT[vdvControl[1],chnExtSourceSignal]{
 }
 
 DEFINE_FUNCTION fnSetExtSourceSignals(INTEGER src){
-	
+
 	STACK_VAR CHAR pParams[500]
 
 	IF(!src){
@@ -2850,7 +2850,7 @@ DEFINE_FUNCTION fnSetExtSourceSignals(INTEGER src){
 		}
 		RETURN
 	}
-	
+
 	IF(mySX.ExtSources[src].IDENTIFIER != ''){
 		pParams = 'Set'
 		pParams = "pParams,' SourceIdentifier: "',mySX.ExtSources[src].IDENTIFIER,'"'"
@@ -2915,21 +2915,21 @@ DEFINE_FUNCTION INTEGER fnStorePeripheralField(CHAR pDATA[]){
 	STACK_VAR INTEGER p
 	STACK_VAR INTEGER pIndex
 	fnDebug(DEBUG_DEVELOP,'fnStorePeripheralField',"'pDATA=',pDATA")
-	
+
 	// Get this Index
 	pINDEX = ATOI(REMOVE_STRING(pDATA,' ',1))
 	p = fnGetPeripheralSlot(pIndex)
-	
+
 	// Set Status if this is a loading process
 	IF(mySX.Peripherals.LoadingOnline){
 		mySX.Peripherals.Device[p].StatusOnline = TRUE
 	}
-	
+
 	// Set Status if this is a loading process
 	IF(mySX.Peripherals.LoadingOffline){
 		mySX.Peripherals.Device[p].StatusOnline = FALSE
 	}
-	
+
 	IF(p){
 		// Store Field
 		SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),2)){
