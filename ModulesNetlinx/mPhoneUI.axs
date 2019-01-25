@@ -8,6 +8,7 @@ INCLUDE 'CustomFunctions'
 ******************************************************************************/
 DEFINE_CONSTANT
 INTEGER chnMicMute	= 198
+INTEGER chnAudMute	= 199
 INTEGER chnOFFHOOK 	= 238
 INTEGER chnRINGING	= 240
 /******************************************************************************
@@ -55,6 +56,7 @@ INTEGER btnCommands[]	={
 INTEGER btnPrivacy	= 201		// Mute Mics into Phone
 INTEGER btnRinging	= 202
 INTEGER btnOffHook	= 203
+INTEGER btnMute		= 204
 
 INTEGER btnLinkGUI[] = {
 	501,502,503,504,505
@@ -151,6 +153,13 @@ DEFINE_EVENT BUTTON_EVENT[tp,btnKeypad]{
 	}
 }
 
+DEFINE_EVENT BUTTON_EVENT[tp,btnMute]{
+	PUSH:{
+		STACK_VAR INTEGER p
+		p = GET_LAST(tp)
+		SEND_COMMAND vdvPhone[myGUI[p].ID],'MUTE-TOGGLE'
+	}
+}
 DEFINE_EVENT BUTTON_EVENT[tp,btnCommands]{
 	PUSH:{
 		STACK_VAR INTEGER p
@@ -249,7 +258,6 @@ DEFINE_EVENT CHANNEL_EVENT[vdvPhone,chnRINGING]{
 		}
 	}
 }
-
 /******************************************************************************
 	Interface Feedback
 ******************************************************************************/
@@ -265,8 +273,9 @@ DEFINE_PROGRAM{
 			[tp[p],btnOFFHOOK] 	 = [vdvPhone[myGUI[p].ID],chnOFFHOOK]
 			[tp[p],btnDialAnswer] = [vdvPhone[myGUI[p].ID],chnOFFHOOK]
 			[tp[p],btnPrivacy]    = [vdvPhone[myGUI[p].ID],chnMicMute]
+			[tp[p],btnMute]   	 = [vdvPhone[myGUI[p].ID],chnAudMute]
 		}
-		
+
 	}
 }
 
