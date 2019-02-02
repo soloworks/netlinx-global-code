@@ -189,24 +189,32 @@ DEFINE_EVENT BUTTON_EVENT[tpMain,btnGainINC]{
 		SEND_COMMAND vdvGains[fnGetLinkedObject(GET_LAST(tpMain),GET_LAST(btnGainINC))],'VOLUME-INC'
 	}
 }
+#ELSE
+	#WARN 'StandardAudio - btnGainINC Not Declared'
 #END_IF
 
 #IF_DEFINED btnGainDEC
 DEFINE_EVENT BUTTON_EVENT[tpMain,btnGainDEC]{
-	PUSH:{dd
+	PUSH:{
 		SEND_COMMAND vdvGains[fnGetLinkedObject(GET_LAST(tpMain),GET_LAST(btnGainDEC))],'VOLUME-DEC'
 	}
 	HOLD[2,REPEAT]:{
 		SEND_COMMAND vdvGains[fnGetLinkedObject(GET_LAST(tpMain),GET_LAST(btnGainDEC))],'VOLUME-DEC'
 	}
 }
+#ELSE
+	#WARN 'StandardAudio - btnGainDEC Not Declared'
 #END_IF
 
+#IF_DEFINED btnGainMute
 DEFINE_EVENT BUTTON_EVENT[tpMain,btnGainMute]{
 	PUSH:{
 		SEND_COMMAND vdvGains[fnGetLinkedObject(GET_LAST(tpMain),GET_LAST(btnGainMute))],'MUTE-TOGGLE'
 	}
 }
+#ELSE
+	#WARN 'StandardAudio - btnGainMute Not Declared'
+#END_IF
 
 /******************************************************************************
 	Standard Audio - Feedback
@@ -220,7 +228,9 @@ DEFINE_PROGRAM{
 				IF(!myAudioPanels[p].GAIN_UNDER_CONTROL){
 					SEND_LEVEL tpMain[p],lvlGain[g],myGains[fnGetLinkedObject(p,g)].VALUE
 				}
+				#IF_DEFINED btnGainMute
 				[tpMain[p],btnGainMute[g]] 			= [vdvGains[fnGetLinkedObject(p,g)],199]
+				#END_IF
 			}
 		}
 	}
