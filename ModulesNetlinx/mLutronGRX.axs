@@ -31,7 +31,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_POLL]{	// Poll Device
 DEFINE_FUNCTION fnSendCommand(CHAR pCMD[]){
 	SEND_STRING dvRS232, "pCMD,$0D"
 	fnInitPoll()
-}
+}	
 /******************************************************************************
 	Communciation
 ******************************************************************************/
@@ -79,7 +79,9 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pcCMD[255]){
 		CASE 'Q':iROOM = 1
 		CASE 'I':iROOM = 2
 	}
-	SEND_STRING vdvControl[iROOM], "'KEYPAD-',ITOA(ATOI(DATA.TEXT))"
+	IF(iROOM){
+		SEND_STRING vdvControl[iROOM], "'KEYPAD-',ITOA(ATOI(DATA.TEXT))"
+	}
 }
 
 DEFINE_PROGRAM{
