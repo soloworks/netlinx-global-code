@@ -34,7 +34,7 @@ DEFINE_TYPE STRUCTURE uWindow{
 	CHAR 		HANDLE[20]
 	INTEGER 	HEIGHT
 	INTEGER 	WIDTH
-	INTEGER 	TOP 
+	INTEGER 	TOP
 	INTEGER 	LEFT
 	CHAR 		SOURCE[255]
 }
@@ -83,14 +83,14 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 	IF(!myDexon.PORT){myDexon.PORT = defPORT}
 	fnDebug(FALSE,"'TRY','[',ITOA(dvIP.PORT),']->DEX'","myDexon.IP,':',ITOA(myDexon.PORT)")
 	myDexon.TRYING = TRUE
-	IP_CLIENT_OPEN(dvIP.port, myDexon.IP, myDexon.PORT, IP_TCP) 
-} 
- 
+	IP_CLIENT_OPEN(dvIP.port, myDexon.IP, myDexon.PORT, IP_TCP)
+}
+
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(dvIP.port)
 }
 
-DEFINE_FUNCTION fnInitTimeout(){	
+DEFINE_FUNCTION fnInitTimeout(){
 	IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){TIMELINE_KILL(TLID_TIMEOUT)}
 	TIMELINE_CREATE(TLID_TIMEOUT,TLT_TIMEOUT,LENGTH_ARRAY(TLT_TIMEOUT),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 }
@@ -104,23 +104,23 @@ DEFINE_FUNCTION fnSendCommand(INTEGER pCMD,CHAR pDATA[20]){
 	STACK_VAR CHAR toSend[255]
 	myDexon.REQUEST 	= pCMD
 	SWITCH(myDexon.REQUEST){
-		CASE QUERY_GET_SOURCES:{ 
+		CASE QUERY_GET_SOURCES:{
 			toSend = 'get sources'
 		}
-		CASE QUERY_GET_WINDOWS:{ 
+		CASE QUERY_GET_WINDOWS:{
 			toSend = 'get windows'
 		}
-		CASE QUERY_GET_HEIGHT:{ 
+		CASE QUERY_GET_HEIGHT:{
 			myDexon.REQ_INDEX = ATOI(pDATA)
 			toSend = "'SEL WND ',WINDOWS[myDexon.REQ_INDEX].HANDLE,$0D,$0A,'GET HEIGHT'"
 		}
-		CASE QUERY_GET_WIDTH:{ 
+		CASE QUERY_GET_WIDTH:{
 			toSend = "'GET WIDTH'"
 		}
-		CASE QUERY_GET_TOP:{ 
+		CASE QUERY_GET_TOP:{
 			toSend = "'GET TOP'"
 		}
-		CASE QUERY_GET_LEFT:{ 
+		CASE QUERY_GET_LEFT:{
 			toSend = "'GET LEFT'"
 		}
 		CASE CMD_SCENARIO:{
@@ -138,7 +138,7 @@ DEFINE_FUNCTION fnSendCommand(INTEGER pCMD,CHAR pDATA[20]){
 			toSend = pDATA
 		}
 	}
-	myDexon.Tx = "myDexon.Tx,toSend,$0D,$0A" 
+	myDexon.Tx = "myDexon.Tx,toSend,$0D,$0A"
 	IF(!myDexon.isIP || myDexon.CONNECTED){ fnActualSend() }
 	ELSE IF(!myDexon.TRYING){ fnOpenTCPConnection() }
 }
@@ -174,7 +174,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[255]){
 	fnDebug(FALSE,'DEXON->AMX',"pDATA")
 	SWITCH(GET_BUFFER_STRING(pDATA,3)){
 		CASE 'ACK':{
-			SWITCH(myDexon.REQUEST){	
+			SWITCH(myDexon.REQUEST){
 				CASE CMD_SCENARIO:fnSendCommand(QUERY_GET_WINDOWS,'')
 			}
 		}
@@ -272,7 +272,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
 			CASE 'PROPERTY':{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
-					CASE 'IP':{ 
+					CASE 'IP':{
 						IF(FIND_STRING(DATA.TEXT,',',1)){
 							myDexon.IP = fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1);
 							myDexon.PORT = ATOI(DATA.TEXT);
@@ -301,7 +301,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 			}
 			CASE 'SCENARIO':{
 				fnSendCommand(CMD_SCENARIO,DATA.TEXT)
-				
+
 			}
 		}
 	}
