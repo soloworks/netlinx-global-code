@@ -202,7 +202,7 @@ DEFINE_EVENT BUTTON_EVENT[tpMain,btnMainMenu]{
 }
 
 DEFINE_EVENT BUTTON_EVENT[tpMain,btnOverlayClose]{
-	PUSH:{
+	RELEASE:{
 		fnSetupOverlay(GET_LAST(tpMain),OVERLAY_NONE)
 		fnResetPanelTimeout(GET_LAST(tpMain),FALSE)
 	}
