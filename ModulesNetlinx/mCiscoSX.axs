@@ -607,7 +607,7 @@ DEFINE_FUNCTION fnInitData(){
 	fnQueueTx('xCommand peripherals list','Connected: True')
 
 	// Get latest Recent Calls list
-	fnClearRecentCalls()
+	//fnClearRecentCalls()
 	fnQueueTx('xCommand CallHistory Recents','Limit: 10 DetailLevel: Full')
 
 	fnInitPoll()
@@ -1484,7 +1484,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl[1]]{
 						CASE 'WAKE':{ 			fnQueueTx('xCommand Standby','Deactivate') }
 						CASE 'SLEEP':{
 							mySX.DIAL_STRING = ''
-							fnUpdatePanelDialString()
+							fnUpdatePanelDialString(0)
 							fnQueueTx('xCommand Standby','Activate')
 						}
 						CASE 'HANGUP':{
@@ -1499,7 +1499,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl[1]]{
 						CASE 'REBOOT':{ 	 	fnReboot() }
 						CASE 'RESETGUI':{
 							mySX.DIAL_STRING = ''
-							fnUpdatePanelDialString()
+							fnUpdatePanelDialString(0)
 						}
 						CASE 'RESETDIR':{
 							fnClearDirectory()
@@ -1912,9 +1912,13 @@ DEFINE_FUNCTION fnDrawSearchKB(INTEGER pPanel){
 	}
 }
 
-DEFINE_FUNCTION fnUpdatePanelDialString(){
-	SEND_COMMAND tp,"'^TXT-',ITOA(btnDialString),',0,',mySX.DIAL_STRING"
-	SEND_COMMAND tp,"'^SHO-',ITOA(btnDialKB[32]),',',ITOA(LENGTH_ARRAY(mySX.DIAL_STRING) > 0)"
+DEFINE_FUNCTION fnUpdatePanelDialString(INTEGER pPanel){
+	IF(!pPanel){
+		STACK_VAR INTEGER p; FOR(p = 1; p <= LENGTH_ARRAY(tp); p++){ fnUpdatePanelDialString(p) }
+		RETURN
+	}
+	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(btnDialString),',0,',mySX.DIAL_STRING"
+	SEND_COMMAND tp[pPanel],"'^SHO-',ITOA(btnDialKB[32]),',',ITOA(LENGTH_ARRAY(mySX.DIAL_STRING) > 0)"
 }
 
 DEFINE_FUNCTION fnSendCallDetail(INTEGER pPanel, INTEGER pCALL){
@@ -2312,7 +2316,7 @@ DEFINE_EVENT BUTTON_EVENT[tp,btnDialKB]{
 				kb = fnGetDialKB(p)
 				IF(DialKB[kb][GET_LAST(btnDialKB)] != ' '){
 					mySX.DIAL_STRING = "mySX.DIAL_STRING,DialKB[kb][GET_LAST(btnDialKB)]"
-					fnUpdatePanelDialString()
+					fnUpdatePanelDialString(0)
 					IF(mySXPanel[p].DIAL_SHIFT){
 						mySXPanel[p].DIAL_SHIFT = FALSE
 						fnDrawDialKB(p)
@@ -2327,7 +2331,7 @@ DEFINE_EVENT BUTTON_EVENT[tp,btnDialKB]{
 		SWITCH(GET_LAST(btnDialKB)){
 			CASE 31:{	// CLEAR
 				mySX.DIAL_STRING = ''
-				fnUpdatePanelDialString()
+				fnUpdatePanelDialString(0)
 			}
 		}
 	}
@@ -2338,7 +2342,7 @@ DEFINE_EVENT BUTTON_EVENT [tp,btnDialSpecial]{
 		k = GET_LAST(btnDialSpecial)
 		IF(DialSpecial[k] != ''){
 			mySX.DIAL_STRING = "mySX.DIAL_STRING,DialSpecial[k]"
-			fnUpdatePanelDialString()
+			fnUpdatePanelDialString(0)
 		}
 	}
 	HOLD[10]:{
@@ -2347,7 +2351,7 @@ DEFINE_EVENT BUTTON_EVENT [tp,btnDialSpecial]{
 		IF(DialSpecial_Alt[k] != ''){
 			mySX.DIAL_STRING = fnStripCharsRight(mySX.DIAL_STRING,1)
 			mySX.DIAL_STRING = "mySX.DIAL_STRING,DialSpecial_Alt[k]"
-			fnUpdatePanelDialString()
+			fnUpdatePanelDialString(0)
 		}
 	}
 }
