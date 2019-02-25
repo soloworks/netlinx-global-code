@@ -834,11 +834,11 @@ DEFINE_FUNCTION CHAR[4] fnBuildObjectIdentifier(LONG pTYPE,LONG pInstNo){
 	STACK_VAR INTEGER x
 	
 	fnDebug(DEBUG_DEV,"'fnBuildObjectIdentifier::pTYPE[',ITOA(pTYPE),']pInstNo[',ITOA(pInstNo),']'")
-	fnDebug(DEBUG_DEV,"'fnBuildObjectIdentifier::pInstAsBytes[',fnBytesToString(fnLongToByte(pInstNo)),']'")
+	fnDebug(DEBUG_DEV,"'fnBuildObjectIdentifier::pInstAsBytes[',fnBytesToString(fnLongToByte(pInstNo,0)),']'")
 	
 	// Set Variables
 	pTypeAsBin  = fnPadLeadingChars(fnBytesToBinary("pType"),'0',10)
-	pInstAsBin  = fnPadLeadingChars(RIGHT_STRING(fnBytesToBinary(fnLongToByte(pInstNo)),22),'0',22)
+	pInstAsBin  = fnPadLeadingChars(RIGHT_STRING(fnBytesToBinary(fnLongToByte(pInstNo,0)),22),'0',22)
 	
 	pResult = fnPadLeadingChars(fnBinaryToByte("pTypeAsBin,pInstAsBin"),$00,4)
 	
