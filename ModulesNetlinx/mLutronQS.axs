@@ -296,22 +296,26 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 							STACK_VAR INTEGER pCompNo
 							STACK_VAR INTEGER pActNo
 							pCompNo = ATOI(fnStripCharsRight(REMOVE_STRING(pDATA,',',1),1))
+							
 							IF(FIND_STRING(pDATA,',',1)){
 								pActNo = ATOI(fnStripCharsRight(REMOVE_STRING(pDATA,',',1),1))
 							}
 							ELSE{
 								pActNo = ATOI(pDATA)
 							}
-
+							SEND_STRING 0,"ID,':',ITOA(pCompNo),':',ITOA(pActNo)"
 							SWITCH(pActNo){
 								CASE 3:{	// Push Event
-									myLutronQS.DEVICE[GET_LAST(vdvControl)].BTN[pCompNo] = TRUE
+									myLutronQS.DEVICE[x].BTN[pCompNo] = TRUE
 								}
-								CASE 4:{	// Release Event
-									myLutronQS.DEVICE[GET_LAST(vdvControl)].BTN[pCompNo] = FALSE
+								CASE 4:	// Release Event
+								CASE 6:{	// Multi-Tap
+									// Force On (some devices dont' register Press
+									[vdvControl[x],pCompNo] = TRUE
+									myLutronQS.DEVICE[x].BTN[pCompNo] = FALSE
 								}
 								CASE 9:{	// LED State
-									myLutronQS.DEVICE[GET_LAST(vdvControl)].LED[pCompNo-80] = ATOI(pDATA)
+									myLutronQS.DEVICE[x].LED[pCompNo-80] = ATOI(pDATA)
 								}
 							}
 						}
@@ -532,6 +536,10 @@ DEFINE_EVENT DATA_EVENT[dvLutron]{
 			myLutronQS.RX = ''
 			fnInitConnection()
 		}
+		ELSE IF(FIND_STRING(myLutronQS.Rx,'QNET> ',1) && myLutronQS.IP_STATE != IP_STATE_CONNECTED) {
+			REMOVE_STRING(myLutronQS.Rx,"'QNET> '",1)
+			fnInitConnection()
+		}
 		IF(myLutronQS.IP_STATE == IP_STATE_CONNECTED){
 			WHILE(FIND_STRING(myLutronQS.Rx,"$0D,$0A",1) || FIND_STRING(myLutronQS.Rx,"'QNET> '",1) || FIND_STRING(myLutronQS.Rx,"'QSE>'",1)){
 				STACK_VAR INTEGER pPacketLOC
@@ -628,11 +636,11 @@ DATA_EVENT[vdvControl]{
 							pGroupID = ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1))
 							pGroupIndex++
 							IF(pGroupIndex <= _MAX_GROUPS){
-								myLutronQS.DEVICE[d].GROUP[pGroupIndex].ID = pGroupID 
+								myLutronQS.DEVICE[d].GROUP[pGroupIndex].ID = pGroupID
 							}
 						}
 						pGroupIndex++
-						myLutronQS.DEVICE[d].GROUP[pGroupIndex].ID = ATOI(DATA.TEXT) 
+						myLutronQS.DEVICE[d].GROUP[pGroupIndex].ID = ATOI(DATA.TEXT)
 					}
 				}
 			}
