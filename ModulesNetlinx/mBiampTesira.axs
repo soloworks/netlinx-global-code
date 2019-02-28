@@ -327,7 +327,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pFBData[4000]){
 		fnDebug(DEBUG_DEV,'fnProcessFeedback','Token Response')
 		REMOVE_STRING(pFBData,':"',1)
 		TOKEN = fnRemoveQuotes(fnStripCharsRight(REMOVE_STRING(pFBData,'"',1),1))
-		
+
 		FOR(o=1; o<=LENGTH_ARRAY(vdvObjects); o++){
 			STACK_VAR CHAR pDATA[4000]
 			pDATA = pFBData
