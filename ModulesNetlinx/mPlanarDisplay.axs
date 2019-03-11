@@ -10,7 +10,7 @@ DEFINE_TYPE STRUCTURE uPlanar{
 	CHAR 		IP_HOST[255]
 	INTEGER 	IP_PORT
 	INTEGER 	DEBUG
-	
+
 	INTEGER  STATE
 	INTEGER	APPLY_PRESET
 }
@@ -37,7 +37,7 @@ LONG TLT_COMMS[]		= { 90000 }
 /******************************************************************************
 	Communication Helpers
 ******************************************************************************/
-DEFINE_FUNCTION fnDebug(INTEGER pDebug,CHAR pMSG[]){	
+DEFINE_FUNCTION fnDebug(INTEGER pDebug,CHAR pMSG[]){
 	IF(pDebug <= myPlanar.DEBUG){
 		STACK_VAR CHAR pMSG_COPY[10000]
 		pMSG_COPY = pMSG
@@ -74,10 +74,10 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_POLL]{
 DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 	// Debug Out
 	fnDebug(DEBUG_STD,"'PLANAR-> ',pDATA")
-	
+
 	// Process Data
 	SWITCH(UPPER_STRING(fnStripCharsRight(REMOVE_STRING(pDATA,':',1),1))){
-		CASE 'DISPLAY.POWER':{	
+		CASE 'DISPLAY.POWER':{
 			fnPoll()
 		}
 		CASE 'SYSTEM.STATE':{
@@ -89,7 +89,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 			}
 		}
 	}
-	
+
 	// Reset Timeout
 	IF(TIMELINE_ACTIVE(TLID_COMMS)){TIMELINE_KILL(TLID_COMMS)}
 	TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
@@ -146,7 +146,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 	}
 }
 /******************************************************************************
-	Device Events - Physical Device 
+	Device Events - Physical Device
 ******************************************************************************/
 DEFINE_EVENT DATA_EVENT[ipUDP]{
 	ONLINE:{
@@ -159,11 +159,13 @@ DEFINE_EVENT DATA_EVENT[ipUDP]{
 	}
 	OFFLINE:{
 		// No idea why this would close, but if it does re-open it
-		IP_CLIENT_OPEN(ipUDP.PORT,myPlanar.IP_HOST,myPlanar.IP_PORT,IP_UDP_2WAY)
+		WAIT 10{
+			IP_CLIENT_OPEN(ipUDP.PORT,myPlanar.IP_HOST,myPlanar.IP_PORT,IP_UDP_2WAY)
+		}
 	}
 }
 /******************************************************************************
-	Device Events - Physical Device 
+	Device Events - Physical Device
 ******************************************************************************/
 DEFINE_PROGRAM{
 	SEND_LEVEL vdvControl,2,myPlanar.STATE
