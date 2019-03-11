@@ -834,9 +834,14 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 					}
 					CASE 'IncomingCallIndication':
 					CASE 'OutgoingCallIndication':{
-						REMOVE_STRING(pDATA,'CallId:',1)
-						fnRegisterCall(ATOI(pDATA))
-						fnQueueTx('xStatus Call',pDATA)
+						SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,':',1),1)){
+							CASE 'CallId':{
+								fnRegisterCall(ATOI(pDATA))
+								fnQueueTx('xStatus Call',pDATA)
+							}
+							CASE 'RemoteURI':{}
+							CASE 'DisplayNameValue':{}
+						}
 					}
 					CASE 'CallSuccessful':{
 						REMOVE_STRING(pDATA,'CallId:',1)
@@ -1943,7 +1948,9 @@ DEFINE_FUNCTION fnSendCallDetail(INTEGER pPanel, INTEGER pCALL){
 	pStateText = "pStateText,$0A,'Number:',mySX.ACTIVE_CALLS[pCALL].NUMBER"
 
 	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addVCCallStatus[pCall]),',2&3,',pStateText"
-	SEND_COMMAND tp[pPanel],"'^SHO-',ITOA(btnHangup[pCALL+1]),',',ITOA([vdvCalls[pCALL],236] || [vdvCalls[pCALL],237] || [vdvCalls[pCALL],238])"
+	IF(LENGTH_ARRAY(vdvCalls) >= pCALL){
+		SEND_COMMAND tp[pPanel],"'^SHO-',ITOA(btnHangup[pCALL+1]),',',ITOA([vdvCalls[pCALL],236] || [vdvCalls[pCALL],237] || [vdvCalls[pCALL],238])"
+	}
 }
 
 DEFINE_FUNCTION fnUpdatePanelCallDuration(){
