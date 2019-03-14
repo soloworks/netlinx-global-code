@@ -14,8 +14,7 @@ DEFINE_TYPE STRUCTURE uCanonProj{
 	INTEGER 	FREEZE
 	(** Desired State **)
 	CHAR 	  	desINPUT[10]
-	INTEGER 	desVMUTE
-	INTEGER 	desFREEZE
+	INTEGER 	desVidMute
 	INTEGER 	desPOWER
 	(** Comms **)
 	INTEGER	isIP
@@ -151,6 +150,12 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 						CASE 'OFF':	myCanonProj.VidMute = FALSE
 						CASE 'ON':	myCanonProj.VidMute = TRUE
 					}
+					IF(myCanonProj.desVidMute && !myCanonProj.VidMute){
+						fnAddToQueue("'BLANK=ON'")
+					}
+					IF(myCanonProj.desVidMute && myCanonProj.VidMute){
+						myCanonProj.desVidMute = FALSE
+					}
 				}
 				CASE 'INPUT':{
 					myCanonProj.INPUT = pDATA
@@ -261,13 +266,15 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{	// Control Events
 					}
 				}
 			}
-			CASE 'VMUTE':{
+			CASE 'VIDMUTE':{
 				SWITCH(DATA.TEXT){
 					CASE 'ON':{
 						fnAddToQueue("'BLANK=ON'")
+						myCanonProj.desVidMute = TRUE
 					}
 					CASE 'OFF':{
 						fnAddToQueue("'BLANK=OFF'")
+						myCanonProj.desVidMute = FALSE
 					}
 				}
 			}
