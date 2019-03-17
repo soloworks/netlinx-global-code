@@ -92,6 +92,16 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 					CASE 'OFF':		fnSendCommand("$01,$01,$00,$02")
 				}
 			}
+			CASE 'INPUT':{
+				SWITCH(DATA.TEXT){
+					CASE 'HDMI1':fnSendCommand("$02,$06,$00,$08")
+				}
+			}
+			CASE 'VMUTE':{
+				SWITCH(DATA.TEXT){
+					CASE 'ON': 		fnSendCommand("$07,$4E,$00,$55")
+				}
+			}
 		}
 	}
 }
