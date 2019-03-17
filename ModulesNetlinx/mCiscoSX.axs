@@ -14,7 +14,7 @@ INTEGER MAX_CALLS	       =  5
 INTEGER MAX_PRESETS      = 15
 INTEGER MAX_CAMERAS      =  7
 INTEGER MAX_PERIPHERAL   = 10
-INTEGER MAX_RECENT_CALLS = 20
+INTEGER MAX_RECENT_CALLS = 15
 
 DEFINE_TYPE STRUCTURE uPeripheral{
 	INTEGER INDEX
@@ -179,6 +179,7 @@ DEFINE_TYPE STRUCTURE uSX{
 	uCall		   ACTIVE_CALLS[MAX_CALLS]
 	uRecentCall RecentCalls[MAX_RECENT_CALLS]
 	INTEGER     RecentCallsLoading
+	INTEGER     RecentCallSelected
 	// Directory
 	uDir		DIRECTORY
 	// Touch10
@@ -199,6 +200,12 @@ DEFINE_TYPE STRUCTURE uSXPanel{
 DEFINE_CONSTANT
 INTEGER lvlVolume				= 1
 INTEGER lvlDIR_ScrollBar 	= 2
+INTEGER btnDirRecords[] = {
+	11,12,13,14,15,16,17,18,19,20,21,22,23,24,25
+}
+INTEGER btnRecentCalls[] = {
+	31,32,33,34,35,36,37,38,39,40,41,42,43,44,45
+}
 /******************************************************************************
 	Interface Text Fields
 ******************************************************************************/
@@ -312,9 +319,6 @@ INTEGER btnDirPage			= 604
 INTEGER btnDirSearchBar2 	= 605
 INTEGER btnDirType[]       = {606,607,608} // Local/Corporate/Toggle
 
-INTEGER btnDirRecords[] = {
-	11,12,13,14,15,16,17,18,19,20,21,22,23,24,25
-}
 INTEGER btnDirMethods[] = {
 	641,642,643
 }
@@ -340,10 +344,7 @@ INTEGER btnDirSearchKB[] = {
 /******************************************************************************
 	Button Numbers - Recent Calls List
 ******************************************************************************/
-INTEGER btnRecentCalls[] = {
-	31,32,33,34,35,36,37,38,39,40,
-	41,42,43,44,45,46,47,48,49,50
-}
+INTEGER btnRecentCallDial	 	= 701
 /******************************************************************************
 	Button Numbers - Custom Speed Dialing
 ******************************************************************************/
@@ -1447,6 +1448,12 @@ CHANNEL_EVENT[vdvCalls,238]{
 	OFF:fnCallEvent()
 	ON: fnCallEvent()
 }
+DEFINE_EVENT CHANNEL_EVENT[vdvControl[1],238]{
+	OFF:{
+		// Get latest Recent Calls list
+		fnQueueTx('xCommand CallHistory Recents',"'Limit: ',ITOA(MAX_RECENT_CALLS),' DetailLevel: Full'")
+	}
+}
 
 DEFINE_FUNCTION fnCallEvent(){
 	IF(TIMELINE_ACTIVE(TLID_CALL_EVENT)){TIMELINE_KILL(TLID_CALL_EVENT)}
@@ -1923,6 +1930,7 @@ DEFINE_FUNCTION fnInitPanel(INTEGER pPanel){
 	fnDrawDialKB(pPanel)
 	fnDrawSearchKB(pPanel)
 	fnSetupPresetButtons(pPanel)
+	fnDisplayRecentCalls(pPanel)
 
 	SEND_COMMAND tp[pPanel], "'^GLL-',ITOA(lvlDIR_ScrollBar),',1'"
 
@@ -2047,11 +2055,16 @@ DEFINE_FUNCTION fnDisplayRecentCalls(INTEGER pPanel){
 			BREAK
 		}
 	}
+	IF(x = MAX_RECENT_CALLS+1){x = MAX_RECENT_CALLS-1}
+	// Show all the calls that we have detail for
 	SEND_COMMAND tp[pPanel],"'^SHO-',ITOA(btnRecentCalls[1]),'.',ITOA(btnRecentCalls[x]),',1'"
+	// Hide all the ones we don't, if there are any
 	IF(x < MAX_RECENT_CALLS){
 		SEND_COMMAND tp[pPanel],"'^SHO-',ITOA(btnRecentCalls[x+1]),'.',ITOA(btnRecentCalls[LENGTH_ARRAY(btnRecentCalls)]),',0'"
 	}
-
+	// Deselect any calls and hide the call buttong
+	mySX.RecentCallSelected = 0
+	SEND_COMMAND tp,"'^SHO-',ITOA(btnRecentCallDial),',0'"
 }
 /******************************************************************************
 	Touch Panel Events - General
@@ -2796,6 +2809,25 @@ DEFINE_FUNCTION fnDisplaySearchStrings(){
 }
 
 /******************************************************************************
+	Recent Call Interface
+******************************************************************************/
+DEFINE_EVENT BUTTON_EVENT[tp,btnRecentCalls]{
+	PUSH:{
+		IF(mySX.RecentCallSelected == GET_LAST(btnRecentCalls)){
+			mySX.RecentCallSelected = 0
+		}ELSE{
+			mySX.RecentCallSelected = GET_LAST(btnRecentCalls)
+		}
+		SEND_COMMAND tp,"'^SHO-',ITOA(btnRecentCallDial),',',ITOA(mySX.RecentCallSelected != 0)"
+	}
+}
+
+DEFINE_EVENT BUTTON_EVENT[tp,btnRecentCallDial]{
+	PUSH:{
+		fnQueueTx('xCommand Dial',"'Number: ',mySX.RecentCalls[mySx.RecentCallSelected].CallbackNumber")
+	}
+}
+/******************************************************************************
 	Interface Feedback
 ******************************************************************************/
 DEFINE_PROGRAM {
@@ -2831,6 +2863,28 @@ DEFINE_PROGRAM {
 			ACTIVE([vdvCalls[b],238]):                   	SEND_LEVEL tp,addVCCallStatus[b],3
 			ACTIVE([vdvCalls[b],237] || [vdvCalls[b],236]): SEND_LEVEL tp,addVCCallStatus[b],2
 			ACTIVE(1):                                   	SEND_LEVEL tp,addVCCallStatus[b],1
+		}
+	}
+	
+	// Recent Calls Feedback
+	FOR(b = 1; b <= LENGTH_ARRAY(btnRecentCalls); b++){
+		IF(mySX.RecentCallSelected == b){
+			SEND_LEVEL tp,btnRecentCalls[b],4
+		}
+		ELSE{
+			SWITCH(mySX.RecentCalls[b].Direction){
+				CASE 'Outgoing':{
+					SEND_LEVEL tp,btnRecentCalls[b],3
+				}
+				CASE 'Incoming':{
+					SWITCH(mySX.RecentCalls[b].OccurenceType){
+						CASE 'Missed':
+						CASE 'Rejected':
+						CASE 'UnacknowledgedMissed':SEND_LEVEL tp,btnRecentCalls[b],1
+						DEFAULT:SEND_LEVEL tp,btnRecentCalls[b],2
+					}
+				}
+			}
 		}
 	}
 }
