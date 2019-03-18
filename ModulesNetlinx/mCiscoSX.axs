@@ -10,10 +10,11 @@ MODULE_NAME='mCiscoSX'(DEV vdvControl[], DEV vdvCalls[], DEV tp[], DEV dvVC)
 	Module Structures
 ******************************************************************************/
 DEFINE_CONSTANT
-INTEGER MAX_CALLS	     =  5
-INTEGER MAX_PRESETS    = 15
-INTEGER MAX_CAMERAS    =  7
-INTEGER MAX_PERIPHERAL = 10
+INTEGER MAX_CALLS	       =  5
+INTEGER MAX_PRESETS      = 15
+INTEGER MAX_CAMERAS      =  7
+INTEGER MAX_PERIPHERAL   = 10
+INTEGER MAX_RECENT_CALLS = 15
 
 DEFINE_TYPE STRUCTURE uPeripheral{
 	INTEGER INDEX
@@ -44,6 +45,15 @@ DEFINE_TYPE STRUCTURE uCall{
 	CHAR 		STATUS[20]
 	INTEGER 	isMUTED
 	INTEGER	DURATION
+}
+
+DEFINE_TYPE STRUCTURE uRecentCall{
+	CHAR    LastOccurenceStartTime[20]
+	CHAR    OccurenceType[20]
+	INTEGER OccurenceCount
+	CHAR    CallbackNumber[100]
+	CHAR    DisplayName[100]
+	CHAR    Direction[20]
 }
 
 DEFINE_TYPE STRUCTURE uDirEntry{
@@ -87,21 +97,21 @@ DEFINE_TYPE STRUCTURE uCamera{
 
 DEFINE_TYPE STRUCTURE uDir{
 	// Directory
-	INTEGER  STATE					// Flat to show Directory is Processing
-	INTEGER	IGNORE_TOTALROWS	// TotalRows value is not garanteed
-	INTEGER	NO_MORE_ENTRIES	// Expected a directory entry, didn't find one, so end of directory reached
-	INTEGER  CORPORATE			// If true use Corporate Directory
-	CHAR		SEARCH1[20]			// Current Search String Restriction
-	CHAR		SEARCH2[20]			// Current Search String Being Edited
-	INTEGER  dragBarActive		// Side Drag Bar is currently being interacted with
-	INTEGER	PAGENO				// Current Page Number
-	INTEGER	PAGESIZE				// Interface Page Size
-	INTEGER	SELECTED_RECORD
-	INTEGER	SELECTED_METHOD
-	INTEGER	RECORDCOUNT
-	uDirEntry	RECORDS[20]			// Directory Size
-	uDirEntry	TRAIL[8]				// Breadcrumb Trail
-	CHAR		PREFERED_METHOD[10]	// Prefered protocol from Dircetory list (optional)
+	INTEGER    STATE					// Flat to show Directory is Processing
+	INTEGER	  IGNORE_TOTALROWS	// TotalRows value is not garanteed
+	INTEGER	  NO_MORE_ENTRIES	// Expected a directory entry, didn't find one, so end of directory reached
+	INTEGER    CORPORATE			// If true use Corporate Directory
+	CHAR		  SEARCH1[20]			// Current Search String Restriction
+	CHAR		  SEARCH2[20]			// Current Search String Being Edited
+	INTEGER    dragBarActive		// Side Drag Bar is currently being interacted with
+	INTEGER	  PAGENO				// Current Page Number
+	INTEGER	  PAGESIZE				// Interface Page Size
+	INTEGER	  SELECTED_RECORD
+	INTEGER	  SELECTED_METHOD
+	INTEGER	  RECORDCOUNT
+	uDirEntry  RECORDS[20]			// Directory Size
+	uDirEntry  TRAIL[8]				// Breadcrumb Trail
+	CHAR		  PREFERED_METHOD[10]	// Prefered protocol from Dircetory list (optional)
 }
 
 DEFINE_TYPE STRUCTURE uSX{
@@ -166,7 +176,10 @@ DEFINE_TYPE STRUCTURE uSX{
 	CHAR 		IP_HOST[15]
 	INTEGER 	IP_PORT
 	// Call State
-	uCall		ACTIVE_CALLS[MAX_CALLS]
+	uCall		   ACTIVE_CALLS[MAX_CALLS]
+	uRecentCall RecentCalls[MAX_RECENT_CALLS]
+	INTEGER     RecentCallsLoading
+	INTEGER     RecentCallSelected
 	// Directory
 	uDir		DIRECTORY
 	// Touch10
@@ -187,6 +200,12 @@ DEFINE_TYPE STRUCTURE uSXPanel{
 DEFINE_CONSTANT
 INTEGER lvlVolume				= 1
 INTEGER lvlDIR_ScrollBar 	= 2
+INTEGER btnDirRecords[] = {
+	11,12,13,14,15,16,17,18,19,20,21,22,23,24,25
+}
+INTEGER btnRecentCalls[] = {
+	31,32,33,34,35,36,37,38,39,40,41,42,43,44,45
+}
 /******************************************************************************
 	Interface Text Fields
 ******************************************************************************/
@@ -300,9 +319,6 @@ INTEGER btnDirPage			= 604
 INTEGER btnDirSearchBar2 	= 605
 INTEGER btnDirType[]       = {606,607,608} // Local/Corporate/Toggle
 
-INTEGER btnDirRecords[] = {
-	11,12,13,14,15,16,17,18,19,20,21,22,23,24,25
-}
 INTEGER btnDirMethods[] = {
 	641,642,643
 }
@@ -325,6 +341,10 @@ INTEGER btnDirSearchKB[] = {
 	693	// CANCEL
 }
 
+/******************************************************************************
+	Button Numbers - Recent Calls List
+******************************************************************************/
+INTEGER btnRecentCallDial	 	= 701
 /******************************************************************************
 	Button Numbers - Custom Speed Dialing
 ******************************************************************************/
@@ -607,8 +627,7 @@ DEFINE_FUNCTION fnInitData(){
 	fnQueueTx('xCommand peripherals list','Connected: True')
 
 	// Get latest Recent Calls list
-	//fnClearRecentCalls()
-	fnQueueTx('xCommand CallHistory Recents','Limit: 10 DetailLevel: Full')
+	fnQueueTx('xCommand CallHistory Recents',"'Limit: ',ITOA(MAX_RECENT_CALLS),' DetailLevel: Full'")
 
 	fnInitPoll()
 }
@@ -692,6 +711,11 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 			mySX.Peripherals.LoadingOffline = FALSE
 			fnSendPeripheralsData()
 		}
+		// Recent Calls
+		IF(mySX.RecentCallsLoading){
+			mySX.RecentCallsLoading = FALSE
+			fnDisplayRecentCalls(0)
+		}
 		RETURN TRUE
 	}
 	ELSE IF(pDATA == 'OK' || pDATA == 'ERROR'){
@@ -712,6 +736,34 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 					}
 					CASE 'SelfviewSetResult':{
 
+					}
+					// Recent Call List
+					CASE 'CallHistoryRecentsResult':{
+						STACK_VAR INTEGER x
+						// Clear existing history if loading starting
+						IF(!mySX.RecentCallsLoading){
+							FOR(x = 1; x <= MAX_RECENT_CALLS; x++){
+								STACK_VAR uRecentCall blankRecentCall
+								mySX.RecentCalls[x] = blankRecentCall
+							}
+						}
+						// Set Loading Variable
+						mySX.RecentCallsLoading = TRUE
+						SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
+							CASE 'Entry':{
+								// Get Entry Number
+								x = ATOI(REMOVE_STRING(pDATA,' ',1))+1
+								// Get the Data
+								SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),2)){
+									CASE 'LastOccurrenceStartTime': mySX.RecentCalls[x].LastOccurenceStartTime = fnRemoveQuotes(pDATA)
+									CASE 'OccurrenceType':          mySX.RecentCalls[x].OccurenceType          = fnRemoveQuotes(pDATA)
+									CASE 'CallbackNumber':          mySX.RecentCalls[x].CallbackNumber         = fnRemoveQuotes(pDATA)
+									CASE 'DisplayName':             mySX.RecentCalls[x].DisplayName            = fnRemoveQuotes(pDATA)
+									CASE 'Direction':               mySX.RecentCalls[x].Direction              = fnRemoveQuotes(pDATA)
+									CASE 'OccurrenceCount':         mySX.RecentCalls[x].OccurenceCount         = ATOI(pDATA)
+								}
+							}
+						}
 					}
 					CASE 'PeripheralsListResult':{
 						// Set status for incoming list
@@ -834,9 +886,14 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 					}
 					CASE 'IncomingCallIndication':
 					CASE 'OutgoingCallIndication':{
-						REMOVE_STRING(pDATA,'CallId:',1)
-						fnRegisterCall(ATOI(pDATA))
-						fnQueueTx('xStatus Call',pDATA)
+						SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,':',1),1)){
+							CASE 'CallId':{
+								fnRegisterCall(ATOI(pDATA))
+								fnQueueTx('xStatus Call',pDATA)
+							}
+							CASE 'RemoteURI':{}
+							CASE 'DisplayNameValue':{}
+						}
 					}
 					CASE 'CallSuccessful':{
 						REMOVE_STRING(pDATA,'CallId:',1)
@@ -1391,6 +1448,12 @@ CHANNEL_EVENT[vdvCalls,238]{
 	OFF:fnCallEvent()
 	ON: fnCallEvent()
 }
+DEFINE_EVENT CHANNEL_EVENT[vdvControl[1],238]{
+	OFF:{
+		// Get latest Recent Calls list
+		fnQueueTx('xCommand CallHistory Recents',"'Limit: ',ITOA(MAX_RECENT_CALLS),' DetailLevel: Full'")
+	}
+}
 
 DEFINE_FUNCTION fnCallEvent(){
 	IF(TIMELINE_ACTIVE(TLID_CALL_EVENT)){TIMELINE_KILL(TLID_CALL_EVENT)}
@@ -1867,6 +1930,7 @@ DEFINE_FUNCTION fnInitPanel(INTEGER pPanel){
 	fnDrawDialKB(pPanel)
 	fnDrawSearchKB(pPanel)
 	fnSetupPresetButtons(pPanel)
+	fnDisplayRecentCalls(pPanel)
 
 	SEND_COMMAND tp[pPanel], "'^GLL-',ITOA(lvlDIR_ScrollBar),',1'"
 
@@ -1943,7 +2007,9 @@ DEFINE_FUNCTION fnSendCallDetail(INTEGER pPanel, INTEGER pCALL){
 	pStateText = "pStateText,$0A,'Number:',mySX.ACTIVE_CALLS[pCALL].NUMBER"
 
 	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addVCCallStatus[pCall]),',2&3,',pStateText"
-	SEND_COMMAND tp[pPanel],"'^SHO-',ITOA(btnHangup[pCALL+1]),',',ITOA([vdvCalls[pCALL],236] || [vdvCalls[pCALL],237] || [vdvCalls[pCALL],238])"
+	IF(LENGTH_ARRAY(vdvCalls) >= pCALL){
+		SEND_COMMAND tp[pPanel],"'^SHO-',ITOA(btnHangup[pCALL+1]),',',ITOA([vdvCalls[pCALL],236] || [vdvCalls[pCALL],237] || [vdvCalls[pCALL],238])"
+	}
 }
 
 DEFINE_FUNCTION fnUpdatePanelCallDuration(){
@@ -1967,7 +2033,39 @@ DEFINE_FUNCTION fnUpdatePanelCallDuration(){
 		}
 	}
 }
-
+DEFINE_FUNCTION fnDisplayRecentCalls(INTEGER pPanel){
+	STACK_VAR INTEGER x
+	IF(!pPanel){
+		STACK_VAR INTEGER p
+		FOR(p = 1; p <= LENGTH_ARRAY(tp); p++){
+			fnDisplayRecentCalls(p)
+		}
+		RETURN 
+	}
+	FOR(x = 1; x <= MAX_RECENT_CALLS; x++){
+		IF(mySX.RecentCalls[x].CallbackNumber != ''){
+			IF(mySX.RecentCalls[x].DisplayName != ''){
+				SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(btnRecentCalls[x]),',0,',mySX.RecentCalls[x].DisplayName"
+			}
+			ELSE{
+				SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(btnRecentCalls[x]),',0,',mySX.RecentCalls[x].CallbackNumber"
+			}
+		}
+		ELSE{
+			BREAK
+		}
+	}
+	IF(x = MAX_RECENT_CALLS+1){x = MAX_RECENT_CALLS-1}
+	// Show all the calls that we have detail for
+	SEND_COMMAND tp[pPanel],"'^SHO-',ITOA(btnRecentCalls[1]),'.',ITOA(btnRecentCalls[x]),',1'"
+	// Hide all the ones we don't, if there are any
+	IF(x < MAX_RECENT_CALLS){
+		SEND_COMMAND tp[pPanel],"'^SHO-',ITOA(btnRecentCalls[x+1]),'.',ITOA(btnRecentCalls[LENGTH_ARRAY(btnRecentCalls)]),',0'"
+	}
+	// Deselect any calls and hide the call buttong
+	mySX.RecentCallSelected = 0
+	SEND_COMMAND tp,"'^SHO-',ITOA(btnRecentCallDial),',0'"
+}
 /******************************************************************************
 	Touch Panel Events - General
 ******************************************************************************/
@@ -2711,6 +2809,25 @@ DEFINE_FUNCTION fnDisplaySearchStrings(){
 }
 
 /******************************************************************************
+	Recent Call Interface
+******************************************************************************/
+DEFINE_EVENT BUTTON_EVENT[tp,btnRecentCalls]{
+	PUSH:{
+		IF(mySX.RecentCallSelected == GET_LAST(btnRecentCalls)){
+			mySX.RecentCallSelected = 0
+		}ELSE{
+			mySX.RecentCallSelected = GET_LAST(btnRecentCalls)
+		}
+		SEND_COMMAND tp,"'^SHO-',ITOA(btnRecentCallDial),',',ITOA(mySX.RecentCallSelected != 0)"
+	}
+}
+
+DEFINE_EVENT BUTTON_EVENT[tp,btnRecentCallDial]{
+	PUSH:{
+		fnQueueTx('xCommand Dial',"'Number: ',mySX.RecentCalls[mySx.RecentCallSelected].CallbackNumber")
+	}
+}
+/******************************************************************************
 	Interface Feedback
 ******************************************************************************/
 DEFINE_PROGRAM {
@@ -2746,6 +2863,28 @@ DEFINE_PROGRAM {
 			ACTIVE([vdvCalls[b],238]):                   	SEND_LEVEL tp,addVCCallStatus[b],3
 			ACTIVE([vdvCalls[b],237] || [vdvCalls[b],236]): SEND_LEVEL tp,addVCCallStatus[b],2
 			ACTIVE(1):                                   	SEND_LEVEL tp,addVCCallStatus[b],1
+		}
+	}
+	
+	// Recent Calls Feedback
+	FOR(b = 1; b <= LENGTH_ARRAY(btnRecentCalls); b++){
+		IF(mySX.RecentCallSelected == b){
+			SEND_LEVEL tp,btnRecentCalls[b],4
+		}
+		ELSE{
+			SWITCH(mySX.RecentCalls[b].Direction){
+				CASE 'Outgoing':{
+					SEND_LEVEL tp,btnRecentCalls[b],3
+				}
+				CASE 'Incoming':{
+					SWITCH(mySX.RecentCalls[b].OccurenceType){
+						CASE 'Missed':
+						CASE 'Rejected':
+						CASE 'UnacknowledgedMissed':SEND_LEVEL tp,btnRecentCalls[b],1
+						DEFAULT:SEND_LEVEL tp,btnRecentCalls[b],2
+					}
+				}
+			}
 		}
 	}
 }

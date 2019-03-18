@@ -871,6 +871,19 @@ DEFINE_EVENT DATA_EVENT[vdvObjects]{
 							CASE 'TOGGLE':	fnSendAttributeCommand(FALSE,myObjects[o].TAG1,'toggle','mute',myObjects[o].INDEX1,'','')
 						}
 					}
+					CASE OBJ_LOGIC_STATE:{
+						SWITCH(DATA.TEXT){
+							CASE 'ON':
+							CASE 'TRUE':	myObjects[o].VAL_STATE[01] = TRUE
+							CASE 'OFF':
+							CASE 'FALSE':	myObjects[o].VAL_STATE[01] = FALSE
+							CASE 'TOGGLE':	myObjects[o].VAL_STATE[01] = !myObjects[o].VAL_STATE[01]
+						}
+						SWITCH(myObjects[o].VAL_STATE[01]){
+							CASE TRUE: 	fnSendAttributeCommand(FALSE,myObjects[o].TAG1,'set','state',myObjects[o].INDEX1,'','true')
+							CASE FALSE:	fnSendAttributeCommand(FALSE,myObjects[o].TAG1,'set','state',myObjects[o].INDEX1,'','false')
+						}
+					}
 				}
 			}
 			CASE 'AUTOANSWER':{
@@ -1034,6 +1047,7 @@ DEFINE_PROGRAM{
 			}
 			CASE OBJ_LOGIC_STATE:{
 				[vdvObjects[o],1] 	= myObjects[o].VAL_STATE[01]
+				[vdvObjects[o],198] 	= myObjects[o].VAL_STATE[01]
 				[vdvObjects[o],199] 	= myObjects[o].VAL_STATE[01]
 			}
 			CASE OBJ_LOGIC_METER:{
