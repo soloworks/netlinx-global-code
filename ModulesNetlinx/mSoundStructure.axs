@@ -729,6 +729,14 @@ DEFINE_EVENT DATA_EVENT[vdvObjects]{
 					}
 				}
 			}
+			CASE 'DTMF':{
+				SWITCH(mySS.OBJECT[o].TYPE){
+					CASE OBJ_TYPE_POTS:
+					CASE OBJ_TYPE_VOIP:{
+						fnSendCommand('set',"'phone_dial "',mySS.OBJECT[o].ID_2,'" "',DATA.TEXT,'"'")
+					}
+				}
+			}
 			CASE 'MICMUTE':{
 				SWITCH(mySS.OBJECT[o].TYPE){
 					CASE OBJ_TYPE_POTS:
