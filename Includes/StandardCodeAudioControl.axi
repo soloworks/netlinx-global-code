@@ -103,6 +103,8 @@ DEFINE_FUNCTION fnSetGainNames(INTEGER pPanel, INTEGER pGain){
 		}
 		RETURN
 	}
+
+	#IF_DEFINED addGainName
 	IF(1){
 		STACK_VAR INTEGER l
 		FOR(l = 1; l <= LENGTH_ARRAY(addGainName); l++){
@@ -111,6 +113,9 @@ DEFINE_FUNCTION fnSetGainNames(INTEGER pPanel, INTEGER pGain){
 			}
 		}
 	}
+	#ELSE
+		#WARN 'StandardAudio - addGainName Not Declared'
+	#END_IF
 }
 
 DEFINE_EVENT DATA_EVENT[tpMain]{
