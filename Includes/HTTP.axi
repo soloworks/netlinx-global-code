@@ -5,6 +5,9 @@
 	Uses structures to help send and receive data via HTTP
 	TODO: HTTP/S
 
+	Required CallBack Function:
+	DEFINE_FUNCTION eventHTTPResponse(uResponse r){}
+
 ******************************************************************************/
 DEFINE_CONSTANT
 INTEGER	CONN_STATE_OFFLINE		= 0
@@ -27,7 +30,7 @@ DEFINE_TYPE Structure uKeyPair{
 	CHAR VALUE[100]
 }
 
-DEFINE_TYPE STRUCTURE uRequest{
+DEFINE_TYPE STRUCTURE uHTTPRequest{
 	INTEGER  METHOD
 	CHAR 		HOST[255]
 	INTEGER	PORT
@@ -37,25 +40,25 @@ DEFINE_TYPE STRUCTURE uRequest{
 	CHAR     BODY[10000]
 }
 
-DEFINE_TYPE STRUCTURE uResponse{
+DEFINE_TYPE STRUCTURE uHTTPResponse{
 	INTEGER	CODE
 	uKeyPair HEADERS[_MAX_HEADERS]
 	CHAR     BODY[10000]
 }
 
 DEFINE_TYPE STRUCTURE uHTTP{
-	INTEGER		CONN_STATE
-	CHAR 			IP_HOST[255]
-	INTEGER		IP_PORT
-	CHAR 			Rx[10000]
-	uHTTPReq    Tx[_REQ_QUEUE_SIZE]
-	uHTTPResp	RESPONSE
-	INTEGER		RESPONSE_HEADERS_PROCESSED
-	uDebug      DEBUG
+	INTEGER			CONN_STATE
+	CHAR 				IP_HOST[255]
+	INTEGER			IP_PORT
+	CHAR 				Rx[10000]
+	uHTTPRequest   Tx[_REQ_QUEUE_SIZE]
+	uHTTPResponse	RESPONSE
+	INTEGER			RESPONSE_HEADERS_PROCESSED
+	uDebug      	DEBUG
 }
 
 DEFINE_VARIABLE
-uHTTP HTTP
+VOLATILE uHTTP HTTP
 
 CHAR HTTP_REQUEST_BODY_01[10000] = ''
 CHAR HTTP_REQUEST_BODY_02[10000] = ''
@@ -82,7 +85,7 @@ CHAR HTTP_RESPONSE_BODY_10[10000] = ''
 DEFINE_START{
 	// Setup Receive Buffer
 	CREATE_BUFFER ipHTTP, HTTP.Rx
-	
+
 	// Setup HTTP Defaults
 	HTTP.IP_PORT = 80
 }
@@ -98,7 +101,7 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 	pHost = HTTP.IP_HOST
 	IF(LENGTH_ARRAY(HTTP.Tx[1].HOST)){ pHOST = HTTP.Tx[1].HOST }
 	pPORT = HTTP.IP_PORT
-	IF(HTTP.Tx[1].PORT){ pPORT = HTTP.Tx[1].PORT }
+	//IF(HTTP.Tx[1].PORT){ pPORT = HTTP.Tx[1].PORT }
 
 	fnDebug(HTTP.DEBUG,DEBUG_DEV,"'fnOpenTCPConnection','Called'")
 
@@ -122,10 +125,10 @@ DEFINE_FUNCTION fnCloseTCPConnection(){
 /******************************************************************************
 	Queue Functions
 ******************************************************************************/
-DEFINE_FUNCTION fnAddToHTTPQueue(uHTTPReq r){
+DEFINE_FUNCTION fnAddToHTTPQueue(uHTTPRequest r){
 	STACK_VAR INTEGER x
 	FOR(x = 1; x <= _REQ_QUEUE_SIZE; x++){
-		IF(!HTTP.Tx[x].TYPE){
+		IF(!HTTP.Tx[x].METHOD){
 			HTTP.Tx[x] = r
 			BREAK
 		}
@@ -135,13 +138,13 @@ DEFINE_FUNCTION fnAddToHTTPQueue(uHTTPReq r){
 /******************************************************************************
 	HTTP Build Helpers
 ******************************************************************************/
-DEFINE_FUNCTION CHAR[10000] fnBuildHTTPRequest(uHTTPReq r){
+DEFINE_FUNCTION CHAR[10000] fnBuildHTTPRequest(uHTTPRequest r){
 	STACK_VAR INTEGER x
 	STACK_VAR CHAR c[10000]
 	fnDebug(HTTP.DEBUG,DEBUG_DEV,"'fnBuildHTTPRequest','Called'")
-	
+
 	// Get Request Type
-	SWITCH(r.TYPE){
+	SWITCH(r.method){
 		CASE HTTP_METHOD_NONE:{
 			fnDebug(HTTP.DEBUG,DEBUG_ERR,"'Missing HTTP Type in Request'")
 			RETURN ''
@@ -156,19 +159,19 @@ DEFINE_FUNCTION CHAR[10000] fnBuildHTTPRequest(uHTTPReq r){
 		CASE '':	c = "c,'/'"
 		DEFAULT:	c = "c,r.PATH"
 	}
-	// Add Space
-	c = "c,' '"
 	// Add Arguments if required
-	SWITCH(r.TYPE){
+	SWITCH(r.METHOD){
 		CASE HTTP_METHOD_GET:{
 			IF(r.ARGS[1].KEY != ''){
 				// Add Args Delim
 				c = "c,'?'"
 				// Add all Args
 				FOR(x = 1; x <= _MAX_ARGS; x++){
-					// Add Delimiter
-					IF(x > 1){c = "c,'&'"}
-					c = "c,r.ARGS[x].KEY,'=',r.ARGS[x].VALUE"
+					IF(r.ARGS[x].KEY != ''){
+						// Add Delimiter
+						IF(x > 1){c = "c,'&'"}
+						c = "c,r.ARGS[x].KEY,'=',r.ARGS[x].VALUE"
+					}
 				}
 			}
 		}
@@ -190,7 +193,7 @@ DEFINE_FUNCTION CHAR[10000] fnBuildHTTPRequest(uHTTPReq r){
 
 	// Add default headers
 	c = "c,'Connection: Close',$0D,$0A"
-	SWITCH(r.TYPE){
+	SWITCH(r.METHOD){
 		CASE HTTP_METHOD_POST:{
 			c = "c,'Content-length: ',ITOA(LENGTH_ARRAY(r.body)),$0D,$0A"
 		}
@@ -209,7 +212,7 @@ DEFINE_FUNCTION CHAR[10000] fnBuildHTTPRequest(uHTTPReq r){
 	c = "c,$0D,$0A"
 
 	// Add Body
-	SWITCH(r.TYPE){
+	SWITCH(r.METHOD){
 		CASE HTTP_METHOD_POST:{
 			c = "c,r.BODY"
 		}
@@ -226,10 +229,10 @@ DEFINE_FUNCTION CHAR[10000] fnBuildHTTPRequest(uHTTPReq r){
 DEFINE_EVENT DATA_EVENT[ipHTTP]{
 	STRING:{
 		fnDebug(HTTP.DEBUG,DEBUG_DEV,"'HTTP DATA_EVENT STRING Called'")
+		fnDebugHTTP(HTTP.DEBUG,DEBUG_DEV,"HTTP.Rx")
 		// Process the Header
 		IF(!HTTP.RESPONSE_HEADERS_PROCESSED && FIND_STRING(HTTP.Rx,"$0D,$0A,$0D,$0A",1)){
-			STACK_VAR CHAR HEAD_LINE[200]
-			fnDebugHTTP(HTTP.DEBUG,DEBUG_DEV,"HTTP.Rx")
+			STACK_VAR CHAR HEAD_LINE[500]
 
 			// Gather HTTP Code
 			HEAD_LINE = fnStripCharsRight(REMOVE_STRING(HTTP.Rx,"$0D,$0A",1),2)
@@ -244,13 +247,14 @@ DEFINE_EVENT DATA_EVENT[ipHTTP]{
 					FOR(x = 1; x <= _MAX_HEADERS; x++){
 						IF(HTTP.RESPONSE.HEADERS[x].KEY == ''){
 							HTTP.RESPONSE.HEADERS[x].KEY = fnStripCharsRight(REMOVE_STRING(HEAD_LINE,':',1),1)
-							HTTP.RESPONSE.HEADERS[x].VALUE = fnRemoveWhiteSpace(HEAD_LINE)		
+							HTTP.RESPONSE.HEADERS[x].VALUE = fnRemoveWhiteSpace(HEAD_LINE)
 							BREAK
 						}
 					}
 				}
 				ELSE{
 					HTTP.RESPONSE_HEADERS_PROCESSED = TRUE
+					BREAK
 				}
 			}
 		}
@@ -258,21 +262,21 @@ DEFINE_EVENT DATA_EVENT[ipHTTP]{
 		fnDebug(HTTP.DEBUG,DEBUG_DEV,"'HTTP DATA_EVENT STRING Ended'")
 	}
 	OFFLINE:{
-		STACK_VAR uHTTPResp blankRepsonse
+		STACK_VAR uHTTPResponse blankResponse
 		fnDebug(HTTP.DEBUG,DEBUG_DEV,"'HTTP DATA_EVENT OFFLINE Called'")
 		HTTP.CONN_STATE = CONN_STATE_OFFLINE
 		HTTP.RESPONSE.BODY = HTTP.Rx
 		HTTP.Rx = ''
 		eventHTTPResponse(HTTP.RESPONSE)
-		HTTP.RESPONSE = blankRepsonse
+		HTTP.RESPONSE = blankResponse
 		HTTP.RESPONSE_HEADERS_PROCESSED = FALSE
 		// Send next in the queue
-		IF(HTTP.Tx[1].TYPE){ fnOpenTCPConnection() }
+		IF(HTTP.Tx[1].METHOD){ fnOpenTCPConnection() }
 		fnDebug(HTTP.DEBUG,DEBUG_DEV,"'HTTP DATA_EVENT OFFLINE Ended'")
 	}
 	ONLINE:{
 		STACK_VAR INTEGER x
-		STACK_VAR uHTTPReq blankReq
+		STACK_VAR uHTTPRequest blankRequest
 
 		fnDebug(HTTP.DEBUG,DEBUG_DEV,"'HTTP DATA_EVENT ONLINE Called'")
 
@@ -282,7 +286,7 @@ DEFINE_EVENT DATA_EVENT[ipHTTP]{
 		FOR(x = 1; x < _REQ_QUEUE_SIZE; x++){
 			HTTP.Tx[x] = HTTP.Tx[x+1]
 		}
-		HTTP.Tx[_REQ_QUEUE_SIZE] = blankReq
+		HTTP.Tx[_REQ_QUEUE_SIZE] = blankRequest
 
 		fnDebug(HTTP.DEBUG,DEBUG_DEV,"'DATA_EVENT ONLINE Ended'")
 	}
