@@ -3,20 +3,20 @@ INCLUDE 'CustomFunctions'
 /******************************************************************************
 	Basic control of Panasonic Projector
 	Verify model against functions
-	
+
 	vdvControl Commands
 	DEBUG-X 				= Debugging Off (Default)
 	INPUT-XXX 			= Go to Input, power on if required
 		[VIDEO|SVIDEO|RGB1|RGB2|AUX|DVI]
-	POWER-ON|OFF 		= Send input X to ouput Y 
+	POWER-ON|OFF 		= Send input X to ouput Y
 	FREEZE-ON|OFF		= Picture Freeze
 	BLANK-ON|OFF		= Video Mute
-	
+
 	Feedback Channels:
-	
+
 	211 = Picture Freeze
 	214 = Video Mute
-	
+
 	251 = Communicating
 	252 = Busy
 	253 = Warming
@@ -28,10 +28,7 @@ INCLUDE 'CustomFunctions'
 	Module Constructs
 ******************************************************************************/
 DEFINE_TYPE STRUCTURE uPanaProj{
-	// Config Settings
-	INTEGER 	TIME_WARM
-	INTEGER 	TIME_COOL
-	
+
 	// Comms Settings
 	INTEGER 	DEBUG
 	CHAR 		BAUD[20]
@@ -44,14 +41,16 @@ DEFINE_TYPE STRUCTURE uPanaProj{
 	CHAR		IP_USER[30]
 	CHAR		IP_PASS[30]
 	CHAR 		IP_HASH[255]
-	INTEGER 	LAST_POLL
+	CHAR   	LAST_SENT[20]
 	CHAR	 	DES_INPUT[10]
-	
+	INTEGER  DesVMUTE
+
 	// State Values
 	INTEGER	PROJ_STATE
 	INTEGER 	FREEZE
-	INTEGER 	PIC_MUTE
+	INTEGER 	VMUTE
 	INTEGER 	ASPECT_RATIO
+	INTEGER  POWER
 }
 /******************************************************************************
 	Module Constants
@@ -73,12 +72,8 @@ LONG TLID_POLL 		= 3		// Polling Timeline
 LONG TLID_SEND			= 4		// Staggered Sending Timeline
 LONG TLID_COMMS		= 5		// Comms Timeout Timeline
 
-
 INTEGER chnFreeze		= 211		// Picture Freeze Feedback
-INTEGER chnBLANK		= 214		// Picture Mute Feedback
-INTEGER chnCOMMS		= 251		// Device Comms Feedback
-INTEGER chnWARM		= 253		// Proj Warming Feedback
-INTEGER chnCOOL		= 254		// Proj Cooling Feedback
+INTEGER chnVMUTE	   = 214		// Picture Mute Feedback
 INTEGER chnPOWER		= 255		// Proj Power Feedback
 
 /******************************************************************************
@@ -99,28 +94,49 @@ LONG TLT_ADJ[] 		= {3000}	// Auto Adjust Delay
 DEFINE_START{
 	CREATE_BUFFER dvDevice,  myPanaProj.Rx
 	myPanaProj.isIP = (dvDevice.Number)
-	myPanaProj.TIME_WARM = 30
-	myPanaProj.TIME_COOL = 30
 }
 
 /******************************************************************************
 	Functions
 ******************************************************************************/
-DEFINE_FUNCTION fnProcessFeedback(CHAR _PACKET[]){
+DEFINE_FUNCTION fnProcessFeedback(CHAR pData[]){
+	
+	SWITCH(myPanaProj.LAST_SENT){
+		CASE 'QPW':{
+			myPanaProj.POWER = ATOI(pData)
+			// Request Shutter Status
+			fnSendCommand('QSH','')
+		}
+			
+		CASE 'QSH':{
+			myPanaProj.VMUTE = ATOI(pData)
+			IF(myPanaProj.VMUTE != myPanaProj.DesVMUTE){
+				SWITCH(myPanaProj.desVMute){
+					CASE TRUE:  fnSendCommand('OSH','1')
+					CASE FALSE: fnSendCommand('OSH','0')
+				}
+			}
+		}
+	}
 }
-DEFINE_FUNCTION fnSendCommand(CHAR ThisCommand[], CHAR Param[]){
-	 STACK_VAR CHAR ToSend[100];
+DEFINE_FUNCTION fnSendCommand(CHAR pCmd[], CHAR pParam[]){
+	STACK_VAR CHAR pPacket[100]
 
-	 ToSend = "$02";						//STX
-	ToSend = "ToSend,'ADZZ;'";			//Device Address (ZZ = ALL)
-	 ToSend = "ToSend,ThisCommand";	//Add Command
+	// Build Command	
+	pPacket = "pCmd"
+	IF(LENGTH_ARRAY(pParam)) pPacket = "pPacket, ':', pParam"
 
-	 IF(LENGTH_ARRAY(Param) > 0) ToSend = "ToSend, ':', Param"
+	// Store Command
+	myPanaProj.LAST_SENT = pPacket
+	
+	// Add delims
+	pPacket = "$02,'ADZZ;',pPacket,$03"	
 
-	 ToSend = "ToSend,$03";				//ETX
-
-	 fnDebug('Sending Power Command',ThisCommand);
-	 SEND_STRING dvDevice, "ToSend";
+	// Send it out
+	SEND_STRING dvDevice, pPacket
+	
+	// Reset Polling
+	fnInitPoll()
 }
 
 DEFINE_FUNCTION fnDebug(CHAR Msg[], CHAR MsgData[]){
@@ -151,22 +167,35 @@ DEFINE_FUNCTION fnSendInputCommand(){
 /******************************************************************************
 	Events
 ******************************************************************************/
+DEFINE_FUNCTION fnInitPoll(){
+	IF(TIMELINE_ACTIVE(TLID_POLL)){TIMELINE_KILL(TLID_POLL)}
+	TIMELINE_CREATE(TLID_POLL,TLT_POLL,LENGTH_ARRAY(TLT_POLL),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
+}
+
+DEFINE_FUNCTION fnPoll(){
+	fnSendCommand('QPW','')
+}
+
+DEFINE_EVENT TIMELINE_EVENT[TLID_POLL]{
+	fnPoll()
+}
+
 DEFINE_EVENT DATA_EVENT[dvDevice]{
 	ONLINE:{
 		IF(myPanaProj.BAUD = ''){myPanaProj.BAUD = '9600'}
 		SEND_COMMAND dvDevice, "'SET MODE DATA'"
 		SEND_COMMAND dvDevice, "'SET BAUD ',myPanaProj.BAUD,' N 8 1 485 DISABLE'"
-		TIMELINE_CREATE(TLID_POLL,TLT_POLL,LENGTH_ARRAY(TLT_POLL),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
-		fnSendCommand('QPW','')
+		fnPoll()
 	}
 	STRING:{
+		fnDebug('Pana->AMX',DATA.TEXT)
+		WHILE(FIND_STRING(myPanaProj.Rx,"$03",1)){
+			REMOVE_STRING(myPanaProj.Rx,"$02",1)
+			fnProcessFeedback(fnStripCharsRight(REMOVE_STRING(myPanaProj.Rx,"$03",1),1));
+		}
 		IF(TIMELINE_ACTIVE(TLID_COMMS)){TIMELINE_KILL(TLID_COMMS)}
 		TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 	}
-}
-
-DEFINE_EVENT TIMELINE_EVENT[TLID_POLL]{
-	fnSendCommand('QPW','')
 }
 
 DEFINE_EVENT DATA_EVENT[vdvControl]{
@@ -174,25 +203,16 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
 			CASE 'PROPERTY':{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
-					CASE 'TIMER':{
-						myPanaProj.TIME_WARM = ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1))
-						myPanaProj.TIME_COOL = ATOI(DATA.TEXT)
-					}
 					CASE 'BAUD':{
 						myPanaProj.BAUD = DATA.TEXT
 						SEND_COMMAND dvDevice, "'SET MODE DATA'"
 						SEND_COMMAND dvDevice, "'SET BAUD ',myPanaProj.BAUD,' N 8 1 485 DISABLE'"
-						IF(TIMELINE_ACTIVE(TLID_POLL)){TIMELINE_KILL(TLID_POLL)}
-						TIMELINE_CREATE(TLID_POLL,TLT_POLL,LENGTH_ARRAY(TLT_POLL),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
-						fnSendCommand('QPW','')
+						fnPoll()
 					}
 				}
 			}
 			CASE 'RAW':{
 				SEND_STRING dvDevice,"$02,DATA.TEXT,$03"
-			}
-			CASE 'RAWIN':{
-				fnSendCommand(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,':',1),1),DATA.TEXT)
 			}
 			CASE 'AUTO':{
 				SWITCH(DATA.TEXT){
@@ -209,62 +229,29 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 				}
 			}
 			CASE 'POWER':{
+				myPanaProj.desVMute = FALSE
 				SWITCH(DATA.TEXT){
 					CASE 'ON':{
 						fnSendCommand('PON','');
-						IF(![vdvControl,chnPOWER] && !TIMELINE_ACTIVE(TLID_BUSY)){
-							ON[vdvControl,chnWARM]	// Warming Up
-							TIMELINE_CREATE(TLID_BUSY,TLT_1s,LENGTH_ARRAY(TLT_1s),TIMELINE_ABSOLUTE,TIMELINE_REPEAT);
-						}
 					}
 					CASE 'OFF':{
 						fnSendCommand('POF','');
-						OFF[vdvControl,chnFreeze]
-						OFF[vdvControl,chnBLANK]
-						IF([vdvControl,chnPOWER]){
-							ON[vdvControl,chnCOOL]	// Cooling Down
-							TIMELINE_CREATE(TLID_BUSY,TLT_1s,LENGTH_ARRAY(TLT_1s),TIMELINE_ABSOLUTE,TIMELINE_REPEAT);
-						}
 					}
 				}
 			}
-		}
-	}
-}
 
-DEFINE_EVENT TIMELINE_EVENT[TLID_BUSY]{
-	STACK_VAR LONG _REPS
-	_REPS = TIMELINE.REPETITION
-	IF( (myPanaProj.TIME_WARM == _REPS && [vdvControl,chnWARM]) || ( myPanaProj.TIME_COOL == _REPS && [vdvControl,chnCOOL]) ){
-		SEND_STRING vdvControl, "'TIME-0:00'"
-		SWITCH([vdvControl,chnWARM]){
-			CASE TRUE:  ON [vdvControl, chnPOWER]
-			CASE FALSE: OFF[vdvControl, chnPOWER]
+			CASE 'VMUTE':{
+				SWITCH(DATA.TEXT){
+					CASE 'ON':     myPanaProj.desVMute = TRUE
+					CASE 'OFF':    myPanaProj.desVMute = FALSE
+					CASE 'TOGGLE': myPanaProj.desVMute = !myPanaProj.desVMute
+				}
+				SWITCH(myPanaProj.desVMute){
+					CASE TRUE:  fnSendCommand('OSH','1')
+					CASE FALSE: fnSendCommand('OSH','0')
+				}
+			}
 		}
-		TIMELINE_KILL(TLID_BUSY);
-		OFF[vdvControl,chnWARM]		// Warming Up
-		OFF[vdvControl,chnCOOL]		// Cooling Down
-		IF([vdvControl,chnPOWER]){
-			fnSendInputCommand()
-		}
-	}
-	ELSE{
-		STACK_VAR LONG RemainSecs;
-		STACK_VAR LONG ElapsedSecs;
-		STACK_VAR CHAR TextSecs[2];
-		STACK_VAR INTEGER _TotalSecs
-
-		IF([vdvControl,chnWARM]){ _TotalSecs = myPanaProj.TIME_WARM }
-		IF([vdvControl,chnCOOL]){ _TotalSecs = myPanaProj.TIME_COOL }
-
-		ElapsedSecs = TIMELINE.REPETITION;
-		RemainSecs = _TotalSecs - ElapsedSecs;
-		  
-		TextSecs = ITOA(RemainSecs % 60)
-		IF(LENGTH_ARRAY(TextSecs) = 1) TextSecs = "'0',Textsecs"
-		
-		SEND_STRING vdvControl, "'TIME_RAW-',ITOA(RemainSecs),':',ITOA(_TotalSecs)"
-		SEND_STRING vdvControl, "'TIME-',ITOA(RemainSecs / 60),':',TextSecs"
 	}
 }
 
@@ -274,4 +261,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLT_ADJ]{
 DEFINE_PROGRAM{
 	[vdvControl,251] = (TIMELINE_ACTIVE(TLID_COMMS))
 	[vdvControl,252] = (TIMELINE_ACTIVE(TLID_COMMS))
+	[vdvControl,chnPOWER] 	= ( myPanaProj.POWER)
+	[vdvControl,chnFreeze] 	= ( myPanaProj.FREEZE )
+	[vdvControl,chnVMUTE]   = ( myPanaProj.VMUTE )
 }
