@@ -31,7 +31,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_POLL]{	// Poll Device
 DEFINE_FUNCTION fnSendCommand(CHAR pCMD[]){
 	SEND_STRING dvRS232, "pCMD,$0D"
 	fnInitPoll()
-}	
+}
 /******************************************************************************
 	Communciation
 ******************************************************************************/
