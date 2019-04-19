@@ -33,12 +33,6 @@ DEFINE_TYPE STRUCTURE uPeripherals{
 	// Peripherals List
 	INTEGER     LoadingOnline
 	INTEGER     LoadingOffline
-	
-	INTEGER     IgnoreTypeControlSystem	
-	INTEGER     IgnoreTypeISDNLink
-	INTEGER     IgnoreTypeOther
-	INTEGER     IgnoreTypeTouchPanel
-	
 	uPeripheral Device[MAX_PERIPHERAL]
 }
 
@@ -715,7 +709,7 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 		//
 		ELSE IF(mySX.Peripherals.LoadingOffline){
 			mySX.Peripherals.LoadingOffline = FALSE
-			fnProcessPeripheralsData()
+			fnSendPeripheralsData()
 		}
 		// Recent Calls
 		IF(mySX.RecentCallsLoading){
@@ -779,6 +773,8 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 							}
 						}
 						ELSE{
+							STACK_VAR INTEGER ID
+							STACK_VAR INTEGER x
 							REMOVE_STRING(pDATA,' ',1)					// Remove Device
 							fnStorePeripheralField(pDATA)
 						}
@@ -1606,18 +1602,6 @@ DEFINE_EVENT DATA_EVENT[vdvControl[1]]{
 						CASE 'PRESENTERCAM':{
 							mySX.PRESENTERTRACK.CameraID = ATOI(DATA.TEXT)
 						}
-						CASE 'PERIPHERAL':{
-							SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
-								CASE 'IGNORE':{
-									SWITCH(DATA.TEXT){
-										CASE 'ControlSystem':mySX.PERIPHERALS.IgnoreTypeControlSystem = TRUE
-										CASE 'TouchPanel':mySX.PERIPHERALS.IgnoreTypeTouchPanel = TRUE
-										CASE 'ISDNLink':mySX.PERIPHERALS.IgnoreTypeISDNLink = TRUE
-										CASE 'Other':mySX.PERIPHERALS.IgnoreTypeOther = TRUE
-									}
-								}
-							}
-						}
 						CASE 'DIRECTORY':{
 							SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
 								CASE 'TYPE':{
@@ -2056,7 +2040,7 @@ DEFINE_FUNCTION fnDisplayRecentCalls(INTEGER pPanel){
 		FOR(p = 1; p <= LENGTH_ARRAY(tp); p++){
 			fnDisplayRecentCalls(p)
 		}
-		RETURN
+		RETURN 
 	}
 	FOR(x = 1; x <= MAX_RECENT_CALLS; x++){
 		IF(mySX.RecentCalls[x].CallbackNumber != ''){
@@ -2881,7 +2865,7 @@ DEFINE_PROGRAM {
 			ACTIVE(1):                                   	SEND_LEVEL tp,addVCCallStatus[b],1
 		}
 	}
-
+	
 	// Recent Calls Feedback
 	FOR(b = 1; b <= LENGTH_ARRAY(btnRecentCalls); b++){
 		IF(mySX.RecentCallSelected == b){
@@ -3073,17 +3057,6 @@ DEFINE_FUNCTION INTEGER fnGetPeripheralSlot(INTEGER pINDEX){
 	fnDebug(DEBUG_DEVELOP,'fnGetPeripheralSlot','Ended')
 }
 
-DEFINE_FUNCTION fnRemovePeripheral(INTEGER d){
-	STACK_VAR INTEGER x
-	STACK_VAR uPeripheral blankPeripheral
-	// Move them all down one over the one we want gone
-	FOR(x = d; x < MAX_PERIPHERAL; x++){
-		mySX.PERIPHERALS.Device[x] = mySX.PERIPHERALS.Device[x+1]
-	}
-	// Blank off the last one (as must be nothing)
-	mySX.PERIPHERALS.Device[MAX_PERIPHERAL] = blankPeripheral
-}
-
 DEFINE_FUNCTION INTEGER fnStorePeripheralField(CHAR pDATA[]){
 	STACK_VAR INTEGER p
 	STACK_VAR INTEGER pIndex
@@ -3122,24 +3095,8 @@ DEFINE_FUNCTION INTEGER fnStorePeripheralField(CHAR pDATA[]){
 	fnDebug(DEBUG_DEVELOP,'fnStorePeripheralField','Ended')
 }
 
-
-
-DEFINE_FUNCTION fnProcessPeripheralsData(){
+DEFINE_FUNCTION fnSendPeripheralsData(){
 	STACK_VAR INTEGER d
-	
-	// Remove all types which are set to be ignored
-	FOR(d = MAX_PERIPHERAL; d > 0; d--){
-		IF(
-		(mySX.PERIPHERALS.Device[d].Type == 'ControlSystem' && mySX.PERIPHERALS.IgnoreTypeControlSystem) ||
-		(mySX.PERIPHERALS.Device[d].Type == 'ISDNLink'      && mySX.PERIPHERALS.IgnoreTypeISDNLink) ||
-		(mySX.PERIPHERALS.Device[d].Type == 'Other'         && mySX.PERIPHERALS.IgnoreTypeOther) ||
-		(mySX.PERIPHERALS.Device[d].Type == 'TouchPanel'    && mySX.PERIPHERALS.IgnoreTypeTouchPanel))
-			{
-			fnRemovePeripheral(d)
-		}
-	}
-	
-	// Send out Metadata Feedback to all devices with virtual devices present
 	FOR(d = 1; d < LENGTH_ARRAY(vdvControl); d++){
 		SEND_STRING vdvControl[d+1],"'PROPERTY-META,MAKE,CiscoPeripheral'"
 		IF(LENGTH_ARRAY(mySX.PERIPHERALS.Device[d].Name)){
