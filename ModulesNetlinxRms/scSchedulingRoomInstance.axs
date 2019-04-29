@@ -31,7 +31,7 @@ INTEGER LANG_CHN = 3
 INTEGER LANG_KOR = 4
 
 // Constant to represent '00:00:00' at end of day (As it appears twice in 24hr clock)
-LONG		MIDNIGHT_SECS	= 24*60*60
+LONG		MIDNIGHT_SECS	= 86400 // 24*60*60 (note: Netlinx thinks 24*60*60 = 128. changed 20190411, gmm)
 
 // Virtual Device Channels
 INTEGER chn_vdv_SensorOnline	    = 1	// External Trigger indicating Sensor is connected
@@ -75,6 +75,12 @@ INTEGER DEBUG_ERR				= 0
 INTEGER DEBUG_STD				= 1
 INTEGER DEBUG_DEV				= 2
 INTEGER DEBUG_LOG				= 3
+
+// Page Details
+INTEGER DETAILS_ON			= 0
+INTEGER DETAILS_OFF			= 1
+INTEGER DETAILS_DEV			= 2
+INTEGER DETAILS_LOG			= 3
 
 // Timeout timeline for calendar page
 LONG TLID_TIMEOUT_OVERLAYS				= 01
@@ -172,6 +178,7 @@ DEFINE_TYPE STRUCTURE uRoom{
 	// Programming Variables
 	INTEGER 			DEBUG
 	SINTEGER 		LAST_TRIGGERED_MINUTE		// Use to store state to check against raising events
+	INTEGER        PAGE_DETAILS					// Used as flag for whether to display the pMsgDetail info on the overlay pane
 }
 /********************************************************************************************************************************************************************************************************************************************************
 	Interface Constants
@@ -315,14 +322,14 @@ DEFINE_FUNCTION fnInitateLogFile(){
 	pTIMESTAMP = "pTIMESTAMP,FORMAT('%02d',TIME_TO_SECOND(TIME))"
 
 	DEBUG_LOG_FILENAME = "'DEBUG_LOG_scRoomBookInstance_',ITOA(vdvRoom.Number),'_',pTIMESTAMP,'.log'"
-	fnDebug(DEBUG_LOG,'fnInitateLogFile','File Created',pTIMESTAMP)
+	fnDebug(DEBUG_LOG,'FUNCTION','fnInitateLogFile',"'File Created:',pTIMESTAMP")
 }
 
 DEFINE_FUNCTION fnDebug(INTEGER pDEBUG,CHAR pOrigin[], CHAR pRef[],CHAR pData[]){
 	// Check the requested debug against the current module setting
 	IF(myRoom.DEBUG >= pDEBUG){
 		STACK_VAR CHAR dbgMsg[255]
-		dbgMsg = "ITOA(vdvRoom.Number),'|',pOrigin,'|',pRef,'|',pData"
+		dbgMsg = "ITOA(vdvRoom.Number),'|',pOrigin,'|',pRef,'| ',pData"
 		// Send to diagnostics screen
 		SEND_STRING 0:0:0, dbgMsg
 		// Log to file if required
@@ -383,7 +390,9 @@ DEFINE_FUNCTION INTEGER fnGetNextMeetingSlot(){
 
 DEFINE_FUNCTION fnInsertFreeSlot(INTEGER s){
 	STACK_VAR uSlot freeSlot
-	fnDebug(DEBUG_LOG,'fnInsertFreeSlot','Called',ITOA(s))
+	STACK_VAR CHAR pStartTime[8]
+	STACK_VAR CHAR pEndTime[8]
+	fnDebug(DEBUG_LOG,'FUNCTION',"'fnInsertFreeSlot(',ITOA(s),')'",'<-- Called')
 	// Prepare a free slot for use
 	freeSlot.SUBJECT   = CH_TO_WC('Free')
 	freeSlot.ORGANISER = CH_TO_WC('N/A')
@@ -392,19 +401,29 @@ DEFINE_FUNCTION fnInsertFreeSlot(INTEGER s){
 		CASE 1:  freeslot.START_REF = 0
 		DEFAULT: freeslot.START_REF = myRoom.SLOTS[s-1].END_REF
 	}
-	freeSlot.START_TIME 	= fnSecondsToTime(freeSlot.START_REF)
+	pStartTime = fnSecondsToTime(freeSlot.START_REF)
+	IF(LEFT_STRING(pStartTime,3) = '24:'){
+		GET_BUFFER_STRING(pStartTime,2)
+		pStartTime = "'00',pStartTime"
+	}
+	freeSlot.START_TIME 	= pStartTime//fnSecondsToTime(freeSlot.START_REF)
 	// Sort out the End
 	SWITCH(myRoom.SLOTS[s+1].START_REF){
 		CASE FALSE: freeSlot.END_REF = MIDNIGHT_SECS
 		DEFAULT:    freeSlot.END_REF = myRoom.SLOTS[s+1].START_REF
 	}
-	freeSlot.END_TIME 	= fnSecondsToTime(freeSlot.END_REF)
+	pEndTime   = fnSecondsToTime(freeSlot.END_REF)
+	IF(LEFT_STRING(pEndTime,3) = '24:'){
+		GET_BUFFER_STRING(pEndTime,2)
+		pEndTime = "'00',pEndTime"
+	}
+	freeSlot.END_TIME 	= pEndTime//fnSecondsToTime(freeSlot.END_REF)
 	// Insert Duration
 	freeSlot.DURATION_SECS = freeSlot.END_REF - freeSlot.START_REF
 	freeSlot.DURATION_MINS = fnSecsToMins(freeSlot.DURATION_SECS,TRUE)
 	// Insert it
 	myRoom.SLOTS[s] = freeSlot
-	fnDebug(DEBUG_LOG,'fnInsertFreeSlot','Ended',ITOA(s))
+	fnDebug(DEBUG_LOG,'FUNCTION',"'fnInsertFreeSlot(',ITOA(s),')'",'--> Done')
 }
 
 DEFINE_FUNCTION INTEGER fnAddSlot(uSlot S){
@@ -448,7 +467,7 @@ DEFINE_FUNCTION INTEGER fnAddSlot(uSlot S){
 DEFINE_START{
 	// Create timeline to check for time ticking over to new Minute value
 	TIMELINE_CREATE(TLID_FB_TIME_CHECK,TLT_FB_TIME_CHECK,LENGTH_ARRAY(TLT_FB_TIME_CHECK),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
-	fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_FB_TIME_CHECK','CREATED')
+	fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_FB_TIME_CHECK','<-- Created')
 }
 /********************************************************************************************************************************************************************************************************************************************************
 	Timeline instead of Feedback to determine Remaining Time
@@ -457,7 +476,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_FB_TIME_CHECK]{
 	// Check if a new Min is in progress
 	IF(myRoom.LAST_TRIGGERED_MINUTE != TIME_TO_MINUTE(TIME)){
 		// Log for Debugging
-		fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_FB_TIME_CHECK','CALLED')
+		fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_FB_TIME_CHECK','<-- Called')
 		// Set Comparison Value to prevent reoccurance until next Min
 		myRoom.LAST_TRIGGERED_MINUTE = TIME_TO_MINUTE(TIME)
 		// If this room has any data to even bother with this
@@ -474,7 +493,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_FB_TIME_CHECK]{
 		IF(myRoom.SLOT_CURRENT){
 			fnUpdatePanel(0)
 		}
-		fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_FB_TIME_CHECK','ENDED')
+		fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_FB_TIME_CHECK','--> Done')
 	}
 }
 
@@ -483,7 +502,9 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_FB_TIME_CHECK]{
 ********************************************************************************************************************************************************************************************************************************************************/
 DEFINE_EVENT DATA_EVENT[vdvRoom]{
 	COMMAND:{
-		fnDebug(DEBUG_DEV,'DATA_EVENT [COMMAND] Called','vdvRoom',DATA.TEXT)
+		//fnDebug(DEBUG_DEV,'DATA_EVENT [COMMAND] Called','vdvRoom',DATA.TEXT)
+		fnDebug(DEBUG_DEV,'DATA_EVENT [COMMAND]','vdvRoom','<-- Called')
+		fnDebug(DEBUG_DEV,'DATA_EVENT [COMMAND]','vdvRoom',DATA.TEXT)
 		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
 			CASE 'PROPERTY':{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
@@ -516,6 +537,18 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 							CASE 'CHN':	myRoom.LANGUAGE = LANG_CHN
 							CASE 'KOR':	myRoom.LANGUAGE = LANG_KOR
 							DEFAULT:		myRoom.LANGUAGE = LANG_EN
+						}
+					}
+					CASE 'PAGE_DETAILS':{
+						SWITCH(DATA.TEXT){
+							CASE 'FALSE':	myRoom.PAGE_DETAILS = DETAILS_OFF
+							CASE 'DEV':		myRoom.PAGE_DETAILS = DETAILS_DEV
+							CASE 'LOG':		myRoom.PAGE_DETAILS = DETAILS_LOG
+							DEFAULT:			myRoom.PAGE_DETAILS = DETAILS_ON
+						}
+						IF(myRoom.PAGE_DETAILS == DETAILS_LOG){
+							myRoom.DEBUG = DEBUG_LOG
+							fnInitateLogFile()
 						}
 					}
 					CASE 'PANELMODE':{
@@ -564,8 +597,8 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 						}
 						myRoom.AUTOBOOK_STANDOFF.INIT_VAL   = ATOI(fnGetCSV(DATA.TEXT,2))
 						myRoom.AUTOBOOK_ACTION.INIT_VAL     = ATOI(fnGetCSV(DATA.TEXT,3))
-						myRoom.AUTOBOOK_EVENTS_THRESHOLD 	  = ATOI(fnGetCSV(DATA.TEXT,4))
-						myRoom.AUTOBOOK_SUBJECT            = fnGetCSV(DATA.TEXT,5)
+						myRoom.AUTOBOOK_EVENTS_THRESHOLD 	= ATOI(fnGetCSV(DATA.TEXT,4))
+						myRoom.AUTOBOOK_SUBJECT             = fnGetCSV(DATA.TEXT,5)
 					}
 				}
 			}
@@ -588,6 +621,7 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 			}
 			CASE 'RESPONSE':{
 				STACK_VAR CHAR pMSG[255]
+				STACK_VAR CHAR pDATA3[50]
 				SWITCH(fnGetCSV(DATA.TEXT,1)){
 					CASE 'EXTEND':pMsg = 'Booking '
 					CASE 'CREATE':pMsg = 'Booking '
@@ -595,16 +629,23 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 					DEFAULT:      pMsg = 'Undefined Action'
 				}
 				SWITCH(fnGetCSV(DATA.TEXT,2)){
-					CASE 'SUCCESS':pMsg = "pMsg,'Successful'"
-					CASE 'FAILURE':pMsg = "pMsg,'Declined'"
-					DEFAULT:       pMsg = "pMsg,'Undefined State'"
+					CASE 'SUCCESS':pMsg = "pMsg,'Successful.'"
+					CASE 'FAILURE':pMsg = "pMsg,'Declined.'"
+					DEFAULT:       pMsg = "pMsg,'Undefined State.'"
 				}
 				IF(pMSG != 'Release Room Successful'){
 					IF(fnGetCSV(DATA.TEXT,3) == ''){
 						fnDisplayStatusMessage(pMSG,pMSG)
 					}
 					ELSE{
-						fnDisplayStatusMessage(pMSG,fnGetCSV(DATA.TEXT,3))
+						// Fixing typo from RMS ('g' missing from end of booking
+						//STACK_VAR CHAR pDATA3[50]
+						pDATA3 = fnGetCSV(DATA.TEXT,3)
+						IF(UPPER_STRING(pDATA3) == 'CANNOT CREATE EVENT BOOKING'){}//do nothing if the spelling is correct
+						ELSE IF(UPPER_STRING(pDATA3) == 'CANNOT CREATE EVENT BOOKIN'){
+							pDATA3 = 'Cannot create event booking'
+						}
+						fnDisplayStatusMessage(pMSG,pDATA3)
 					}
 				}
 			}
@@ -613,6 +654,8 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 				STACK_VAR INTEGER T	// Total Bookings
 				STACK_VAR INTEGER s	// Total Bookings
 				STACK_VAR uSlot thisSlot
+				STACK_VAR CHAR pStartTime[8]
+				STACK_VAR CHAR pEndTime[8]
 
 				b = ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1))
 				T = ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1))
@@ -639,14 +682,34 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 					// Populate additional fields
 					thisSlot.DURATION_SECS = thisSlot.END_REF - thisSlot.START_REF
 					thisSlot.DURATION_MINS = fnSecsToMins(thisSlot.DURATION_SECS,TRUE)
-					thisSlot.START_TIME    = fnSecondsToTime(thisSlot.START_REF)
-					thisSlot.END_TIME 	  = fnSecondsToTime(thisSlot.END_REF)
+					pStartTime = fnSecondsToTime(thisSlot.START_REF)
+					pEndTime   = fnSecondsToTime(thisSlot.END_REF)
+					IF(LEFT_STRING(pStartTime,3) = '24:'){
+						GET_BUFFER_STRING(pStartTime,2)
+						pStartTime = "'00',pStartTime"
+					}
+					IF(LEFT_STRING(pEndTime,3) = '24:'){
+						GET_BUFFER_STRING(pEndTime,2)
+						pEndTime = "'00',pEndTime"
+					}
+					thisSlot.START_TIME = pStartTime//fnSecondsToTime(thisSlot.START_REF)
+					thisSlot.END_TIME   = pEndTime//fnSecondsToTime(thisSlot.END_REF)
 
 					IF(thisSlot.ALLDAY){
 						thisSlot.START_REF  = 0
 						thisSlot.END_REF    = MIDNIGHT_SECS
-						thisSlot.START_TIME = fnSecondsToTime(thisSlot.START_REF)
-						thisSlot.END_TIME 	= fnSecondsToTime(thisSlot.END_REF)
+						pStartTime = fnSecondsToTime(thisSlot.START_REF)
+						pEndTime   = fnSecondsToTime(thisSlot.END_REF)
+						IF(LEFT_STRING(pStartTime,3) = '24:'){
+							GET_BUFFER_STRING(pStartTime,2)
+							pStartTime = "'00',pStartTime"
+						}
+						IF(LEFT_STRING(pEndTime,3) = '24:'){
+							GET_BUFFER_STRING(pEndTime,2)
+							pEndTime = "'00',pEndTime"
+						}
+						thisSlot.START_TIME = pStartTime//fnSecondsToTime(thisSlot.START_REF)
+						thisSlot.END_TIME   = pEndTime//fnSecondsToTime(thisSlot.END_REF)
 					}
 
 					if(thisSlot.isPRIVATE){
@@ -688,7 +751,8 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 				}
 			}
 		}
-		fnDebug(DEBUG_DEV,'DATA_EVENT [COMMAND] Ended','vdvRoom','')
+		//fnDebug(DEBUG_DEV,'DATA_EVENT [COMMAND] Ended','vdvRoom','')
+		fnDebug(DEBUG_DEV,'DATA_EVENT [COMMAND]','vdvRoom','--> Done')
 	}
 }
 /********************************************************************************************************************************************************************************************************************************************************
@@ -724,7 +788,7 @@ DEFINE_EVENT CHANNEL_EVENT[vdvRoom,chn_vdv_SlotBooked]{
 				IF(TIMELINE_ACTIVE(TLID_TIMER_QUICKBOOK_TIMEOUT)){TIMELINE_KILL(TLID_TIMER_QUICKBOOK_TIMEOUT)}
 				TIMELINE_CREATE(TLID_TIMER_QUICKBOOK_TIMEOUT,TLT_ONE_MIN,LENGTH_ARRAY(TLT_ONE_MIN),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
 			}
-			
+
 			// Start AutoBook Standoff Timer
 			IF(TIMELINE_ACTIVE(TLID_TIMER_AUTOBOOK_STANDOFF)){
 				myRoom.AUTOBOOK_STANDOFF.COUNTER = myRoom.AUTOBOOK_STANDOFF.INIT_VAL
@@ -761,7 +825,7 @@ DEFINE_EVENT CHANNEL_EVENT[vdvRoom,chn_vdv_SlotBooked]{
 	Virtual Device Timeline Event - Inactivity
 ********************************************************************************************************************************************************************************************************************************************************/
 DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_QUICKBOOK_TIMEOUT]{
-	fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_TIMER_QUICKBOOK_TIMEOUT',"'TIMELINE.REPETITION=',ITOA(TIMELINE.REPETITION)")
+	fnDebug(DEBUG_DEV,'TIMELINE_EVENT',"'TLID_TIMER_QUICKBOOK_TIMEOUT',' ','TIMELINE.REPETITION=',ITOA(TIMELINE.REPETITION)",'<-- Called')
 
 	// Knock a Min off the timer
 	myRoom.QUICKBOOK_TIMEOUT.COUNTER--
@@ -778,6 +842,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_QUICKBOOK_TIMEOUT]{
 			fnDisplayStatusMessage('Ending Meeting','Room is being released...')
 		}
 	}
+	fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_TIMER_QUICKBOOK_TIMEOUT','--> Done')
 }
 DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_NOSHOW_TIMEOUT]{
 	fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_TIMER_NOSHOW_TIMEOUT',"'TIMELINE.REPETITION=',ITOA(TIMELINE.REPETITION)")
@@ -803,11 +868,11 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_NOSHOW_TIMEOUT]{
 ********************************************************************************************************************************************************************************************************************************************************/
 DEFINE_EVENT CHANNEL_EVENT[vdvRoom,chn_vdv_RoomOccupied]{
 	ON:{
-		fnDebug(DEBUG_DEV,'CHANNEL_EVENT','chn_vdv_RoomOccupied','ON')
+		fnDebug(DEBUG_DEV,'CHANNEL_EVENT','chn_vdv_RoomOccupied','<-- ON')
 		fnUpdateLEDs(0)
 	}
 	OFF:{
-		fnDebug(DEBUG_DEV,'CHANNEL_EVENT','chn_vdv_RoomOccupied','OFF')
+		fnDebug(DEBUG_DEV,'CHANNEL_EVENT','chn_vdv_RoomOccupied','--> OFF')
 		fnUpdateLEDs(0)
 		IF(myRoom.SLOTS[myRoom.SLOT_CURRENT].isQUICKBOOK || myRoom.SLOTS[myRoom.SLOT_CURRENT].isAUTOBOOK){
 			SEND_COMMAND vdvRoom,"'ACTION-CANCEL,',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].BOOKING_INDEX),',Unoccupied'"
@@ -818,7 +883,7 @@ DEFINE_EVENT CHANNEL_EVENT[vdvRoom,chn_vdv_RoomOccupied]{
 
 DEFINE_EVENT CHANNEL_EVENT[vdvRoom,chn_vdv_SensorTriggered]{
 	ON:{
-		fnDebug(DEBUG_DEV,'CHANNEL_EVENT','chn_vdv_SensorTriggered','ON')
+		fnDebug(DEBUG_DEV,'CHANNEL_EVENT','chn_vdv_SensorTriggered','<-- ON')
 
 		// Reset the Occupancy Timer Value
 		myRoom.OCCUPANCY_TIMEOUT.COUNTER = myRoom.OCCUPANCY_TIMEOUT.INIT_VAL
@@ -842,7 +907,7 @@ DEFINE_EVENT CHANNEL_EVENT[vdvRoom,chn_vdv_SensorTriggered]{
 		}
 	}
 	OFF:{
-		fnDebug(DEBUG_DEV,'CHANNEL_EVENT','chn_vdv_SensorTriggered','OFF')
+		fnDebug(DEBUG_DEV,'CHANNEL_EVENT','chn_vdv_SensorTriggered','--> OFF')
 
 		// Set Diagnostics Text
 		SEND_COMMAND tp,"'^TXT-',ITOA(lvlRoomOccupied),',2,',ITOA(myRoom.OCCUPANCY_TIMEOUT.COUNTER),' min'"
@@ -851,12 +916,12 @@ DEFINE_EVENT CHANNEL_EVENT[vdvRoom,chn_vdv_SensorTriggered]{
 		TIMELINE_CREATE(TLID_TIMER_OCCUPANCY_TIMEOUT,TLT_ONE_MIN,LENGTH_ARRAY(TLT_ONE_MIN),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
 
 		// Debug Out
-		fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_TIMER_OCCUPANCY_TIMEOUT',"'Exit'")
+		fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_TIMER_OCCUPANCY_TIMEOUT',"'<-- Created'")//"'Exit'")
 	}
 }
 
 DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_OCCUPANCY_TIMEOUT]{
-	fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_TIMER_OCCUPANCY_TIMEOUT',"'TIMELINE.REPETITION=',ITOA(TIMELINE.REPETITION)")
+	fnDebug(DEBUG_DEV,'TIMELINE_EVENT',"'TLID_TIMER_OCCUPANCY_TIMEOUT',' ','TIMELINE.REPETITION=',ITOA(TIMELINE.REPETITION)",'<-- Called')
 
 	// Subtract one Min from the Occupancy Timer
 	myRoom.OCCUPANCY_TIMEOUT.COUNTER--
@@ -868,14 +933,14 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_OCCUPANCY_TIMEOUT]{
 	IF(myRoom.OCCUPANCY_TIMEOUT.COUNTER == 0){ TIMELINE_KILL(TLID_TIMER_OCCUPANCY_TIMEOUT) }
 
 	// Debug Out
-	fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_TIMER_OCCUPANCY_TIMEOUT',"'Exit'")
+	fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_TIMER_OCCUPANCY_TIMEOUT','--> Done')//"'Exit'")
 }
 /********************************************************************************************************************************************************************************************************************************************************
 	Timer Control - AutoBooking
 ********************************************************************************************************************************************************************************************************************************************************/
 // AutoBook Control
 DEFINE_FUNCTION fnAutoBookEvent(){
-	fnDebug(DEBUG_DEV,'Function','fnAutoBookEvent',"'Started'")
+	fnDebug(DEBUG_DEV,'FUNCTION','fnAutoBookEvent',"'<-- Called'/*'Started'*/")
 	IF(myRoom.SLOT_CURRENT){
 		// If AutoBook is configured AND Autobook is not currently supposed to standoff
 		IF(myRoom.AUTOBOOK_ACTION.INIT_VAL && !TIMELINE_ACTIVE(TLID_TIMER_AUTOBOOK_STANDOFF)  && !myRoom.SLOTS[myRoom.SLOT_CURRENT].BOOKING_INDEX){
@@ -898,12 +963,12 @@ DEFINE_FUNCTION fnAutoBookEvent(){
 			fnUpdateAutoBookFB(0)
 		}
 	}
-	fnDebug(DEBUG_DEV,'Function','fnAutoBookEvent',"'Ended'")
+	fnDebug(DEBUG_DEV,'FUNCTION','fnAutoBookEvent',"'--> Done'")
 }
 
 DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_AUTOBOOK_ACTION]{
 	// Debug Out
-	fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_TIMER_AUTOBOOK',"'TIMELINE.REPETITION=',ITOA(TIMELINE.REPETITION)")
+	fnDebug(DEBUG_DEV,'TIMELINE_EVENT',"'TLID_TIMER_AUTOBOOK',' ','TIMELINE.REPETITION=',ITOA(TIMELINE.REPETITION)",'<-- Called')
 	SWITCH(myRoom.AUTOBOOK_MODE){
 		CASE AUTOBOOK_MODE_EVENTS:{
 			// Decrement the AutoBook timer value by 1
@@ -926,7 +991,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_AUTOBOOK_ACTION]{
 			fnUpdateAutoBookFB(0)
 		}
 		CASE AUTOBOOK_MODE_LATCHED:{
-			// Incrememetn timer to show note how long this occupancy has been high for
+			// Incremement timer to show note how long this occupancy has been high for
 			myRoom.AUTOBOOK_ACTION.COUNTER++
 			// Check and Do
 			IF(myRoom.AUTOBOOK_ACTION.COUNTER == myRoom.AUTOBOOK_ACTION.INIT_VAL){
@@ -938,6 +1003,8 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_AUTOBOOK_ACTION]{
 			}
 		}
 	}
+	// Debug Out
+	fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_TIMER_AUTOBOOK_ACTION','--> Done')
 }
 
 DEFINE_FUNCTION fnDoAutoBook(){
@@ -981,9 +1048,10 @@ DEFINE_FUNCTION fnUpdateAutoBookFB(INTEGER pPanel){
 
 DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_AUTOBOOK_STANDOFF]{
 
+	fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_TIMER_AUTOBOOK_STANDOFF',"'<-- Called'")
 	// Decrement the AutoBook timer value by 1
 	myRoom.AUTOBOOK_STANDOFF.COUNTER--
-	
+
 	// Update Timer
 	SEND_COMMAND tp,"'^TXT-',ITOA(lvlAutoBookStandOffTimer),',2,',FORMAT('%02d',myRoom.AUTOBOOK_STANDOFF.COUNTER),' min'"
 
@@ -1001,6 +1069,8 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_AUTOBOOK_STANDOFF]{
 			}
 		}
 	}
+	// Debug Out
+	fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_TIMER_AUTOBOOK_STANDOFF',"'--> Done'")
 }
 
 /********************************************************************************************************************************************************************************************************************************************************
@@ -1015,7 +1085,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_AUTOBOOK_STANDOFF]{
 DEFINE_EVENT DATA_EVENT[tp]{
 	ONLINE:{
 		STACK_VAR INTEGER x
-		fnDebug(DEBUG_DEV,'DATA_EVENT','Panel Online','')
+		fnDebug(DEBUG_DEV,'DATA_EVENT',"'Panel[',ITOA(DATA.DEVICE.NUMBER),']'",'<-- Online')
 
 		// Hide all cal slots and store state
 		IF(1){
@@ -1027,7 +1097,7 @@ DEFINE_EVENT DATA_EVENT[tp]{
 		fnInitPanel(GET_LAST(tp))
 	}
 	OFFLINE:{
-		fnDebug(DEBUG_DEV,'DATA_EVENT','Panel Offline','')
+		fnDebug(DEBUG_DEV,'DATA_EVENT',"'Panel[',ITOA(DATA.DEVICE.NUMBER),']'",'<-- Offline')
 		myRMSPanel[GET_LAST(tp)].OVERLAY = OVERLAY_NONE
 	}
 }
@@ -1242,7 +1312,7 @@ DEFINE_EVENT BUTTON_EVENT[tp, btnQuickbook]{
 	}
 }
 // create the booking if subject and time are filled out
-DEFINE_EVENT BUTTON_EVENT[tp, btnQuickBookInstant]{
+DEFINE_EVENT BUTTON_EVENT[tp, btnQuickBookInstant]{//instance booking button on the AZ booking panels.
 	PUSH:{
 		STACK_VAR CHAR pMSG[255]
 		pMSG = "'ACTION-CREATE'"	// Booking Index
@@ -1276,12 +1346,12 @@ DEFINE_EVENT BUTTON_EVENT[tp,0]{ //any presses for timeline below
 		IF(TIMELINE_ACTIVE(TLID_TIMEOUT_OVERLAYS)){TIMELINE_KILL(TLID_TIMEOUT_OVERLAYS)}
 		TIMELINE_CREATE(TLID_TIMEOUT_OVERLAYS,TLT_OLAY_TIMEOUT,LENGTH_ARRAY(TLT_OLAY_TIMEOUT),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 
-		fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLT_OLAY_TIMEOUT','CREATED')
+		fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLT_OLAY_TIMEOUT','<-- Created')
 	}
 }
 
 DEFINE_EVENT TIMELINE_EVENT[TLID_TIMEOUT_OVERLAYS]{
-	fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_TIMEOUT_OVERLAYS','TRIGGERED')
+	fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_TIMEOUT_OVERLAYS','<-- Called')
 	fnSetupOverlay(0,OVERLAY_NONE)
 }
 /********************************************************************************************************************************************************************************************************************************************************
@@ -1289,7 +1359,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMEOUT_OVERLAYS]{
 ********************************************************************************************************************************************************************************************************************************************************/
 DEFINE_FUNCTION fnInitPanel(INTEGER pPanel){
 	// Debug Out
-	fnDebug(DEBUG_DEV,'fnInitPanel','Called',"'pPanel=',ITOA(pPanel)")
+	fnDebug(DEBUG_DEV,'FUNCTION',"'fnInitPanel(','pPanel=',ITOA(pPanel),')'",'<-- Called')
 
 	// Cater for when all panels should be updated
 	IF(!pPanel){
@@ -1419,14 +1489,14 @@ DEFINE_FUNCTION fnInitPanel(INTEGER pPanel){
 	fnSetupPanel(pPanel)
 
 	// Debug Out
-	fnDebug(DEBUG_DEV,'fnInitPanel','Called',"'pPanel=',ITOA(pPanel)")
+	fnDebug(DEBUG_DEV,'FUNCTION',"'fnInitPanel(','pPanel=',ITOA(pPanel),')'",'<-- Called')
 }
 /********************************************************************************************************************************************************************************************************************************************************
 	Interface Control - Panel Setup Functions
 ********************************************************************************************************************************************************************************************************************************************************/
 DEFINE_FUNCTION fnSetupPanel(INTEGER pPanel){
 	// Debug Out
-	fnDebug(DEBUG_DEV,'fnSetupPanel','Called',"'pPanel=',ITOA(pPanel)")
+	fnDebug(DEBUG_DEV,'FUNCTION',"'fnSetupPanel(','pPanel=',ITOA(pPanel),')'",'<-- Called')
 
 	// Cater for when all panels should be updated
 	IF(!pPanel){
@@ -1480,12 +1550,12 @@ DEFINE_FUNCTION fnSetupPanel(INTEGER pPanel){
 	}
 
 
-	fnDebug(DEBUG_DEV,'fnSetupPanel','Ended',"'pPanel=',ITOA(pPanel)")
+	fnDebug(DEBUG_DEV,'FUNCTION',"'fnSetupPanel(','pPanel=',ITOA(pPanel),')'",'--> Done')
 }
 
 //core function for updating the panel with the correct booking info
 DEFINE_FUNCTION fnBuildDiaryDetailOnPanel(INTEGER pPanel){
-	fnDebug(DEBUG_DEV,'fnBuildDiaryDetailOnPanel','Called',"'pPanel=',ITOA(pPanel)")
+	fnDebug(DEBUG_DEV,'FUNCTION',"'fnBuildDiaryDetailOnPanel(','pPanel=',ITOA(pPanel),')'",'<-- Called')
 
 	// Call all panels
 	IF(!pPanel){
@@ -1551,11 +1621,14 @@ DEFINE_FUNCTION fnBuildDiaryDetailOnPanel(INTEGER pPanel){
 	}
 	fnUpdatePanel(pPanel)
 
-	fnDebug(DEBUG_DEV,'fnBuildDiaryDetailOnPanel','Ended',"'pPanel=',ITOA(pPanel)")
+	fnDebug(DEBUG_DEV,'FUNCTION',"'fnBuildDiaryDetailOnPanel(','pPanel=',ITOA(pPanel),')'",'--> Done')
 }
 
 DEFINE_FUNCTION fnUpdatePanel(INTEGER pPanel){
-	fnDebug(DEBUG_DEV,'fnUpdatePanel','Called',"'pPanel=',ITOA(pPanel)")
+	STACK_VAR CHAR pStartTime[8]
+	STACK_VAR CHAR pEndTime[8]
+
+	fnDebug(DEBUG_DEV,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'",'<-- Called')
 
 	// Call all panels
 	IF(!pPanel){
@@ -1568,11 +1641,21 @@ DEFINE_FUNCTION fnUpdatePanel(INTEGER pPanel){
 
 	// Populate Now Fields
 	SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNowSubject),   ',0,',WC_TP_ENCODE(myRoom.SLOTS[myRoom.SLOT_CURRENT].SUBJECT)"
-	
-	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNowStart),     ',0,',fnStripCharsRight( myRoom.SLOTS[myRoom.SLOT_CURRENT].START_TIME,3)"
-	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNowEnd),       ',0,',fnStripCharsRight( myRoom.SLOTS[myRoom.SLOT_CURRENT].END_TIME,3)"
+
+	pStartTime = fnStripCharsRight( myRoom.SLOTS[myRoom.SLOT_CURRENT].START_TIME,3)
+	pEndTime   = fnStripCharsRight( myRoom.SLOTS[myRoom.SLOT_CURRENT].END_TIME,3)
+	IF(LEFT_STRING(pStartTime,3) = '24:'){
+		GET_BUFFER_STRING(pStartTime,2)
+		pStartTime = "'00',pStartTime"
+	}
+	IF(LEFT_STRING(pEndTime,3) = '24:'){
+		GET_BUFFER_STRING(pEndTime,2)
+		pEndTime = "'00',pEndTime"
+	}
+	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNowStart),     ',0,',pStartTime"//fnStripCharsRight( myRoom.SLOTS[myRoom.SLOT_CURRENT].START_TIME,3)"
+	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNowEnd),       ',0,',pEndTime"//fnStripCharsRight( myRoom.SLOTS[myRoom.SLOT_CURRENT].END_TIME,3)"
 	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNowDuration),  ',0,',fnSecondsToDurationText(myRoom.SLOTS[myRoom.SLOT_CURRENT].DURATION_SECS,0)"
-	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNowRemaining), ',0,',fnSecondsToDurationText(myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_SECS,2)"
+	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNowRemaining), ',0,',fnSecondsToDurationText(myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_SECS,0)"//2)"
 
 	// Populate Now Organiser
 	IF(!myRoom.SLOTS[myRoom.SLOT_CURRENT].isQUICKBOOK && !myRoom.SLOTS[myRoom.SLOT_CURRENT].isAUTOBOOK){
@@ -1594,9 +1677,21 @@ DEFINE_FUNCTION fnUpdatePanel(INTEGER pPanel){
 		SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNextSubject),  ',0,',WC_TP_ENCODE(myRoom.SLOTS[myRoom.SLOT_CURRENT+1].SUBJECT)"
 		SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNextOrganiser),',0,',WC_TP_ENCODE(myRoom.SLOTS[myRoom.SLOT_CURRENT+1].ORGANISER)"
 
-		SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNextStart),    ',0,',fnStripCharsRight( myRoom.SLOTS[myRoom.SLOT_CURRENT+1].START_TIME,3)"
-		SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNextEnd),      ',0,',fnStripCharsRight( myRoom.SLOTS[myRoom.SLOT_CURRENT+1].END_TIME,3)"
+	pStartTime = fnStripCharsRight( myRoom.SLOTS[myRoom.SLOT_CURRENT+1].START_TIME,3)
+	pEndTime   = fnStripCharsRight( myRoom.SLOTS[myRoom.SLOT_CURRENT+1].END_TIME,3)
+	IF(LEFT_STRING(pStartTime,3) = '24:'){
+		GET_BUFFER_STRING(pStartTime,2)
+		pStartTime = "'00',pStartTime"
+	}
+	IF(LEFT_STRING(pEndTime,3) = '24:'){
+		GET_BUFFER_STRING(pEndTime,2)
+		pEndTime = "'00',pEndTime"
+	}
+		SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNextStart),    ',0,',pStartTime"//fnStripCharsRight( myRoom.SLOTS[myRoom.SLOT_CURRENT+1].START_TIME,3)"
+		SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNextEnd),      ',0,',pEndTime"//fnStripCharsRight( myRoom.SLOTS[myRoom.SLOT_CURRENT+1].END_TIME,3)"
 		SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNextDuration), ',0,',fnSecondsToDurationText(myRoom.SLOTS[myRoom.SLOT_CURRENT+1].DURATION_SECS,0)"
+		fnDebug(DEBUG_DEV,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'next pStartTime = ',pStartTime")
+		fnDebug(DEBUG_DEV,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'next pEndTime = ',  pEndTime")
 	}
 	ELSE{
 		SEND_COMMAND tp[pPanel],"'^SHO-61.66,0'"
@@ -1613,11 +1708,11 @@ DEFINE_FUNCTION fnUpdatePanel(INTEGER pPanel){
 	// Setup LEDs
 	fnUpdateLEDs(pPanel)
 
-	fnDebug(DEBUG_DEV,'fnUpdatePanel','Ended',"'pPanel=',ITOA(pPanel)")
+	fnDebug(DEBUG_DEV,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'",'--> Done')
 }
 //changes the LED's on the pannel and the background border to match
 DEFINE_FUNCTION fnUpdateLEDs(INTEGER pPanel){
-	fnDebug(DEBUG_DEV,'fnUpdateLED','Called',"'pPanel=',ITOA(pPanel)")
+	fnDebug(DEBUG_DEV,'FUNCTION',"'fnUpdateLED(','pPanel=',ITOA(pPanel),')'",'<-- Called')
 	// Loop if all panels
 	IF(pPanel == 0){
 		STACK_VAR INTEGER p
@@ -1643,7 +1738,7 @@ DEFINE_FUNCTION fnUpdateLEDs(INTEGER pPanel){
 			DEFAULT: fnSetLEDs(pPanel,LED_STATE_RED)
 		}
 	}
-	fnDebug(DEBUG_DEV,'fnUpdateLED','Ended',"'pPanel=',ITOA(pPanel)")
+	fnDebug(DEBUG_DEV,'FUNCTION',"'fnUpdateLED(','pPanel=',ITOA(pPanel),')'",'--> Done')
 }
 
 DEFINE_FUNCTION fnSetLEDs(INTEGER pPanel, INTEGER pState){
@@ -1670,7 +1765,7 @@ DEFINE_FUNCTION fnSetLEDs(INTEGER pPanel, INTEGER pState){
 
 //hides/shows overlays
 DEFINE_FUNCTION fnSetupOverlay(INTEGER pPanel, INTEGER pOVERLAY){
-	fnDebug(DEBUG_DEV,'fnSetupOverlay','Called',"'pPanel=',ITOA(pPanel),',pOVERLAY=',ITOA(pOVERLAY)")
+	fnDebug(DEBUG_DEV,'FUNCTION',"'fnSetupOverlay(','pPanel=',ITOA(pPanel),',pOVERLAY=',ITOA(pOVERLAY),')'",'<-- Called')
 	IF(pPanel == 0){
 		STACK_VAR INTEGER x
 		FOR(x = 1; x <= LENGTH_ARRAY(tp); x++){
@@ -1714,27 +1809,52 @@ DEFINE_FUNCTION fnSetupOverlay(INTEGER pPanel, INTEGER pOVERLAY){
 	IF(TIMELINE_ACTIVE(TLID_TIMEOUT_OVERLAYS)){ TIMELINE_KILL(TLID_TIMEOUT_OVERLAYS) }
 	IF(pOVERLAY != OVERLAY_NONE){
 		TIMELINE_CREATE(TLID_TIMEOUT_OVERLAYS,TLT_OLAY_TIMEOUT,LENGTH_ARRAY(TLT_OLAY_TIMEOUT),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
-		fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLT_OLAY_TIMEOUT','CREATED')
+		fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLT_OLAY_TIMEOUT','<-- Created')
 	}
 
 	// Store Value
 	myRMSPanel[pPanel].OVERLAY = pOVERLAY
 
-	fnDebug(DEBUG_DEV,'fnSetupOverlay','Ended',"'pPanel=',ITOA(pPanel),',pOVERLAY=',ITOA(pOVERLAY)")
+	fnDebug(DEBUG_DEV,'FUNCTION',"'fnSetupOverlay(','pPanel=',ITOA(pPanel),',pOVERLAY=',ITOA(pOVERLAY),')'",'--> Done')
 }
 
 // updates the booking response pop-up when creating/updating
 DEFINE_FUNCTION fnDisplayStatusMessage(CHAR pMsg[], CHAR pMsgDetail[50]){
+	STACK_VAR CHAR pTempMsg[64]
+	STACK_VAR CHAR pTempMsgDetail[64]
 	// Debugging
-	fnDebug(DEBUG_DEV,'fnDisplayStatusMessage','Called',"'pMsg=',pMsg,',pMsgDetail=',pMsgDetail")
+	fnDebug(DEBUG_DEV,'FUNCTION',"'fnDisplayStatusMessage(','pMsg=',pMsg,',pMsgDetail=',pMsgDetail,')'",'<-- Called')
 
+	IF(UPPER_STRING(pMsg) == 'BOOKING DECLINED'){
+		pTempMsg = pMsg
+	}
+	ELSE IF(UPPER_STRING(pMsg) == 'BOOKING'){
+		pTempMsg = pMsgDetail
+	}
+	ELSE IF(UPPER_STRING(pMsg) == 'QUICK BOOK'){
+		pTempMsg = pMsgDetail
+		pTempMsgDetail = pMsg
+	}
+	ELSE{
+		pTempMsg = pMsg
+		pTempMsgDetail = pMsgDetail
+	}
+	IF(myRoom.PAGE_DETAILS == DETAILS_ON){
+		// Show details
+	}
+	ELSE{
+		pTempMsgDetail = ''//Don't show details
+	}
+//	IF(pTempMsg == pTempMsgDetail){
+//		pTempMsgDetail = ''
+//	}
 	// Set Message and show
-   SEND_COMMAND tp,"'^TXT-',ITOA(addMessage),',0,',pMsg"
-   SEND_COMMAND tp,"'^TXT-',ITOA(addMessageDetail),',0,',pMsgDetail"
+   SEND_COMMAND tp,"'^TXT-',ITOA(addMessage),',0,',pTempMsg"
+   SEND_COMMAND tp,"'^TXT-',ITOA(addMessageDetail),',0,',pTempMsgDetail"
 	fnSetupOverlay(0,OVERLAY_MESSAGE)
 
 	// Debugging
-	fnDebug(DEBUG_DEV,'fnDisplayStatusMessage','Ended',"'pMsg=',pMsg,',pMsgDetail=',pMsgDetail")
+	fnDebug(DEBUG_DEV,'FUNCTION',"'fnDisplayStatusMessage(','pMsg=',pTempMsg,',pMsgDetail=',pTempMsgDetail,')'",'--> Done')
 }
 
 // updates the text on the keyboard in line with keyboard array. Num/letters
@@ -1747,15 +1867,15 @@ DEFINE_FUNCTION fnUpdateKeyboard(INTEGER pPanel, INTEGER state){
 
 //add text to the input string on the keyboard for quick book
 DEFINE_FUNCTION fnUpdatePanelQuickBook(INTEGER pPanel){
-	fnDebug(DEBUG_DEV,'fnUpdatePanelQuickBook','Called',"'pPanel=',ITOA(pPanel)")
+	fnDebug(DEBUG_DEV,'FUNCTION',"'fnUpdatePanelQuickBook(','pPanel=',ITOA(pPanel),')'",'<-- Called')
 	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addQuickBookSubject),',0,',myRMSPanel[pPanel].SUBJECT"
 	SEND_COMMAND tp[pPanel],"'^SHO-',ITOA(btnQuickBook),',',ITOA(LENGTH_ARRAY(myRMSPanel[pPanel].SUBJECT) > 0)"
-	fnDebug(DEBUG_DEV,'fnUpdatePanelQuickBook','Ended',"'pPanel=',ITOA(pPanel)")
+	fnDebug(DEBUG_DEV,'FUNCTION',"'fnUpdatePanelQuickBook(','pPanel=',ITOA(pPanel),')'",'--> Done')
 }
 
 DEFINE_FUNCTION fnPopulateCalView(INTEGER pPanel){
 	STACK_VAR INTEGER x
-	fnDebug(DEBUG_DEV,'fnPopulateCalView','Called',"'pPanel=',ITOA(pPanel)")
+	fnDebug(DEBUG_DEV,'FUNCTION',"'fnPopulateCalView(','pPanel=',ITOA(pPanel),')'",'<-- Called')
 	FOR(x = 1; x <= _MAX_SLOTS; x++){
 		IF(myRMSPanel[pPanel].CAL_SLOT_STATE[x]){
 			SEND_COMMAND tp[pPanel], "'^SHD-',ITOA(addSlot),',bookSlot',FORMAT('%02d',x)"
@@ -1776,7 +1896,7 @@ DEFINE_FUNCTION fnPopulateCalView(INTEGER pPanel){
 			SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addSlotSUBJECT+x),  ',0,',WC_TP_ENCODE(myRoom.SLOTS[x].SUBJECT)"
 			SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addSlotName+x),  ',0,',WC_TP_ENCODE(myRoom.SLOTS[x].ORGANISER)"
 
-			// Set ON/OFF meetign FB
+			// Set ON/OFF meeting FB
 			[tp[pPanel],addSlot+x] = (myRoom.SLOTS[x].BOOKING_INDEX)
 
 			// Fade out Past
@@ -1788,11 +1908,11 @@ DEFINE_FUNCTION fnPopulateCalView(INTEGER pPanel){
 			}
 		}
 	}
-	fnDebug(DEBUG_DEV,'fnPopulateCalView','Ended',"'pPanel=',ITOA(pPanel)")
+	fnDebug(DEBUG_DEV,'FUNCTION',"'fnPopulateCalView(','pPanel=',ITOA(pPanel),')'",'--> Done')
 }
 
 DEFINE_FUNCTION fnSetPanelMode(INTEGER pPanel,CHAR pMODE[20]){
-	fnDebug(DEBUG_DEV,'fnSetPanelMode','Called',"'pPanel=',ITOA(pPanel),',pMODE=',pMODE")
+	fnDebug(DEBUG_DEV,'FUNCTION',"'fnSetPanelMode(','pPanel=',ITOA(pPanel),',pMODE=',pMODE,')'",'<-- Called')
 
 	IF(!pPanel){
 		STACK_VAR INTEGER p
@@ -1810,7 +1930,7 @@ DEFINE_FUNCTION fnSetPanelMode(INTEGER pPanel,CHAR pMODE[20]){
 		CASE 'QUICKBOOK':	myRMSPanel[pPanel].MODE = MODE_QUICKBOOK
 	}
 
-	fnDebug(DEBUG_DEV,'fnSetPanelMode','Ended','')
+	fnDebug(DEBUG_DEV,'FUNCTION','fnSetPanelMode','--> Done')
 }
 /********************************************************************************************************************************************************************************************************************************************************
 	Feedback

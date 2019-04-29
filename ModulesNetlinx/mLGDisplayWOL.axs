@@ -336,11 +336,13 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 					SWITCH(myLGDisplayWOL.POWER){
 						CASE TRUE:{
 							//fnAddToQueue('k','a','01')
-							SEND_COMMAND vdvWOL,"'ASCII-',myLGDisplayWOL.MAC_ADD"
+							SEND_COMMAND vdvWOL,"'WOL-ASCII,',myLGDisplayWOL.MAC_ADD"
+							fnDebug(DEBUG_DEV,'Power Control:','POWER-ON-via-WOL')
 						}
 						CASE FALSE:{
 							fnAddToQueue('k','a','00')
 							myLGDisplayWOL.AUDMUTE = FALSE
+							fnDebug(DEBUG_DEV,'Power Control:','POWER-OFF')
 						}
 					}
 					fnSetPoweredOff(myLGDisplayWOL.POWER)

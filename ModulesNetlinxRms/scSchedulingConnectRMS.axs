@@ -62,17 +62,17 @@ RMS_CUSTOM_EVENT_ADDRESS_EVENT_BOOKING    					= 6;
 RMS_EVENT_BOOKING_STARTED                     = 1;
 RMS_EVENT_BOOKING_ENDED                       = 2;
 RMS_EVENT_BOOKING_EXTENDED                    = 3;
-RMS_EVENT_BOOKING_cancelled                    = 4;
+RMS_EVENT_BOOKING_CANCELLED                   = 4;
 RMS_EVENT_BOOKING_CREATED                     = 5;
 RMS_EVENT_BOOKING_UPDATED                     = 6;
-RMS_EVENT_BOOKING_MONTHLY_SUMMARY_UPDATED		= 7;
+RMS_EVENT_BOOKING_MONTHLY_SUMMARY_UPDATED		 = 7;
 RMS_EVENT_BOOKING_ACTIVE_UPDATED              = 8;
 RMS_EVENT_BOOKING_NEXT_ACTIVE_UPDATED         = 9;
 RMS_EVENT_BOOKING_DAILY_COUNT                 = 10;
 
 // RMS Custom Event IDs - Response to Clue
 RMS_EVENT_BOOKING_ACTIVE_RESPONSE             = 30;
-RMS_EVENT_BOOKING_cancelled_RESPONSE           = 31;
+RMS_EVENT_BOOKING_CANCELLED_RESPONSE          = 31;
 RMS_EVENT_BOOKING_CREATED_RESPONSE            = 32;
 RMS_EVENT_BOOKING_ENDED_RESPONSE              = 33;
 RMS_EVENT_BOOKING_EXTENDED_RESPONSE           = 34;
@@ -86,7 +86,7 @@ RMS_EVENT_BOOKING_SUMMARY_DAILY_RESPONSE      = 39;
 INTEGER _MAX_BOOKINGS 	= 50			// Max number of actual meetings
 
 // Constant to represent '00:00:00' at end of day (As it appears twice in 24hr clock)
-LONG		MIDNIGHT_SECS	= 24*60*60
+LONG		MIDNIGHT_SECS	= 86400 // 24*60*60 (note: Netlinx thinks 24*60*60 = 128. changed 20190411, gmm)
 
 // Debug Values
 INTEGER DEBUG_ERR				= 0
@@ -159,7 +159,7 @@ DEFINE_FUNCTION fnGetCleanBookingResponse(CHAR encode[10000],uRmsBookResp pResp)
 
 	STACK_VAR uRmsBookRespOriginal myRmsEventBookingResponse
 
-	fnDebug(DEBUG_DEV,vdvRMSDuet,'fnGetCleanBookingResponse','Called')
+	fnDebug(DEBUG_DEV,vdvRMSDuet,'fnGetCleanBookingResponse','<-- Called')
 
 	STRING_TO_VARIABLE(myRmsEventBookingResponse,encode,1)
 
@@ -185,7 +185,7 @@ DEFINE_FUNCTION fnGetCleanBookingResponse(CHAR encode[10000],uRmsBookResp pResp)
 	pResp.clientGatewayUid 		= WC_TO_CH(myRmsEventBookingResponse.clientGatewayUid)
 	pResp.failureDescription   = WC_TO_CH(myRmsEventBookingResponse.failureDescription)
 
-	fnDebug(DEBUG_DEV,vdvRMSDuet,'fnGetCleanBookingResponse','Done')
+	fnDebug(DEBUG_DEV,vdvRMSDuet,'fnGetCleanBookingResponse','--> Done')
 
 }
 /********************************************************************************************************************************************************************************************************************************************************
@@ -271,7 +271,7 @@ DEFINE_FUNCTION fnDebug(INTEGER pDEBUG,DEV dvOrigin, CHAR pRef[],CHAR pData[]){
 	// Check the requested debug against the current module setting
 	IF(myConnectRMS.DEBUG >= pDEBUG){
 		STACK_VAR CHAR dbgMsg[255]
-		dbgMsg = "ITOA(dvOrigin.Number),'|RMSConnect|',pRef,'|',pData"
+		dbgMsg = "ITOA(dvOrigin.Number),'|RMSConnect|',pRef,'| ',pData"
 		// Send to diagnostics screen
 		SEND_STRING 0:0:0, dbgMsg
 		// Log to file if required
@@ -307,41 +307,41 @@ DEFINE_FUNCTION fnDebugBooking(INTEGER pDebug,SLONG Index, SLONG Total, uRmsBook
 ********************************************************************************************************************************************************************************************************************************************************/
 DEFINE_EVENT DATA_EVENT[vdvRoom]{
 	COMMAND:{
-		STACK_VAR INTEGER r
-		r = GET_LAST(vdvRoom)
+		STACK_VAR INTEGER pROOM
+		pROOM = GET_LAST(vdvRoom)
 		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
 			CASE 'PROPERTY':{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
 					CASE 'OCCUPANCY':{
-						myConnectRMS.ROOM[GET_LAST(vdvRoom)].OCCUPANCY_TIMEOUT          = ATOI(fnGetCSV(DATA.TEXT,1))
+						myConnectRMS.ROOM[pROOM].OCCUPANCY_TIMEOUT          = ATOI(fnGetCSV(DATA.TEXT,1))
 					}
 					CASE 'NOSHOW':{
-						myConnectRMS.ROOM[GET_LAST(vdvRoom)].NOSHOW_ACTIVE              = TRUE
-						myConnectRMS.ROOM[GET_LAST(vdvRoom)].NOSHOW_TIMEOUT             = ATOI(fnGetCSV(DATA.TEXT,1))
-						myConnectRMS.ROOM[GET_LAST(vdvRoom)].NOSHOW_MAXIMUM             = ATOI(fnGetCSV(DATA.TEXT,2))
+						myConnectRMS.ROOM[pROOM].NOSHOW_ACTIVE              = TRUE
+						myConnectRMS.ROOM[pROOM].NOSHOW_TIMEOUT             = ATOI(fnGetCSV(DATA.TEXT,1))
+						myConnectRMS.ROOM[pROOM].NOSHOW_MAXIMUM             = ATOI(fnGetCSV(DATA.TEXT,2))
 					}
 					CASE 'QUICKBOOK':{
-						myConnectRMS.ROOM[GET_LAST(vdvRoom)].QUICKBOOK_ACTIVE           = TRUE
-						myConnectRMS.ROOM[GET_LAST(vdvRoom)].QUICKBOOK_STANDOFF_TIMEOUT = ATOI(fnGetCSV(DATA.TEXT,1))
-						myConnectRMS.ROOM[GET_LAST(vdvRoom)].QUICKBOOK_MINIMUM          = ATOI(fnGetCSV(DATA.TEXT,2))
-						myConnectRMS.ROOM[GET_LAST(vdvRoom)].QUICKBOOK_MAXIMUM          = ATOI(fnGetCSV(DATA.TEXT,3))
-						myConnectRMS.ROOM[GET_LAST(vdvRoom)].QUICKBOOK_STEP             = ATOI(fnGetCSV(DATA.TEXT,4))
+						myConnectRMS.ROOM[pROOM].QUICKBOOK_ACTIVE           = TRUE
+						myConnectRMS.ROOM[pROOM].QUICKBOOK_STANDOFF_TIMEOUT = ATOI(fnGetCSV(DATA.TEXT,1))
+						myConnectRMS.ROOM[pROOM].QUICKBOOK_MINIMUM          = ATOI(fnGetCSV(DATA.TEXT,2))
+						myConnectRMS.ROOM[pROOM].QUICKBOOK_MAXIMUM          = ATOI(fnGetCSV(DATA.TEXT,3))
+						myConnectRMS.ROOM[pROOM].QUICKBOOK_STEP             = ATOI(fnGetCSV(DATA.TEXT,4))
 					}
 					CASE 'AUTOBOOK':{
-						myConnectRMS.ROOM[GET_LAST(vdvRoom)].AUTOBOOK_ACTIVE           = TRUE
-						myConnectRMS.ROOM[GET_LAST(vdvRoom)].AUTOBOOK_STANDOFF_TIMEOUT = ATOI(fnGetCSV(DATA.TEXT,1))
-						myConnectRMS.ROOM[GET_LAST(vdvRoom)].AUTOBOOK_ACTION_TIMEOUT   = ATOI(fnGetCSV(DATA.TEXT,2))
-						myConnectRMS.ROOM[GET_LAST(vdvRoom)].AUTOBOOK_EVENTS_TARGET    = ATOI(fnGetCSV(DATA.TEXT,3))
+						myConnectRMS.ROOM[pROOM].AUTOBOOK_ACTIVE           = TRUE
+						myConnectRMS.ROOM[pROOM].AUTOBOOK_STANDOFF_TIMEOUT = ATOI(fnGetCSV(DATA.TEXT,1))
+						myConnectRMS.ROOM[pROOM].AUTOBOOK_ACTION_TIMEOUT   = ATOI(fnGetCSV(DATA.TEXT,2))
+						myConnectRMS.ROOM[pROOM].AUTOBOOK_EVENTS_TARGET    = ATOI(fnGetCSV(DATA.TEXT,3))
 					}
 					CASE 'ROOMNAME':{
-						myConnectRMS.ROOM[GET_LAST(vdvRoom)].ROOM_NAME = DATA.TEXT
+						myConnectRMS.ROOM[pROOM].ROOM_NAME = DATA.TEXT
 					}
 				}
 			}
 			CASE 'ACTION':{
 				SWITCH(fnGetCSV(DATA.TEXT,1)){
 					CASE 'RESET':{
-						fnResetRoom(GET_LAST(vdvRoom))
+						fnResetRoom(pROOM)
 					}
 					CASE 'CREATE':{
 						// Local Variables
@@ -359,7 +359,7 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 						// Add Body
 						ToSend = "ToSend,',AMX Created Meeting: ',fnGetCSV(DATA.TEXT,2)"
 						// Add LocationID
-						ToSend = "ToSend,',',ITOA(myConnectRMS.ROOM[GET_LAST(vdvRoom)].LOC_ID)"
+						ToSend = "ToSend,',',ITOA(myConnectRMS.ROOM[pROOM].LOC_ID)"
 						// Send Command
 						SEND_COMMAND vdvRMSDuet,ToSend
 					}
@@ -370,11 +370,11 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 						// Build Message
 						ToSend = 'SCHEDULING.BOOKING.EXTEND-'
 						// Add BookingID to be extended
-						ToSend = "ToSend,BOOKING[GET_LAST(vdvRoom)][ATOI(fnGetCSV(DATA.TEXT,2))].bookingId"
+						ToSend = "ToSend,BOOKING[pROOM][ATOI(fnGetCSV(DATA.TEXT,2))].bookingId"
 						// Add Extending Duration
 						ToSend = "ToSend,',',fnGetCSV(DATA.TEXT,3)"
 						// Add LocationID
-						ToSend = "ToSend,',',ITOA(myConnectRMS.ROOM[GET_LAST(vdvRoom)].LOC_ID)"
+						ToSend = "ToSend,',',ITOA(myConnectRMS.ROOM[pROOM].LOC_ID)"
 						// Send Command
 						SEND_COMMAND vdvRMSDuet,ToSend
 					}
@@ -385,9 +385,9 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 						// Build Message
 						ToSend = 'SCHEDULING.BOOKING.END-'
 						// Add BookingID to be Cancelled
-						ToSend = "ToSend,BOOKING[GET_LAST(vdvRoom)][ATOI(fnGetCSV(DATA.TEXT,2))].bookingId"
+						ToSend = "ToSend,BOOKING[pROOM][ATOI(fnGetCSV(DATA.TEXT,2))].bookingId"
 						// Add LocationID
-						ToSend = "ToSend,',',ITOA(myConnectRMS.ROOM[GET_LAST(vdvRoom)].LOC_ID)"
+						ToSend = "ToSend,',',ITOA(myConnectRMS.ROOM[pROOM].LOC_ID)"
 						// Send Command
 						SEND_COMMAND vdvRMSDuet,ToSend
 					}
@@ -395,7 +395,7 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 					CASE 'OVERRIDE':{
 						SWITCH(fnGetCSV(DATA.TEXT,2)){
 							CASE 'NOSHOW':{
-								fnUpdateStatusString(GET_LAST(vdvRoom),"'OverRide: NoShow'")
+								fnUpdateStatusString(pROOM,"'OverRide: NoShow'")
 							}
 						}
 					}
@@ -434,7 +434,7 @@ DEFINE_EVENT DATA_EVENT[vdvRMSNetlinx]{
 ********************************************************************************************************************************************************************************************************************************************************/
 DEFINE_EVENT DATA_EVENT[vdvRMSDuet]{
 	ONLINE:{
-		fnDebug(DEBUG_DEV,vdvRMSDuet,'DATA_EVENT [ONLINE] vdvRMSDuet','Called')
+		fnDebug(DEBUG_DEV,vdvRMSDuet,'DATA_EVENT [ONLINE] vdvRMSDuet','<-- Called')
 		IF(myConnectRMS.RMS_HOST != ''){
 			// System Reference is blank, fill it with the Serial Number
 			IF(myConnectRMS.RMS_SYSREF == ''){
@@ -455,13 +455,13 @@ DEFINE_EVENT DATA_EVENT[vdvRMSDuet]{
 			// Set Enabled
 			SEND_COMMAND DATA.DEVICE, "'CONFIG.CLIENT.ENABLED-true'"
 		}
-		fnDebug(DEBUG_DEV,vdvRMSDuet,'DATA_EVENT [ONLINE] vdvRMSDuet','Finished')
+		fnDebug(DEBUG_DEV,vdvRMSDuet,'DATA_EVENT [ONLINE] vdvRMSDuet','--> Done')//'Finished')
 	}
 	COMMAND:{
 		// Local variable to hold converted data
 		STACK_VAR CHAR pDATA[1000]
 		// Dev Debug Out
-		fnDebug(DEBUG_DEV,vdvRMSDuet,'[DATA_EVENT][COMMAND]','Called')
+		fnDebug(DEBUG_DEV,vdvRMSDuet,'DATA_EVENT [COMMAND]','<-- Called')
 		// Convert incoming from WCHAR to CHAR
 		pDATA = WC_TO_CH(_WC(DATA.TEXT))
 		fnDebug(DEBUG_DEV,vdvRMSDuet,'pDATA',pDATA)
@@ -547,23 +547,21 @@ DEFINE_EVENT DATA_EVENT[vdvRMSDuet]{
 				}
 			}
 		}
-		fnDebug(DEBUG_DEV,vdvRMSDuet,'DATA_EVENT [COMMAND] vdvRMSDuet','Finished')
+		fnDebug(DEBUG_DEV,vdvRMSDuet,'DATA_EVENT [COMMAND] vdvRMSDuet','--> Done')//'Finished')
 	}
 }
 /********************************************************************************************************************************************************************************************************************************************************
 	RMS Custom Events - Booking Record Response
-	This will be returned when bookins are requested, so will be part of a set
+	This will be returned when bookings are requested, so will be part of a set
 ********************************************************************************************************************************************************************************************************************************************************/
-DEFINE_EVENT CUSTOM_EVENT[vdvRMSDuet,
-	RMS_CUSTOM_EVENT_ADDRESS_EVENT_BOOKING,
-		RMS_EVENT_BOOKING_RECORD_RESPONSE]{
+DEFINE_EVENT CUSTOM_EVENT[vdvRMSDuet, RMS_CUSTOM_EVENT_ADDRESS_EVENT_BOOKING, RMS_EVENT_BOOKING_RECORD_RESPONSE]{
 
 	IF(custom.flag == TRUE){
 		// Local Variables
 		STACK_VAR INTEGER r
 		STACK_VAR uRmsBookResp thisBooking
 		// Debug Out
-		fnDebug(DEBUG_DEV,vdvRMSDuet,'BOOKING_RECORD_RESPONSE','Called')
+		fnDebug(DEBUG_DEV,vdvRMSDuet,'BOOKING_RECORD_RESPONSE','<-- Called')
 		// Decode Variable
 		fnGetCleanBookingResponse(custom.encode,thisBooking)
 		// Find matching Room
@@ -578,8 +576,9 @@ DEFINE_EVENT CUSTOM_EVENT[vdvRMSDuet,
 				// Get Total Bookings
 				myConnectRMS.ROOM[r].BOOKING_COUNT = TYPE_CAST( CUSTOM.VALUE3 )	// Booking Index
 
-				// Clear out bookings if this is the first of a new set
-				IF(b == 1){
+				// Clear out bookings if this is the first of a new set, or less!
+				IF(b <= 1){
+					fnDebug(DEBUG_DEV,vdvRMSDuet,'CLEAR BOOKINGS',"'b = ',ITOA(b),' t = ',ITOA(myConnectRMS.ROOM[r].BOOKING_COUNT)")
 					fnClearBookings(r)
 				}
 				fnDebugBooking(DEBUG_DEV,CUSTOM.VALUE2,CUSTOM.VALUE3,thisBooking)
@@ -595,7 +594,7 @@ DEFINE_EVENT CUSTOM_EVENT[vdvRMSDuet,
 				}
 			}
 		}
-		fnDebug(DEBUG_DEV,vdvRMSDuet,'BOOKING_RECORD_RESPONSE','Finished')
+		fnDebug(DEBUG_DEV,vdvRMSDuet,'BOOKING_RECORD_RESPONSE','--> Done')//'Finished')
 	}
 }
 
@@ -616,7 +615,7 @@ CUSTOM_EVENT[vdvRMSDuet, RMS_CUSTOM_EVENT_ADDRESS_EVENT_BOOKING, RMS_EVENT_BOOKI
 		STACK_VAR uRmsBookResp thisBooking
 
 		// Debug Out
-		fnDebug(DEBUG_DEV,vdvRMSDuet,'RMS_CUSTOM_ACTION_EVENT','Called')
+		fnDebug(DEBUG_DEV,vdvRMSDuet,'RMS_CUSTOM_ACTION_EVENT','<-- Called')
 		// decode custom enceded data to event booking structure
 		fnGetCleanBookingResponse(custom.encode,thisBooking)
 		fnDebugBooking(DEBUG_DEV,CUSTOM.VALUE2,CUSTOM.VALUE3,thisBooking)
@@ -645,7 +644,7 @@ CUSTOM_EVENT[vdvRMSDuet, RMS_CUSTOM_EVENT_ADDRESS_EVENT_BOOKING, RMS_EVENT_BOOKI
 		}
 
 		// Debug Out
-		fnDebug(DEBUG_DEV,vdvRMSDuet,'RMS_CUSTOM_ACTION_EVENT','Exit')
+		fnDebug(DEBUG_DEV,vdvRMSDuet,'RMS_CUSTOM_ACTION_EVENT','--> Done')//'Exit')
 	}
 }
 /********************************************************************************************************************************************************************************************************************************************************
@@ -662,7 +661,7 @@ CUSTOM_EVENT[vdvRMSDuet,6,9]{	// The Next Active Booking has Updated
 	IF(custom.flag == TRUE){
 		STACK_VAR INTEGER r
 		STACK_VAR uRmsBookResp thisBooking
-		fnDebug(DEBUG_DEV,vdvRMSDuet,'BOOKING_EVENT','Enter')
+		fnDebug(DEBUG_DEV,vdvRMSDuet,'BOOKING_EVENT','<-- Called')//'Enter')
 		// decode custom enceded data to event booking structure
 		fnGetCleanBookingResponse(custom.encode,thisBooking)
 		fnDebugBooking(DEBUG_DEV,CUSTOM.VALUE2,CUSTOM.VALUE3,thisBooking)
@@ -683,7 +682,7 @@ CUSTOM_EVENT[vdvRMSDuet,6,9]{	// The Next Active Booking has Updated
 				fnGetBookings(r)
 			}
 		}
-		fnDebug(DEBUG_DEV,vdvRMSDuet,'BOOKING_EVENT','Exit')
+		fnDebug(DEBUG_DEV,vdvRMSDuet,'BOOKING_EVENT','--> Done')//'Exit')
 	}
 }
 DEFINE_FUNCTION INTEGER fnUpdateBooking(INTEGER r, uRmsBookResp thisBooking){
@@ -730,13 +729,18 @@ DEFINE_FUNCTION  fnSendBookingsToRoom(INTEGER r){
 					ToSend = "ToSend,',',ITOA(fnTimeToSeconds(BOOKING[r][b].startTime))"
 				}
 				// End Time (Seconds since Midnight)
-				IF(fnDateDif(LDATE,BOOKING[r][b].endDate) > 0 || BOOKING[r][b].endTime == '00:00:00'){
+				fnDebug(DEBUG_DEV,vdvRoom[r],"'BOOKING[',ITOA(r),',][',ITOA(b),'].endDate = '",BOOKING[r][b].endDate)
+				fnDebug(DEBUG_DEV,vdvRoom[r],"'BOOKING[',ITOA(r),',][',ITOA(b),'].endTime = '",BOOKING[r][b].endTime)
+				IF((fnDateDif(LDATE,BOOKING[r][b].endDate) > 0) || BOOKING[r][b].endTime == '00:00:00'){
 					// If this meeting Ends After today, set time to midnight
 					ToSend = "ToSend,',',ITOA(MIDNIGHT_SECS)"
+					fnDebug(DEBUG_DEV,vdvRoom[r],'BOOKING IF',"'this meeting Ends After today, set time to midnight = ',ITOA(MIDNIGHT_SECS)")
 				}
 				ELSE{
 					ToSend = "ToSend,',',ITOA(fnTimeToSeconds(BOOKING[r][b].endTime))"
+					fnDebug(DEBUG_DEV,vdvRoom[r],'BOOKING ELSE',"'ITOA(fnTimeToSeconds(BOOKING[',ITOA(r),'][',ITOA(b),'].endTime)) = ', ITOA(fnTimeToSeconds(BOOKING[r][b].endTime))")
 				}
+				fnDebug(DEBUG_DEV,vdvRoom[r],'ToSend = ',ToSend)
 				// Subject
 				ToSend = "ToSend,',',WC_ENCODE(BOOKING[r][b].subject,WC_FORMAT_TP,1)"
 				// Organiser
@@ -772,11 +776,11 @@ DEFINE_EVENT CHANNEL_EVENT[vdvRoom,3]{
 ********************************************************************************************************************************************************************************************************************************************************/
 DEFINE_FUNCTION fnUpdateStatusString(INTEGER pROOM, CHAR pMSG[]){
 	// Debug Out
-	fnDebug(DEBUG_DEV,vdvRoom[pRoom],'fnUpdateStatusString','Called')
+	fnDebug(DEBUG_DEV,vdvRoom[pRoom],'fnUpdateStatusString','<-- Called')
 	//
 	SEND_COMMAND vdvRMSDuet, "'ASSET.PARAM.UPDATE-',DEVTOA(vdvRoom[pROOM]),',string.subject,SET_VALUE,[',TIME,']"',pMSG,'",true'"
 	// Debug out
-	fnDebug(DEBUG_DEV,vdvRoom[pRoom],'fnUpdateStatusString','Ended')
+	fnDebug(DEBUG_DEV,vdvRoom[pRoom],'fnUpdateStatusString','--> Done')//'Ended')
 }
 /********************************************************************************************************************************************************************************************************************************************************
 	RMS Function - Get All Bookings
@@ -785,12 +789,12 @@ DEFINE_FUNCTION fnUpdateStatusString(INTEGER pROOM, CHAR pMSG[]){
 ********************************************************************************************************************************************************************************************************************************************************/
 DEFINE_FUNCTION fnGetBookings(INTEGER pROOM){
 	// Debug Out
-	fnDebug(DEBUG_DEV,vdvRoom[pRoom],'fnGetBookings','Called')
+	fnDebug(DEBUG_DEV,vdvRoom[pRoom],'fnGetBookings','<-- Called')
 	// Reinitialise Timeline
 	IF(TIMELINE_ACTIVE(TLID_GET_BOOKINGS_00+pROOM)){ TIMELINE_KILL(TLID_GET_BOOKINGS_00+pROOM) }
 	TIMELINE_CREATE(TLID_GET_BOOKINGS_00+pROOM,TLT_GET_BOOKINGS_SHORT,LENGTH_ARRAY(TLT_GET_BOOKINGS_SHORT),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 	// Debug Out
-	fnDebug(DEBUG_DEV,vdvRoom[pRoom],'fnGetBookings','Ended')
+	fnDebug(DEBUG_DEV,vdvRoom[pRoom],'fnGetBookings','--> Done')//'--> Done')//'Ended')
 }
 
 DEFINE_EVENT
@@ -824,14 +828,14 @@ TIMELINE_EVENT[TLID_GET_BOOKINGS_24]{
 	// Get Current Room
 	r = TIMELINE.ID - TLID_GET_BOOKINGS_00
 	// Debugging
-	fnDebug(DEBUG_DEV,vdvRoom[r],'TLID_GET_BOOKINGS','TRIGGERED')
+	fnDebug(DEBUG_DEV,vdvRoom[r],'TLID_GET_BOOKINGS','<-- Called')//'TRIGGERED')
 	// Send Request to RMS
 	fnDebug(DEBUG_DEV,vdvRoom[r],'TLID_GET_BOOKINGS',"'?SCHEDULING.BOOKING-',LDATE,',',ITOA(myConnectRMS.ROOM[r].LOC_ID)")
 	SEND_COMMAND vdvRMSDuet, "'?SCHEDULING.BOOKINGS-',LDATE,',',ITOA(myConnectRMS.ROOM[r].LOC_ID)"
 	// Restart Timeline to repoll this data
 	TIMELINE_CREATE(TIMELINE.ID,TLT_GET_BOOKINGS_LONG,LENGTH_ARRAY(TLT_GET_BOOKINGS_LONG),TIMELINE_RELATIVE,TIMELINE_ONCE)
 	// Debugging
-	fnDebug(DEBUG_DEV,vdvRoom[r],'TLID_GET_BOOKINGS','PROCESSED')
+	fnDebug(DEBUG_DEV,vdvRoom[r],'TLID_GET_BOOKINGS','--> Done')//'PROCESSED')
 }
 /********************************************************************************************************************************************************************************************************************************************************
 	Helper Function - fnResetModule()
@@ -839,7 +843,7 @@ TIMELINE_EVENT[TLID_GET_BOOKINGS_24]{
 ********************************************************************************************************************************************************************************************************************************************************/
 DEFINE_FUNCTION fnResetRoom(INTEGER r){
 	// Debug Out
-	fnDebug(DEBUG_DEV,vdvRoom[r],'fnResetModule','Called')
+	fnDebug(DEBUG_DEV,vdvRoom[r],'fnResetModule','<-- Called')
 	// Clear Existing Bookings
 	fnClearBookings(r)
 	// Clear Location Details
@@ -848,7 +852,7 @@ DEFINE_FUNCTION fnResetRoom(INTEGER r){
 	// Request RMS Location to trigger new data
 	SEND_COMMAND vdvRMSDuet, "'?ASSET.LOCATION-',DEVTOA(vdvRoom[r])"
 	// Debug Out
-	fnDebug(DEBUG_DEV,vdvRoom[r],'fnResetModule','Ended')
+	fnDebug(DEBUG_DEV,vdvRoom[r],'fnResetModule','--> Done')//'Ended')
 }
 
 DEFINE_FUNCTION fnClearBookings(INTEGER r){
@@ -859,6 +863,17 @@ DEFINE_FUNCTION fnClearBookings(INTEGER r){
 		BOOKING[r][b] = blankBooking
 	}
 }
+
+DEFINE_PROGRAM{
+	//Reset Bookings at midnight
+	STACK_VAR INTEGER r
+	IF(TIME = '00:00:00'){
+		FOR( r = 1; r <= 24; r++ ){
+			fnResetRoom(r)
+		}
+	}
+}
+
 /********************************************************************************************************************************************************************************************************************************************************
 	Feedback
 ********************************************************************************************************************************************************************************************************************************************************/

@@ -97,7 +97,7 @@ DEFINE_TYPE STRUCTURE uCamera{
 
 DEFINE_TYPE STRUCTURE uDir{
 	// Directory
-	INTEGER    STATE					// Flat to show Directory is Processing
+	INTEGER    STATE					// Flag to show Directory is Processing
 	INTEGER	  IGNORE_TOTALROWS	// TotalRows value is not garanteed
 	INTEGER	  NO_MORE_ENTRIES	// Expected a directory entry, didn't find one, so end of directory reached
 	INTEGER    CORPORATE			// If true use Corporate Directory
@@ -218,63 +218,64 @@ INTEGER addVCCallTime[]     = {71,72,73,74,75}
 	Button Numbers - General Control
 ******************************************************************************/
 DEFINE_CONSTANT
-(**	Microphone Mute		**)
-INTEGER btnMicMute		= 201
-(**	SelfView Toggle		**)
-INTEGER btnSelfViewMode	= 202
-(**	SelfView Toggle		**)
+(**   Microphone Mute               **)
+INTEGER btnMicMute      = 201
+(**   SelfView Fullscreen Toggle    **)
+INTEGER btnSelfViewMode   = 202
+(**   SelfView Toggle               **)
 INTEGER btnSelfViewPos[]= {203,204}
-(**	Toggle Tracking Mode **)
-INTEGER btnSpeakerTrack		= 205
-INTEGER btnPresenterTrack	= 206
+(**   Toggle Tracking Mode          **)
+INTEGER btnSpeakerTrack      = 205
+INTEGER btnPresenterTrack   = 206
+(**   SelfView Toggle               **)
 INTEGER btnSelfViewToggle  = 209
-(**	Hang Up Calls		**)
+(**   Hang Up Calls                 **)
 INTEGER btnHangup[] = {
-	210,211,212,213,214,215	// ALL | Call 1..5
+   210,211,212,213,214,215   // ALL | Call 1..5
 }
-(**	Answer Calls		**)
+(**   Answer Calls                  **)
 INTEGER btnAnswer[] = {
-	220,221,222,223,224,225	// ALL | Call 1..5
+   220,221,222,223,224,225   // ALL | Call 1..5
 }
-(**	Reject Calls		**)
+(**   Reject Calls                  **)
 INTEGER btnReject[] = {
-	230,231,232,233,234,235	// ALL | Call 1..5
+   230,231,232,233,234,235   // ALL | Call 1..5
 }
 INTEGER btnLayoutLocal[] = {
-	241,242,243,244,245
+   241,242,243,244,245
 }
 
-(** Dialing Interface **)
-INTEGER btnDialString 	= 250						// Address for DialString
+(**   Dialing Interface   **)
+INTEGER btnDialString    = 250                  // Address for DialString
 INTEGER btnDialKB[] = {
-	251,252,253,254,255,256,257,258,259,260,	// Row One
-	261,262,263,264,265,266,267,268,269,		// Row Two
-	270,271,272,273,274,275,276,					// Row Three
-	277,	// SPACE
-	278,	// SHIFT
-	279,	// CAPS
-	280,	// NUMLOCK
-	281,	// DELETE
-	282,	// DIAL
-	283,	// NUMLOCK ON
-	284	// NUMLOCK OFF
+   251,252,253,254,255,256,257,258,259,260,   // Row One
+   261,262,263,264,265,266,267,268,269,      // Row Two
+   270,271,272,273,274,275,276,               // Row Three
+   277,   // SPACE
+   278,   // SHIFT
+   279,   // CAPS
+   280,   // NUMLOCK
+   281,   // DELETE
+   282,   // DIAL
+   283,   // NUMLOCK ON
+   284    // NUMLOCK OFF
 }
 INTEGER btnDialSpecial[]={
-	290,291,292
+   290,291,292,293,294,295
 }
 INTEGER btnPresets[] = {
-	301,302,303,304,305,306,307,308,309,310,
-	311,312,313,314,315,316,317,318,319,320,
-	321,322,323,324,325,326,327,328,329,330
+   301,302,303,304,305,306,307,308,309,310,
+   311,312,313,314,315,316,317,318,319,320,
+   321,322,323,324,325,326,327,328,329,330
 }
 
-(**	Send DTMF Tones	**)
-(**	340..349 | 0..9	**)
-(**	350		| *		**)
-(**	351		| #		**)
-(**							**)
+(**   Send DTMF Tones   **)
+(**   340..349 | 0..9   **)
+(**   350      | *      **)
+(**   351      | #      **)
+(**                     **)
 INTEGER btnDTMF[] = {
-	340,341,342,343,344,345,346,347,348,349,350,351
+   340,341,342,343,344,345,346,347,348,349,350,351
 }
 
 /******************************************************************************
@@ -455,12 +456,13 @@ CHAR DialKB[3][26] = {
 		'1234567890            _-#:'
 	}
 }
-CHAR DialSpecial[3][4] = {
+CHAR DialSpecial[6][255] = {
 	{'.'},
 	{'.com'},
-	{'@'}
+	{'@'},
+	{'.webex.com'}
 }
-CHAR DialSpecial_Alt[3][4]	// Characters after holding DialSpecial for 1sec
+CHAR DialSpecial_Alt[6][4]	// Characters after holding DialSpecial for 1sec
 
 /******************************************************************************
 	Utility Functions - Communications
@@ -2040,7 +2042,7 @@ DEFINE_FUNCTION fnDisplayRecentCalls(INTEGER pPanel){
 		FOR(p = 1; p <= LENGTH_ARRAY(tp); p++){
 			fnDisplayRecentCalls(p)
 		}
-		RETURN 
+		RETURN
 	}
 	FOR(x = 1; x <= MAX_RECENT_CALLS; x++){
 		IF(mySX.RecentCalls[x].CallbackNumber != ''){
@@ -2865,7 +2867,7 @@ DEFINE_PROGRAM {
 			ACTIVE(1):                                   	SEND_LEVEL tp,addVCCallStatus[b],1
 		}
 	}
-	
+
 	// Recent Calls Feedback
 	FOR(b = 1; b <= LENGTH_ARRAY(btnRecentCalls); b++){
 		IF(mySX.RecentCallSelected == b){
