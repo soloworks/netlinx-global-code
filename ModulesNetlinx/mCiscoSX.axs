@@ -1050,11 +1050,28 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 							CASE 'Input':{
 								SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
 									CASE 'MainVideoSource:':{
-										IF(mySX.NEAR_CAMERA != ATOI(pDATA) && !mySX.NEAR_CAMERA_LOCKED && mySX.NEAR_CAMERA){
+										STACK_VAR INTEGER x
+										STACK_VAR INTEGER pCONNECTOR
+										STACK_VAR INTEGER pCAMERA
+										pCONNECTOR = ATOI(pDATA)
+										fnDebug(DEBUG_DEVELOP,'FB Input',"'pCONNECTOR = ',ITOA(pCONNECTOR)")
+										FOR (x=1; x<=MAX_CAMERAS; x++){
+											IF(mySX.CAMERA[x].CONNECTOR_OVERRIDE){
+												IF(mySX.CAMERA[x].CONNECTOR_OVERRIDE == pCONNECTOR){
+													pCAMERA = x
+													BREAK
+												}
+											}
+											ELSE{
+												pCAMERA = pCONNECTOR
+											}
+										}
+										fnDebug(DEBUG_DEVELOP,'FB Input',"'pCAMERA = ',ITOA(pCAMERA)")
+										IF(mySX.NEAR_CAMERA != pCAMERA && !mySX.NEAR_CAMERA_LOCKED && mySX.NEAR_CAMERA){
 											fnQueueTx('xCommand Camera',"'Ramp CameraId:',ITOA(mySX.NEAR_CAMERA),' Pan:Stop'")
 											fnQueueTx('xCommand Camera',"'Ramp CameraId:',ITOA(mySX.NEAR_CAMERA),' Tilt:Stop'")
 											fnQueueTx('xCommand Camera',"'Ramp CameraId:',ITOA(mySX.NEAR_CAMERA),' Zoom:Stop'")
-											mySX.NEAR_CAMERA = ATOI(pDATA)
+											mySX.NEAR_CAMERA = pCAMERA
 											SEND_STRING vdvControl[1],"'CAMERA-CONTROL,',ITOA(mySX.NEAR_CAMERA)"
 										}
 									}
@@ -1584,6 +1601,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl[1]]{
 							SWITCH(DATA.TEXT){
 								CASE 'DEV':	mySX.DEBUG = DEBUG_DEVELOP
 								CASE 'TRUE':mySX.DEBUG = DEBUG_BASIC
+								DEFAULT:    mySX.DEBUG = DEBUG_ERROR
 							}
 						}
 						CASE 'LOGIN':{
