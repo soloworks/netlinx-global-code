@@ -5,9 +5,10 @@
 
 trigger:
 - master
+- azurepipeline
 
 pool:
-  vmImage: 'win1803`
+  vmImage: 'win1803'
 
 steps:
 - script: echo Hello, world!
