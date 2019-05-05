@@ -11,8 +11,11 @@ pool:
   vmImage: 'win1803'
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+- script: Invoke-WebRequest -Uri "https://www.amx.com/en/softwares/netlinx-studio-4-v4-4-1626/download" -OutFile "NetLinxStudioSetup_4_4_1626.zip"
+- script: Expand-Archive -Path NetLinxStudioSetup_4_4_1626.zip -DestinationPath .
+- script: .\NetLinxStudioSetup_4_4_1626.exe /quiet
+- script: echo installed now...?
+  displayName: 'Downloading & Installing AMX Netlinx Studio'
 
 - script: |
     echo Add other tasks to build, test, and deploy your project.
