@@ -8,7 +8,7 @@ trigger:
 - azurepipeline
 
 pool:
-  vmImage: 'win1803'
+  vmImage: 'surfacepro'
 
 steps:
 - script: Invoke-WebRequest -Uri "https://www.amx.com/en/softwares/netlinx-studio-4-v4-4-1626/download" -OutFile "NetLinxStudioSetup_4_4_1626.zip"
