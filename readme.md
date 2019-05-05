@@ -1,5 +1,7 @@
 # SoloWorksAMX : Custom modules and include files for AMX by Harmam Netlinx development
 
+[![Build Status](https://dev.azure.com/soloworkslondon/WindowsComplierPipelineTest/_apis/build/status/soloworks.netlinx-global-code?branchName=azurepipeline)](https://dev.azure.com/soloworkslondon/WindowsComplierPipelineTest/_build/latest?definitionId=1&branchName=azurepipeline)
+
 ## Overview
 This repo contains all centralised code and modules used by SoloWorks London in our Netlinx development.
 
