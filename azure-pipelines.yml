@@ -11,13 +11,10 @@ pool:
   name: 'Default'
 
 steps:
-- script: Invoke-WebRequest -Uri "https://www.amx.com/en/softwares/netlinx-studio-4-v4-4-1626/download" -OutFile "NetLinxStudioSetup_4_4_1626.zip"
-- script: Expand-Archive -Path NetLinxStudioSetup_4_4_1626.zip -DestinationPath .
-- script: .\NetLinxStudioSetup_4_4_1626.exe /quiet
-- script: echo installed now...?
-  displayName: 'Downloading & Installing AMX Netlinx Studio'
+- script: NLRC.exe -CFG"C:\Users\samsh\Documents\GitHub\netlinx-global-code\NLRC.cfg"
+  displayName: 'Compiling the Project'
 
 - script: |
     echo Add other tasks to build, test, and deploy your project.
     echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+  displayName: 'Packing up the project'
