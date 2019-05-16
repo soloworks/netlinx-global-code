@@ -36,6 +36,7 @@ DEFINE_TYPE STRUCTURE uSharpDisplay{
 
 	INTEGER 	DEBUG
 	CHAR 		lastPOLL[4]
+	CHAR 		lastCMD[16]		// For storing last requested command ie. power off
 
 	INTEGER 	POWER
 	INTEGER 	VOLUME
@@ -123,11 +124,21 @@ DEFINE_FUNCTION fnAddToQueue(CHAR pToSend[]){
 DEFINE_FUNCTION fnSendFromQueue(){
 	IF(mySharpDisplay.CONN_STATE == CONN_STATE_CONNECTED && !mySharpDisplay.TX_PEND){
 		STACK_VAR CHAR toSend[100]
+		STACK_VAR INTEGER pVALUE
 		IF(FIND_STRING(mySharpDisplay.Tx,"$0D",1)){
 			toSend = REMOVE_STRING(mySharpDisplay.Tx,"$0D",1)
 			fnDebug(FALSE,'->SHP',toSend)
 			IF(FIND_STRING(toSend,'????',1)){
 				mySharpDisplay.lastPOLL = LEFT_STRING(toSend,4)
+			}ELSE{
+				IF(LEFT_STRING(toSend,4) == 'POWR'){
+					pVALUE = AToI(toSend)
+					IF(pVALUE == 1){
+						mySharpDisplay.lastCMD = 'power on'
+					}ELSE{
+						mySharpDisplay.lastCMD = 'power off'
+					}
+				}
 			}
 			SEND_STRING dvDevice,toSend
 			mySharpDisplay.TX_PEND = TRUE
@@ -196,20 +207,41 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 	ELSE IF(pDATA == 'OK'){
 		mySharpDisplay.lastPOLL = ''
 		mySharpDisplay.CONN_STATE = CONN_STATE_CONNECTED
+		IF(mySharpDisplay.lastCMD != ''){
+			fnPoll()
+		}
 	}
 	ELSE{
 		SWITCH(mySharpDisplay.lastPOLL){
 			CASE 'POWR':{
 				mySharpDisplay.POWER = ATOI(pDATA)
-				IF(mySharpDisplay.POWER){
-					fnAddQueryToQueue('VOLM')
-					fnAddQueryToQueue('MUTE')
-					IF(mySharpDisplay.INPUT_CONFIG==INPUT_CONFIG_01){
-						fnAddQueryToQueue('INPS')
-					}ELSE{
-						fnAddQueryToQueue('IAVD')
+				SWITCH(mySharpDisplay.POWER){
+					CASE 1:{//Display is ON
+						SWITCH(mySharpDisplay.lastCMD){
+							CASE 'power on':{
+								mySharpDisplay.lastCMD = ''
+								IF(mySharpDisplay.INPUT_CONFIG==INPUT_CONFIG_01){
+									fnAddQueryToQueue('INPS')
+								}ELSE{
+									fnAddQueryToQueue('IAVD')
+								}
+								fnAddCmdToQueue('RSPW','1')
+							}
+							CASE 'power off':{
+								fnPoll()
+							}
+						}
 					}
-					fnAddCmdToQueue('RSPW','1')
+					CASE 0:{//Display is OFF
+						SWITCH(mySharpDisplay.lastCMD){
+							CASE 'power off':{
+								mySharpDisplay.lastCMD = ''
+							}
+							CASE 'power on':{
+								fnPoll()
+							}
+						}
+					}
 				}
 				IF(!LENGTH_ARRAY(mySharpDisplay.META_MODEL)){
 					IF(mySharpDisplay.MODEL_QTYPE){
@@ -235,6 +267,8 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 			CASE 'IAVD':
 			CASE 'INPS':{
 				mySharpDisplay.INPUT = pDATA
+				fnAddQueryToQueue('VOLM')
+				fnAddQueryToQueue('MUTE')
 			}
 			CASE 'MNRD':
 			CASE 'INF1':{
@@ -545,7 +579,7 @@ DEFINE_PROGRAM{
 		[vdvControl,199] = (mySharpDisplay.MUTE)
 		[vdvControl,251] = TIMELINE_ACTIVE(TLID_COMMS)
 		[vdvControl,252] = TIMELINE_ACTIVE(TLID_COMMS)
-		[vdvControl,255] = (mySharpDisplay.POWER)
+		[vdvControl,255] = ((mySharpDisplay.POWER)&&(mySharpDisplay.lastCMD == ''))
 		SEND_LEVEL vdvControl,1,mySharpDisplay.VOLUME
 	}
 }
