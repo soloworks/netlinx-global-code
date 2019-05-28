@@ -173,7 +173,10 @@ DEFINE_TYPE STRUCTURE uRoom{
 	uTimer 			AUTOBOOK_STANDOFF
 	CHAR				AUTOBOOK_SUBJECT[50]			// If present, place this in default meeting title
 	INTEGER 			AUTOBOOK_EVENTS_COUNT		// Each movement triggers a Tick
-	INTEGER			AUTOBOOK_EVENTS_THRESHOLD		// Total Ticks to consider constant movement
+	INTEGER			AUTOBOOK_EVENTS_THRESHOLD  // Total Ticks to consider constant movement
+
+	// Private Meeting Mode
+	INTEGER        PRIVATE_MODE               // Mode 0 = Hide both the Private Meeting Subject & Organiser; Mode 1 = Hide the Private Meeting Subject only
 
 	// Programming Variables
 	INTEGER 			DEBUG
@@ -551,6 +554,9 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 							fnInitateLogFile()
 						}
 					}
+					CASE 'PRIVATE_MODE':{
+						myRoom.PRIVATE_MODE = ATOI(fnGetCSV(DATA.TEXT,1))
+					}
 					CASE 'PANELMODE':{
 						STACK_VAR INTEGER p
 						p = 0
@@ -566,7 +572,7 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 						myRoom.DEF_NAME = DATA.TEXT
 					}
 					CASE 'OCCUPANCY':{
-						myRoom.OCCUPANCY_TIMEOUT.INIT_VAL	 = ATOI(fnGetCSV(DATA.TEXT,1))
+						myRoom.OCCUPANCY_TIMEOUT.INIT_VAL = ATOI(fnGetCSV(DATA.TEXT,1))
 					}
 					// Room Settings
 					CASE 'NOSHOW':{
@@ -633,7 +639,7 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 					CASE 'FAILURE':pMsg = "pMsg,'Declined.'"
 					DEFAULT:       pMsg = "pMsg,'Undefined State.'"
 				}
-				IF(pMSG != 'Release Room Successful'){
+				IF(pMSG != 'Release Room Successful.'){
 					IF(fnGetCSV(DATA.TEXT,3) == ''){
 						fnDisplayStatusMessage(pMSG,pMSG)
 					}
@@ -643,7 +649,7 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 						pDATA3 = fnGetCSV(DATA.TEXT,3)
 						IF(UPPER_STRING(pDATA3) == 'CANNOT CREATE EVENT BOOKING'){}//do nothing if the spelling is correct
 						ELSE IF(UPPER_STRING(pDATA3) == 'CANNOT CREATE EVENT BOOKIN'){
-							pDATA3 = 'Cannot create event booking'
+							pDATA3 = 'Cannot create event booking.'
 						}
 						fnDisplayStatusMessage(pMSG,pDATA3)
 					}
@@ -713,8 +719,13 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 					}
 
 					if(thisSlot.isPRIVATE){
-						thisSlot.SUBJECT   = CH_TO_WC('Private')
-						thisSlot.ORGANISER = CH_TO_WC('Private')
+						if(myRoom.PRIVATE_MODE){
+							thisSlot.SUBJECT   = CH_TO_WC('Private')
+							//thisSlot.ORGANISER = CH_TO_WC('Private')
+						}else{
+							thisSlot.SUBJECT   = CH_TO_WC('Private')
+							thisSlot.ORGANISER = CH_TO_WC('Private')
+						}
 					}
 					if(WC_TO_CH(thisSlot.SUBJECT) == myRoom.QUICKBOOK_SUBJECT){
 						thisSlot.isQUICKBOOK = TRUE
@@ -839,7 +850,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_QUICKBOOK_TIMEOUT]{
 		// Check for Room Occupancy
 		IF(![vdvRoom,chn_vdv_RoomOccupied] && [vdvRoom,chn_vdv_SensorOnline]){
 			SEND_COMMAND vdvRoom,"'ACTION-CANCEL,',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].BOOKING_INDEX),',QuickBook Timeout'"
-			fnDisplayStatusMessage('Ending Meeting','Room is being released...')
+			fnDisplayStatusMessage('Ending Meeting...','Room being released.')
 		}
 	}
 	fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_TIMER_QUICKBOOK_TIMEOUT','--> Done')
@@ -859,7 +870,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_NOSHOW_TIMEOUT]{
 		// Check for Room Occupancy
 		IF(![vdvRoom,chn_vdv_RoomOccupied] && [vdvRoom,chn_vdv_SensorOnline]){
 			SEND_COMMAND vdvRoom,"'ACTION-CANCEL,',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].BOOKING_INDEX),',No Show'"
-			fnDisplayStatusMessage('Ending Meeting','Room is being released...')
+			fnDisplayStatusMessage('Ending Meeting...','Room being released.')
 		}
 	}
 }
@@ -876,7 +887,7 @@ DEFINE_EVENT CHANNEL_EVENT[vdvRoom,chn_vdv_RoomOccupied]{
 		fnUpdateLEDs(0)
 		IF(myRoom.SLOTS[myRoom.SLOT_CURRENT].isQUICKBOOK || myRoom.SLOTS[myRoom.SLOT_CURRENT].isAUTOBOOK){
 			SEND_COMMAND vdvRoom,"'ACTION-CANCEL,',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].BOOKING_INDEX),',Unoccupied'"
-			fnDisplayStatusMessage('Ending Meeting','Room is being released...')
+			fnDisplayStatusMessage('Ending Meeting...','Room being released.')
 		}
 	}
 }
@@ -1019,7 +1030,7 @@ DEFINE_FUNCTION fnDoAutoBook(){
 			pMSG = "pMSG,',',myRoom.QUICKBOOK_END_TIME"
 			SEND_COMMAND vdvRoom,pMSG
 			SEND_STRING vdvRoom, 'MEETING-AUTOBOOK'
-			fnDisplayStatusMessage('Booking','Booking Meeting...')
+			fnDisplayStatusMessage('Booking Meeting...','Automatic Booking.')
 		}
 	}
 }
@@ -1307,7 +1318,7 @@ DEFINE_EVENT BUTTON_EVENT[tp, btnQuickbook]{
 			pMSG = "pMSG,',',myRoom.QUICKBOOK_START_TIME"
 			pMSG = "pMSG,',',fnSecondsToTime( fnTimeToSeconds(myRoom.QUICKBOOK_START_TIME)+(myRMSPanel[pPanel].QUICK_DURATION*60) )"
 			SEND_COMMAND vdvRoom,pMSG
-			fnDisplayStatusMessage('Quick Book','Booking Meeting...')
+			fnDisplayStatusMessage('Booking Meeting...','Quick Booking.')
 		}
 	}
 }
@@ -1320,7 +1331,7 @@ DEFINE_EVENT BUTTON_EVENT[tp, btnQuickBookInstant]{//instance booking button on 
 		pMSG = "pMSG,',',myRoom.QUICKBOOK_START_TIME"
 		pMSG = "pMSG,',',myRoom.QUICKBOOK_END_TIME"
 		SEND_COMMAND vdvRoom,pMSG
-		fnDisplayStatusMessage('Quick Book','Booking Meeting...')
+		fnDisplayStatusMessage('Booking Meeting...','Instant Booking.')
 	}
 }
 
@@ -1332,7 +1343,7 @@ DEFINE_EVENT BUTTON_EVENT[tp, btnExtend]{
 		fnDebug(DEBUG_DEV,'BUTTON_EVENT','btnExtend','PUSH')
 		IF(myRMSPanel[pPanel].EXTEND_DURATION){	//details filled out
 			SEND_COMMAND vdvRoom,"'ACTION-EXTEND,',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].BOOKING_INDEX),',',ITOA(myRMSPanel[pPanel].EXTEND_DURATION)"
-			fnDisplayStatusMessage('Extend Meeting','Extending Meeting...')
+			fnDisplayStatusMessage('Extending Meeting...',"'by ',fnSecondsToDurationText(myRMSPanel[pPanel].EXTEND_DURATION,0),'.'")
 		}
 	}
 }
@@ -1825,8 +1836,12 @@ DEFINE_FUNCTION fnDisplayStatusMessage(CHAR pMsg[], CHAR pMsgDetail[50]){
 	// Debugging
 	fnDebug(DEBUG_DEV,'FUNCTION',"'fnDisplayStatusMessage(','pMsg=',pMsg,',pMsgDetail=',pMsgDetail,')'",'<-- Called')
 
-	IF(UPPER_STRING(pMsg) == 'BOOKING DECLINED'){
+/*
+	IF(UPPER_STRING(pMsg) == 'BOOKING DECLINED.'){
 		pTempMsg = pMsg
+	}
+	ELSE IF(UPPER_STRING(pMsg) == 'ENDING MEETING'){
+		pTempMsg = "pMsg,'...'"
 	}
 	ELSE IF(UPPER_STRING(pMsg) == 'BOOKING'){
 		pTempMsg = pMsgDetail
@@ -1835,19 +1850,17 @@ DEFINE_FUNCTION fnDisplayStatusMessage(CHAR pMsg[], CHAR pMsgDetail[50]){
 		pTempMsg = pMsgDetail
 		pTempMsgDetail = pMsg
 	}
-	ELSE{
+	ELSE*/{
 		pTempMsg = pMsg
 		pTempMsgDetail = pMsgDetail
 	}
+
 	IF(myRoom.PAGE_DETAILS == DETAILS_ON){
 		// Show details
 	}
 	ELSE{
 		pTempMsgDetail = ''//Don't show details
 	}
-//	IF(pTempMsg == pTempMsgDetail){
-//		pTempMsgDetail = ''
-//	}
 	// Set Message and show
    SEND_COMMAND tp,"'^TXT-',ITOA(addMessage),',0,',pTempMsg"
    SEND_COMMAND tp,"'^TXT-',ITOA(addMessageDetail),',0,',pTempMsgDetail"
