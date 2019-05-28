@@ -13,7 +13,12 @@ pool:
 steps:
 - task: PowerShell@2
   inputs:    
-    filePath: '.\compile.ps1'
+    filePath: '.\getConfig.ps1'
+  displayName: 'Fetching the compiler config'
+
+- task: PowerShell@2
+  inputs:    
+    filePath: '.\runCompile.ps1'
   displayName: 'Compiling the Project'
 
 - script: |
