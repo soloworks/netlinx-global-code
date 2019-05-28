@@ -11,7 +11,17 @@ pool:
   name: 'Default'
 
 steps:
-- script: NLRC.exe -CFG"C:\Users\samsh\Documents\GitHub\netlinx-global-code\NLRC.cfg"
+- script: |
+    $ROOT = (Get-Item -Path ".\").FullName
+
+    $URI = "https://us-central1-soloworkslondon.cloudfunctions.net/GenerateNetlinxCompileCfg?"
+    $URI = "$($URI)root=$($ROOT)"
+    $URI = "$($URI)&logfile=compile.log"
+    $URI = "$($URI)&logconsole=true"
+
+    $R = Invoke-WebRequest -Uri $URI -Method POST -InFile ".\netlinx-global-code.apw" -OutFile ".\compile.cfg"
+
+    & 'C:\Program Files (x86)\Common Files\AMXShare\COM\NLRC.exe' -CFG"$($ROOT)\compile.cfg"
   displayName: 'Compiling the Project'
 
 - script: |
