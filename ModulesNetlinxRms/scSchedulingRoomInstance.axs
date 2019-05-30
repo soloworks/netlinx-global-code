@@ -82,6 +82,12 @@ INTEGER DETAILS_OFF			= 1
 INTEGER DETAILS_DEV			= 2
 INTEGER DETAILS_LOG			= 3
 
+// Now Pane Organiser Details
+INTEGER NOW_PANE_DEFAULT	= 0
+INTEGER NOW_PANE_MODE_1		= 1
+INTEGER NOW_PANE_MODE_2		= 2
+INTEGER NOW_PANE_MODE_3		= 3
+
 // Timeout timeline for calendar page
 LONG TLID_TIMEOUT_OVERLAYS				= 01
 LONG TLID_FB_TIME_CHECK					= 02
@@ -175,13 +181,17 @@ DEFINE_TYPE STRUCTURE uRoom{
 	INTEGER 			AUTOBOOK_EVENTS_COUNT		// Each movement triggers a Tick
 	INTEGER			AUTOBOOK_EVENTS_THRESHOLD  // Total Ticks to consider constant movement
 
-	// Private Meeting Mode
-	INTEGER        PRIVATE_MODE               // Mode 0 = Hide both the Private Meeting Subject & Organiser; Mode 1 = Hide the Private Meeting Subject only
-
 	// Programming Variables
 	INTEGER 			DEBUG
 	SINTEGER 		LAST_TRIGGERED_MINUTE		// Use to store state to check against raising events
 	INTEGER        PAGE_DETAILS					// Used as flag for whether to display the pMsgDetail info on the overlay pane
+	// Private Meeting Mode
+	INTEGER        PRIVATE_MODE               // Mode 0 = Hide both the Private Meeting Subject & Organiser; Mode 1 = Hide the Private Meeting Subject only
+   // Now Pane Display Mode
+	INTEGER        NOW_PANE_MODE              // Mode 0 = Use Meeting Subject as Organiser for Instant Bookings;
+	                                          // Mode 1 = Use Diary name as Organiser for Instant Bookings
+															// Mode 2 = RMS Location Name as Organiser for Instant Bookings
+															// Mode 3 = The text 'Walk Up Meeting' as Organiser for Instant Bookings
 }
 /********************************************************************************************************************************************************************************************************************************************************
 	Interface Constants
@@ -557,6 +567,9 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 					CASE 'PRIVATE_MODE':{
 						myRoom.PRIVATE_MODE = ATOI(fnGetCSV(DATA.TEXT,1))
 					}
+					CASE 'NOW_PANE_MODE':{
+						myRoom.NOW_PANE_MODE = ATOI(fnGetCSV(DATA.TEXT,1))
+					}
 					CASE 'PANELMODE':{
 						STACK_VAR INTEGER p
 						p = 0
@@ -820,11 +833,18 @@ DEFINE_EVENT CHANNEL_EVENT[vdvRoom,chn_vdv_SlotBooked]{
 
 		// Start AutoBook Standoff Timer
 		IF(!TIMELINE_ACTIVE(TLID_TIMER_AUTOBOOK_STANDOFF)){
-			myRoom.AUTOBOOK_STANDOFF.COUNTER = myRoom.AUTOBOOK_STANDOFF.INIT_VAL
-			IF(TIMELINE_ACTIVE(TLID_TIMER_AUTOBOOK_STANDOFF)){TIMELINE_KILL(TLID_TIMER_AUTOBOOK_STANDOFF)}
-			TIMELINE_CREATE(TLID_TIMER_AUTOBOOK_STANDOFF,TLT_ONE_MIN,LENGTH_ARRAY(TLT_ONE_MIN),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
-			// Update Timer
-			SEND_COMMAND tp,"'^TXT-',ITOA(lvlAutoBookStandOffTimer),',2,',FORMAT('%02d',myRoom.AUTOBOOK_STANDOFF.COUNTER),' min'"
+			IF(myRoom.AUTOBOOK_STANDOFF.INIT_VAL > 0){
+				myRoom.AUTOBOOK_STANDOFF.COUNTER = myRoom.AUTOBOOK_STANDOFF.INIT_VAL
+				IF(TIMELINE_ACTIVE(TLID_TIMER_AUTOBOOK_STANDOFF)){TIMELINE_KILL(TLID_TIMER_AUTOBOOK_STANDOFF)}
+				TIMELINE_CREATE(TLID_TIMER_AUTOBOOK_STANDOFF,TLT_ONE_MIN,LENGTH_ARRAY(TLT_ONE_MIN),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
+				// Update Timer
+				SEND_COMMAND tp,"'^TXT-',ITOA(lvlAutoBookStandOffTimer),',2,',FORMAT('%02d',myRoom.AUTOBOOK_STANDOFF.COUNTER),' min'"
+			}ELSE{
+				myRoom.AUTOBOOK_STANDOFF.COUNTER = 0
+				IF(TIMELINE_ACTIVE(TLID_TIMER_AUTOBOOK_STANDOFF)){TIMELINE_KILL(TLID_TIMER_AUTOBOOK_STANDOFF)}
+				// Update Timer
+				SEND_COMMAND tp,"'^TXT-',ITOA(lvlAutoBookStandOffTimer),',2,','disabled'"
+			}
 		}
 		// Update Panels
 		fnUpdatePanel(0)
@@ -951,10 +971,11 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_OCCUPANCY_TIMEOUT]{
 ********************************************************************************************************************************************************************************************************************************************************/
 // AutoBook Control
 DEFINE_FUNCTION fnAutoBookEvent(){
-	fnDebug(DEBUG_DEV,'FUNCTION','fnAutoBookEvent',"'<-- Called'/*'Started'*/")
+	fnDebug(DEBUG_DEV,'FUNCTION','fnAutoBookEvent',"'<-- Called'")
 	IF(myRoom.SLOT_CURRENT){
 		// If AutoBook is configured AND Autobook is not currently supposed to standoff
-		IF(myRoom.AUTOBOOK_ACTION.INIT_VAL && !TIMELINE_ACTIVE(TLID_TIMER_AUTOBOOK_STANDOFF)  && !myRoom.SLOTS[myRoom.SLOT_CURRENT].BOOKING_INDEX){
+		IF( (myRoom.AUTOBOOK_ACTION.INIT_VAL) && (!TIMELINE_ACTIVE(TLID_TIMER_AUTOBOOK_STANDOFF)) && (!myRoom.SLOTS[myRoom.SLOT_CURRENT].BOOKING_INDEX) ){
+			fnDebug(DEBUG_DEV,'FUNCTION','fnAutoBookEvent',"'If AutoBook is configured AND Autobook is not currently supposed to standoff'")
 			// If timeline is not currently active
 			IF(!TIMELINE_ACTIVE(TLID_TIMER_AUTOBOOK_ACTION)){
 				// Set Event Count by 1
@@ -1612,11 +1633,14 @@ DEFINE_FUNCTION fnBuildDiaryDetailOnPanel(INTEGER pPanel){
 
 					// Convert it to a Time value
 					myRoom.QUICKBOOK_END_TIME = fnSecondsToTime(NEW_END_TIME)
-					IF(myRoom.QUICKBOOK_END_TIME = '24:00:00'){myRoom.QUICKBOOK_END_TIME = '23:59:00'}
+					IF(myRoom.QUICKBOOK_END_TIME = '24:00:00'){myRoom.QUICKBOOK_END_TIME = '23:59:50'}
 
 					// Set Start Time as well
 					myRoom.QUICKBOOK_START_TIME = fnSecondsToTime(fnTimeToSeconds(TIME)-(fnTimeToSeconds(TIME)%60))
 
+					fnDebug(DEBUG_DEV,'FUNCTION',"'fnBuildDiaryDetailOnPanel(','pPanel=',ITOA(pPanel),')'","'myRoom.SLOTS[myRoom.SLOT_CURRENT].END_REF = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].END_REF)")
+					fnDebug(DEBUG_DEV,'FUNCTION',"'fnBuildDiaryDetailOnPanel(','pPanel=',ITOA(pPanel),')'","'myRoom.QUICKBOOK_START_TIME = ',ITOA(myRoom.QUICKBOOK_START_TIME)")
+					fnDebug(DEBUG_DEV,'FUNCTION',"'fnBuildDiaryDetailOnPanel(','pPanel=',ITOA(pPanel),')'","'myRoom.QUICKBOOK_MINIMUM = ',ITOA(myRoom.QUICKBOOK_MINIMUM)")
 					IF(myRoom.SLOTS[myRoom.SLOT_CURRENT].END_REF - fnTimeToSeconds(myRoom.QUICKBOOK_START_TIME) >= myRoom.QUICKBOOK_MINIMUM*60){
 						pBookinfoPane = 'bookingInfoQuickBook'
 					}
@@ -1638,7 +1662,8 @@ DEFINE_FUNCTION fnBuildDiaryDetailOnPanel(INTEGER pPanel){
 DEFINE_FUNCTION fnUpdatePanel(INTEGER pPanel){
 	STACK_VAR CHAR pStartTime[8]
 	STACK_VAR CHAR pEndTime[8]
-
+	STACK_VAR WIDECHAR pWC[300]
+	
 	fnDebug(DEBUG_DEV,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'",'<-- Called')
 
 	// Call all panels
@@ -1669,13 +1694,29 @@ DEFINE_FUNCTION fnUpdatePanel(INTEGER pPanel){
 	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNowRemaining), ',0,',fnSecondsToDurationText(myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_SECS,0)"//2)"
 
 	// Populate Now Organiser
-	IF(!myRoom.SLOTS[myRoom.SLOT_CURRENT].isQUICKBOOK && !myRoom.SLOTS[myRoom.SLOT_CURRENT].isAUTOBOOK){
-		SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNowOrganiser),',0,',WC_TP_ENCODE(myRoom.SLOTS[myRoom.SLOT_CURRENT].ORGANISER)"
+	SWITCH(myRoom.NOW_PANE_MODE){
+		
+		CASE NOW_PANE_MODE_1:{
+			SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNowOrganiser),',0,',WC_TP_ENCODE(myRoom.SLOTS[myRoom.SLOT_CURRENT].ORGANISER)"
+		}
+		CASE NOW_PANE_MODE_2:{
+			pWC = WC_DECODE(myRoom.LOC_NAME,WC_FORMAT_TP,1)
+			SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNowOrganiser),',0,',WC_TP_ENCODE(pWC)"
+		}
+		CASE NOW_PANE_MODE_3:{
+			pWC = WC_DECODE('Walk Up Meeting',WC_FORMAT_TP,1)
+			SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNowOrganiser),',0,',WC_TP_ENCODE(pWC)"
+		}
+		DEFAULT:{
+			IF(!myRoom.SLOTS[myRoom.SLOT_CURRENT].isQUICKBOOK && !myRoom.SLOTS[myRoom.SLOT_CURRENT].isAUTOBOOK){
+				SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNowOrganiser),',0,',WC_TP_ENCODE(myRoom.SLOTS[myRoom.SLOT_CURRENT].ORGANISER)"
+			}
+			ELSE{
+				SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNowOrganiser),',0,',WC_TP_ENCODE(myRoom.SLOTS[myRoom.SLOT_CURRENT].SUBJECT)"
+			}
+		}
 	}
-	ELSE{
-		SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNowOrganiser),',0,',WC_TP_ENCODE(myRoom.SLOTS[myRoom.SLOT_CURRENT].SUBJECT)"
-	}
-
+	
 	// Send Diagnostics Details - Meeting Remaining Limits
 	SEND_COMMAND tp[pPanel],"'^BMF-',ITOA(lvlMeetingRemain),',0,%GL0%GH',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].DURATION_MINS)"
 
