@@ -1,8 +1,13 @@
-# SoloWorksAMX : Custom modules and include files for AMX by Harmam Netlinx development
+# netlinx-global-code : Custom modules and include files for Netlinx (AMX by Harman)
 
-[![Build Status](https://dev.azure.com/soloworkslondon/WindowsComplierPipelineTest/_apis/build/status/soloworks.netlinx-global-code?branchName=master)](https://dev.azure.com/soloworkslondon/WindowsComplierPipelineTest/_build/latest?definitionId=1&branchName=master)
+| branch | status |
+|-------|----|
+| master  | [![Build Status](https://dev.azure.com/soloworkslondon/WindowsComplierPipelineTest/_apis/build/status/soloworks.netlinx-global-code?branchName=master)](https://dev.azure.com/soloworkslondon/WindowsComplierPipelineTest/_build/latest?definitionId=1&branchName=master) |
+| develop | [![Build Status](https://dev.azure.com/soloworkslondon/WindowsComplierPipelineTest/_apis/build/status/soloworks.netlinx-global-code?branchName=develop)](https://dev.azure.com/soloworkslondon/WindowsComplierPipelineTest/_build/latest?definitionId=1&branchName=develop) |
+
+
 ## Overview
-This repo contains all centralised code and modules used by SoloWorks London in our Netlinx development.
+This repo contains all centralised code and modules used by Solo Works London in our Netlinx development.
 
 We are making them availible to other developers in order to faciitate better collaboration and conversation
 
@@ -46,7 +51,7 @@ We find it good practice to have a Modules project in each workspace which refer
 Our use case for these file is to download the repo to a sibling directory to your projects:
  
     -- AMXProjectsFolder
-        |-- SoloWorksAMX
+        |-- netlinx-global-code
         |    |-- Includes
         |    |-- IncludesRms
         |    |-- ModulesNetlinx
@@ -77,6 +82,6 @@ bitbucket.org/solo_works/netlinxstudioconfigtool
 
 ## Author
 
-Created by Solo Works London, maintained by Sam Shelton 
+Created by Solo Works London, maintained by Sam Shelton and others
 
 Find us at https://soloworks.co.uk/
