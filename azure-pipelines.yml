@@ -25,6 +25,7 @@ steps:
   inputs:    
     filePath: '.\getReport.ps1'
   displayName: 'Getting Compile Report'
+  condition: always()
 
 - script: |
     echo Add other tasks to build, test, and deploy your project.
