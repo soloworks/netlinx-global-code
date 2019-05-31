@@ -34,7 +34,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 /******************************************************************************
 	WebSocket Callback Events
 ******************************************************************************/
-DEFINE_FUNCTION eventHTTPResponse(uHTTPResp r){
+DEFINE_FUNCTION eventHTTPResponse(uHTTPResponse r){
 
 }
 /******************************************************************************
