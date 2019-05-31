@@ -21,6 +21,11 @@ steps:
     filePath: '.\runCompile.ps1'
   displayName: 'Compiling the Project'
 
+- task: PowerShell@2
+  inputs:    
+    filePath: '.\getReport.ps1'
+  displayName: 'Getting Compile Report'
+
 - script: |
     echo Add other tasks to build, test, and deploy your project.
     echo See https://aka.ms/yaml
