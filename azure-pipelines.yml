@@ -5,7 +5,7 @@
 
 trigger:
 - master
-- azurepipeline
+- develop
 
 pool:
   name: 'Default'
