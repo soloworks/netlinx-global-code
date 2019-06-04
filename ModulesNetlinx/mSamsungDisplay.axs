@@ -94,17 +94,17 @@ DEFINE_FUNCTION fnCloseTCPConnection(){
 }
 
 DEFINE_FUNCTION CHAR[25] fnBuildCommand(INTEGER pID, INTEGER pCMD, CHAR pDATA[]){
-	
+
 	STACK_VAR CHAR 	myPacket[25]
 	STACK_VAR INTEGER CHK_SUM;
 	STACK_VAR INTEGER x
-	
+
 	myPacket = "pCMD,pID,LENGTH_ARRAY(pDATA),pDATA"
 	FOR (x = 1; x <=LENGTH_ARRAY(myPacket); x++){
 		CHK_SUM = CHK_SUM + myPacket[x];
 	}
 	CHK_SUM = HEXTOI(RIGHT_STRING(ITOHEX(CHK_SUM),2))
-	
+
 	RETURN "$AA,myPacket,CHK_SUM"
 }
 

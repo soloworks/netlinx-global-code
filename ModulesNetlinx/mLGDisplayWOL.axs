@@ -362,7 +362,9 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 						CASE 'COMP':	pInputCode = '40'	// COMP
 						CASE 'PC':		pInputCode = '60'	// RGB
 						CASE 'DPORT':	pInputCode = 'C0'	// Display Port
-						CASE 'DVI':		pInputCode = '80'	// Display Port
+						CASE 'DVI':
+						CASE 'DVI1':	pInputCode = '80'	// DVI version 1
+						CASE 'DVI2':	pInputCode = '70'	// DVI version 2
 					}
 					SWITCH(myLGDisplayWOL.POWER){
 						CASE TRUE:	fnAddToQueue('x','b',pInputCode)

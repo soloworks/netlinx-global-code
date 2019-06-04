@@ -6,7 +6,7 @@ INCLUDE 'CustomFunctions'
 DEFINE_TYPE STRUCTURE uSurface{
 
 	INTEGER 	DISABLED
-	
+
 	CHAR    Rx[500]
 
 	INTEGER DEBUG
