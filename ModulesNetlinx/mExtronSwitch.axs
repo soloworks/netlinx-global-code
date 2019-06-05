@@ -3,6 +3,13 @@ INCLUDE 'CustomFunctions'
 /******************************************************************************
 	Basic Extron Video Switcher Module - RMS Enabled
 ******************************************************************************/
+DEFINE_TYPE STRUCTURE uGain{
+	INTEGER  MUTE
+	INTEGER  GAIN
+	INTEGER  GAIN_PEND
+	SINTEGER LAST_GAIN
+}
+
 DEFINE_TYPE STRUCTURE uSwitch{
 	// Communications
 	INTEGER 	IP_PORT						//
@@ -29,19 +36,21 @@ DEFINE_TYPE STRUCTURE uSwitch{
 	CHAR DIAG_INT_TEMP[20]		// Internal Temperature
 	INTEGER SIGNAL[8]
 	// Audio
-	INTEGER  MICMUTE
-	INTEGER 	GAIN
-	INTEGER  MUTE
-	INTEGER  GAIN_PEND
-	SINTEGER LAST_GAIN
+	uGain AUDIO[2]
 }
 
 DEFINE_CONSTANT
 LONG TLID_COMMS 	= 1
 LONG TLID_POLL	 	= 2
 LONG TLID_SEND		= 3
-LONG TLID_GAIN	 	= 4
-LONG TLID_RETRY	= 5
+LONG TLID_RETRY	= 4
+
+LONG TLID_GAIN_00	= 10
+LONG TLID_GAIN_01	= 11
+LONG TLID_GAIN_02	= 12
+
+INTEGER AUDIO_PRO = 1
+INTEGER AUDIO_MIC = 2
 
 // IP States
 INTEGER IP_STATE_OFFLINE		= 0
@@ -376,21 +385,24 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 				}
 				ACTIVE(mySwitch.LAST_SENT == 'V'):{
 					SWITCH(mySwitch.MODEL_ID){
-						CASE MODEL_MLAVC10:	mySwitch.GAIN = ATOI(DATA.TEXT)
-						DEFAULT:					mySwitch.GAIN = ATOI(DATA.TEXT) + 100
+						CASE MODEL_MLAVC10:	mySwitch.AUDIO[AUDIO_PRO].GAIN = ATOI(DATA.TEXT)
+						DEFAULT:					mySwitch.AUDIO[AUDIO_PRO].GAIN = ATOI(DATA.TEXT) + 100
 					}
 				}
 				ACTIVE(mySwitch.LAST_SENT == "$1B,'D1GRPM',$0D"):{
-					mySwitch.GAIN = (ATOI(DATA.TEXT) + 1000) / 10
+					mySwitch.AUDIO[AUDIO_PRO].GAIN = (ATOI(DATA.TEXT) + 1000) / 10
+				}
+				ACTIVE(mySwitch.LAST_SENT == "$1B,'D3GRPM',$0D"):{
+					mySwitch.AUDIO[AUDIO_MIC].GAIN = (ATOI(DATA.TEXT) + 1000) / 10
 				}
 				ACTIVE(mySwitch.LAST_SENT == 'Z'):{
-					mySwitch.MUTE = ATOI("DATA.TEXT[1]")
+					mySwitch.AUDIO[AUDIO_PRO].MUTE = ATOI("DATA.TEXT[1]")
 				}
 				ACTIVE(mySwitch.LAST_SENT == "$1B,'D2GRPM',$0D"):{
-					mySwitch.MUTE = ATOI("DATA.TEXT[1]")
+					mySwitch.AUDIO[AUDIO_PRO].MUTE = ATOI("DATA.TEXT[1]")
 				}
 				ACTIVE(mySwitch.LAST_SENT == "$1B,'D4GRPM',$0D"):{
-					mySwitch.MICMUTE = ATOI("DATA.TEXT[1]")
+					mySwitch.AUDIO[AUDIO_MIC].MUTE = ATOI("DATA.TEXT[1]")
 				}
 				ACTIVE(mySwitch.LAST_SENT == 'Q'):{
 					mySwitch.META_FIRMWARE = fnStripCharsRight(DATA.TEXT,2)
@@ -459,18 +471,22 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 					SELECT{
 						ACTIVE(LEFT_STRING(DATA.TEXT,7) == 'GrpmD1*'):{
 							GET_BUFFER_STRING(DATA.TEXT,7)
-							mySwitch.GAIN = (ATOI(DATA.TEXT) + 1000) / 10
+							mySwitch.AUDIO[AUDIO_PRO].GAIN = (ATOI(DATA.TEXT) + 1000) / 10
+						}
+						ACTIVE(LEFT_STRING(DATA.TEXT,7) == 'GrpmD3*'):{
+							GET_BUFFER_STRING(DATA.TEXT,7)
+							mySwitch.AUDIO[AUDIO_MIC].GAIN = (ATOI(DATA.TEXT) + 1000) / 10
 						}
 						ACTIVE(LEFT_STRING(DATA.TEXT,3) == 'Vol'):{
 							GET_BUFFER_STRING(DATA.TEXT,3)
 							SWITCH(mySwitch.MODEL_ID){
-								CASE MODEL_MLAVC10:	mySwitch.GAIN = ATOI(DATA.TEXT)
-								DEFAULT:					mySwitch.GAIN = ATOI(DATA.TEXT) + 100
+								CASE MODEL_MLAVC10:	mySwitch.AUDIO[AUDIO_PRO].GAIN = ATOI(DATA.TEXT)
+								DEFAULT:					mySwitch.AUDIO[AUDIO_PRO].GAIN = ATOI(DATA.TEXT) + 100
 							}
 						}
 						ACTIVE(LEFT_STRING(DATA.TEXT,3) == 'Amt'):{
 							GET_BUFFER_STRING(DATA.TEXT,3)
-							mySwitch.MUTE = ATOI(DATA.TEXT)
+							mySwitch.AUDIO[AUDIO_PRO].MUTE = ATOI(DATA.TEXT)
 						}
 					}
 				}
@@ -490,20 +506,20 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_COMMS]{
 }
 
 DEFINE_FUNCTION fnResetModule(){
+	STACK_VAR uGain blankGain
 	mySwitch.Tx 					= ''
 	mySwitch.LAST_SENT			= ''
 	mySwitch.DIAG_INT_TEMP 		= ''
-	mySwitch.GAIN 					= 0
+	mySwitch.AUDIO[AUDIO_PRO] = blankGain
+	mySwitch.AUDIO[AUDIO_MIC]  = blankGain
 	mySwitch.HAS_AUDIO 			= FALSE
 	mySwitch.HAS_NETWORK 		= FALSE
-	mySwitch.LAST_GAIN			= 0
 	mySwitch.META_FIRMWARE		= ''
 	mySwitch.META_FIRMWARE_FULL= ''
 	mySwitch.META_IP				= ''
 	mySwitch.META_MAC				= ''
 	mySwitch.META_MODEL			= ''
 	mySwitch.MODEL_ID 			= 0
-	mySwitch.MUTE 					= FALSE
 	mySwitch.SIGNAL[1]			= FALSE
 	mySwitch.SIGNAL[2]			= FALSE
 	mySwitch.SIGNAL[3]			= FALSE
@@ -563,13 +579,13 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 									SINTEGER VOL
 									VOL = -100
 									VOL = VOL + ATOI(DATA.TEXT)
-									IF(!TIMELINE_ACTIVE(TLID_GAIN)){
+									IF(!TIMELINE_ACTIVE(TLID_GAIN_00+AUDIO_PRO)){
 										fnAddToQueue("ITOA(VOL),'V'",FALSE)
-										TIMELINE_CREATE(TLID_GAIN,TLT_GAIN,LENGTH_ARRAY(TLT_GAIN),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
+										TIMELINE_CREATE(TLID_GAIN_00+AUDIO_PRO,TLT_GAIN,LENGTH_ARRAY(TLT_GAIN),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 									}
 									ELSE{
-										mySwitch.LAST_GAIN = VOL
-										mySwitch.GAIN_PEND = TRUE
+										mySwitch.AUDIO[AUDIO_PRO].LAST_GAIN = VOL
+										mySwitch.AUDIO[AUDIO_PRO].GAIN_PEND = TRUE
 									}
 								}
 							}
@@ -584,13 +600,38 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 									SINTEGER VOL
 									VOL = -1000
 									VOL = VOL + (ATOI(DATA.TEXT) * 10)
-									IF(!TIMELINE_ACTIVE(TLID_GAIN)){
+									IF(!TIMELINE_ACTIVE(TLID_GAIN_00+AUDIO_PRO)){
 										fnAddToQueue("$1B,'D1*',ITOA(VOL),'GRPM',$0D",FALSE)
-										TIMELINE_CREATE(TLID_GAIN,TLT_GAIN,LENGTH_ARRAY(TLT_GAIN),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
+										TIMELINE_CREATE(TLID_GAIN_00+AUDIO_PRO,TLT_GAIN,LENGTH_ARRAY(TLT_GAIN),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 									}
 									ELSE{
-										mySwitch.LAST_GAIN = VOL
-										mySwitch.GAIN_PEND = TRUE
+										mySwitch.AUDIO[AUDIO_PRO].LAST_GAIN = VOL
+										mySwitch.AUDIO[AUDIO_PRO].GAIN_PEND = TRUE
+									}
+								}
+							}
+						}
+					}
+				}
+				CASE 'MICVOLUME':{
+					SWITCH(mySwitch.MODEL_ID){
+						CASE MODEL_IN1606:
+						CASE MODEL_IN1608:
+						CASE MODEL_IN1608xi:{
+							SWITCH(DATA.TEXT){
+								CASE 'INC':	fnAddToQueue("$1B,'D3*20+GRPM',$0D",FALSE)
+								CASE 'DEC':	fnAddToQueue("$1B,'D3*20-GRPM',$0D",FALSE)
+								DEFAULT:{
+									SINTEGER VOL
+									VOL = -1000
+									VOL = VOL + (ATOI(DATA.TEXT) * 10)
+									IF(!TIMELINE_ACTIVE(TLID_GAIN_00+AUDIO_MIC)){
+										fnAddToQueue("$1B,'D3*',ITOA(VOL),'GRPM',$0D",FALSE)
+										TIMELINE_CREATE(TLID_GAIN_00+AUDIO_MIC,TLT_GAIN,LENGTH_ARRAY(TLT_GAIN),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
+									}
+									ELSE{
+										mySwitch.AUDIO[AUDIO_MIC].LAST_GAIN = VOL
+										mySwitch.AUDIO[AUDIO_MIC].GAIN_PEND = TRUE
 									}
 								}
 							}
@@ -599,28 +640,28 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 				}
 				CASE 'MUTE':{
 					SWITCH(DATA.TEXT){
-						CASE 'ON':		mySwitch.MUTE = TRUE
-						CASE 'OFF':		mySwitch.MUTE = FALSE
-						CASE 'TOGGLE':	mySwitch.MUTE = !mySwitch.MUTE
+						CASE 'ON':		mySwitch.AUDIO[AUDIO_PRO].MUTE = TRUE
+						CASE 'OFF':		mySwitch.AUDIO[AUDIO_PRO].MUTE = FALSE
+						CASE 'TOGGLE':	mySwitch.AUDIO[AUDIO_PRO].MUTE = !mySwitch.AUDIO[AUDIO_PRO].MUTE
 					}
 					SWITCH(mySwitch.MODEL_ID){
 						CASE MODEL_MLAVC10:
-						CASE MODEL_IN1604:   fnAddToQueue("ITOA(mySwitch.MUTE),'Z'",FALSE)
+						CASE MODEL_IN1604:   fnAddToQueue("ITOA(mySwitch.AUDIO[AUDIO_PRO].MUTE),'Z'",FALSE)
 						CASE MODEL_IN1606:
 						CASE MODEL_IN1608:
-						CASE MODEL_IN1608xi: fnAddToQueue("$1B,'D2*',ITOA(mySwitch.MUTE),'GRPM',$0D",FALSE)
+						CASE MODEL_IN1608xi: fnAddToQueue("$1B,'D2*',ITOA(mySwitch.AUDIO[AUDIO_PRO].MUTE),'GRPM',$0D",FALSE)
 					}
 				}
 				CASE 'MICMUTE':{
 					SWITCH(DATA.TEXT){
-						CASE 'ON':		mySwitch.MICMUTE = TRUE
-						CASE 'OFF':		mySwitch.MICMUTE = FALSE
-						CASE 'TOGGLE':	mySwitch.MICMUTE = !mySwitch.MICMUTE
+						CASE 'ON':		mySwitch.AUDIO[AUDIO_MIC].MUTE = TRUE
+						CASE 'OFF':		mySwitch.AUDIO[AUDIO_MIC].MUTE = FALSE
+						CASE 'TOGGLE':	mySwitch.AUDIO[AUDIO_MIC].MUTE = !mySwitch.AUDIO[AUDIO_MIC].MUTE
 					}
 					SWITCH(mySwitch.MODEL_ID){
 						CASE MODEL_IN1606:
 						CASE MODEL_IN1608:
-						CASE MODEL_IN1608xi: fnAddToQueue("$1B,'D4*',ITOA(mySwitch.MICMUTE),'GRPM',$0D",FALSE)
+						CASE MODEL_IN1608xi: fnAddToQueue("$1B,'D4*',ITOA(mySwitch.AUDIO[AUDIO_MIC].MUTE),'GRPM',$0D",FALSE)
 					}
 				}
 				CASE 'RAW':{
@@ -637,24 +678,37 @@ DEFINE_EVENT CHANNEL_EVENT[vdvControl,199]{
 	ON:{}
 	OFF:{}
 }
-DEFINE_EVENT TIMELINE_EVENT[TLID_GAIN]{
-	IF(mySwitch.GAIN_PEND){
+DEFINE_EVENT TIMELINE_EVENT[TLID_GAIN_01]{
+	IF(mySwitch.AUDIO[AUDIO_PRO].GAIN_PEND){
 		SWITCH(mySwitch.MODEL_ID){
-			CASE MODEL_IN1604:   fnAddToQueue("ITOA(mySwitch.LAST_GAIN),'V'",FALSE)
+			CASE MODEL_IN1604:   fnAddToQueue("ITOA(mySwitch.AUDIO[AUDIO_PRO].LAST_GAIN),'V'",FALSE)
 			CASE MODEL_IN1606:
 			CASE MODEL_IN1608:
-			CASE MODEL_IN1608xi: fnAddToQueue("$1B,'D1*',ITOA(mySwitch.LAST_GAIN),'GRPM',$0D",FALSE)
+			CASE MODEL_IN1608xi: fnAddToQueue("$1B,'D1*',ITOA(mySwitch.AUDIO[AUDIO_PRO].LAST_GAIN),'GRPM',$0D",FALSE)
 		}
-		mySwitch.LAST_GAIN = 0
-		mySwitch.GAIN_PEND = FALSE
-		TIMELINE_CREATE(TLID_GAIN,TLT_GAIN,LENGTH_ARRAY(TLT_GAIN),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
+		mySwitch.AUDIO[AUDIO_PRO].LAST_GAIN = 0
+		mySwitch.AUDIO[AUDIO_PRO].GAIN_PEND = FALSE
+		TIMELINE_CREATE(TLID_GAIN_01,TLT_GAIN,LENGTH_ARRAY(TLT_GAIN),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
+	}
+}
+DEFINE_EVENT TIMELINE_EVENT[TLID_GAIN_02]{
+	IF(mySwitch.AUDIO[AUDIO_MIC].GAIN_PEND){
+		SWITCH(mySwitch.MODEL_ID){
+			CASE MODEL_IN1606:
+			CASE MODEL_IN1608:
+			CASE MODEL_IN1608xi: fnAddToQueue("$1B,'D3*',ITOA(mySwitch.AUDIO[AUDIO_MIC].LAST_GAIN),'GRPM',$0D",FALSE)
+		}
+		mySwitch.AUDIO[AUDIO_MIC].LAST_GAIN = 0
+		mySwitch.AUDIO[AUDIO_MIC].GAIN_PEND = FALSE
+		TIMELINE_CREATE(TLID_GAIN_02,TLT_GAIN,LENGTH_ARRAY(TLT_GAIN),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 	}
 }
 DEFINE_PROGRAM{
 	IF(!mySwitch.DISABLED){
-		[vdvControl,198] = (mySwitch.MICMUTE)
-		[vdvControl,199] = (mySwitch.MUTE)
-		SEND_LEVEL vdvControl,1,mySwitch.GAIN
+		[vdvControl,199] = (mySwitch.AUDIO[AUDIO_PRO].MUTE)
+		[vdvControl,198] = (mySwitch.AUDIO[AUDIO_MIC].MUTE)
+		SEND_LEVEL vdvControl,1,mySwitch.AUDIO[AUDIO_PRO].GAIN
+		SEND_LEVEL vdvControl,2,mySwitch.AUDIO[AUDIO_MIC].GAIN
 		[vdvControl,251] = (TIMELINE_ACTIVE(TLID_COMMS))
 		[vdvControl,252] = (TIMELINE_ACTIVE(TLID_COMMS))
 		[vdvControl,1] = (mySwitch.SIGNAL[1])
