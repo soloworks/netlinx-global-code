@@ -235,8 +235,27 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 					}
 				}
 			}
-			CASE 'PIP':{
+			CASE 'FAV':{
 				fnAddToQueue("'RFA00',DATA.TEXT")
+			}
+			CASE 'WINDOW':{
+				SWITCH(DATA.TEXT){
+					CASE 'A':fnAddToQueue("'WND001'")
+					CASE 'B':fnAddToQueue("'WND002'")
+					CASE 'C':fnAddToQueue("'WND003'")
+					CASE 'D':fnAddToQueue("'WND004'")
+					CASE 'E':fnAddToQueue("'WND005'")
+					CASE 'F':fnAddToQueue("'WND006'")
+					CASE 'G':fnAddToQueue("'WND007'")
+					CASE 'H':fnAddToQueue("'WND008'")
+				}
+			}
+			CASE 'SOURCE':{
+				STACK_VAR INTEGER s
+				STACK_VAR INTEGER c
+				s = ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'*',1),1))
+				c = ATOI(DATA.TEXT)
+				fnAddToQueue("'CH',ITOA(c),'00',ITOA(s)")
 			}
 			CASE 'RAW':{
 				fnAddToQueue("DATA.TEXT")
