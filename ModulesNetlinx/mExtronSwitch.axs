@@ -29,8 +29,9 @@ DEFINE_TYPE STRUCTURE uSwitch{
 	CHAR DIAG_INT_TEMP[20]		// Internal Temperature
 	INTEGER SIGNAL[8]
 	// Audio
-	INTEGER  MUTE
+	INTEGER  MICMUTE
 	INTEGER 	GAIN
+	INTEGER  MUTE
 	INTEGER  GAIN_PEND
 	SINTEGER LAST_GAIN
 }
@@ -198,6 +199,7 @@ DEFINE_FUNCTION fnPollFull(){
 					CASE MODEL_IN1608xi:{
 						fnAddToQueue("$1B,'D1GRPM',$0D",TRUE)
 						fnAddToQueue("$1B,'D2GRPM',$0D",TRUE)
+						fnAddToQueue("$1B,'D4GRPM',$0D",TRUE)
 					}
 				}
 			}
@@ -386,6 +388,9 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 				}
 				ACTIVE(mySwitch.LAST_SENT == "$1B,'D2GRPM',$0D"):{
 					mySwitch.MUTE = ATOI("DATA.TEXT[1]")
+				}
+				ACTIVE(mySwitch.LAST_SENT == "$1B,'D4GRPM',$0D"):{
+					mySwitch.MICMUTE = ATOI("DATA.TEXT[1]")
 				}
 				ACTIVE(mySwitch.LAST_SENT == 'Q'):{
 					mySwitch.META_FIRMWARE = fnStripCharsRight(DATA.TEXT,2)
@@ -606,6 +611,18 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 						CASE MODEL_IN1608xi: fnAddToQueue("$1B,'D2*',ITOA(mySwitch.MUTE),'GRPM',$0D",FALSE)
 					}
 				}
+				CASE 'MICMUTE':{
+					SWITCH(DATA.TEXT){
+						CASE 'ON':		mySwitch.MICMUTE = TRUE
+						CASE 'OFF':		mySwitch.MICMUTE = FALSE
+						CASE 'TOGGLE':	mySwitch.MICMUTE = !mySwitch.MICMUTE
+					}
+					SWITCH(mySwitch.MODEL_ID){
+						CASE MODEL_IN1606:
+						CASE MODEL_IN1608:
+						CASE MODEL_IN1608xi: fnAddToQueue("$1B,'D4*',ITOA(mySwitch.MICMUTE),'GRPM',$0D",FALSE)
+					}
+				}
 				CASE 'RAW':{
 					fnAddToQueue(DATA.TEXT,FALSE)
 				}
@@ -635,6 +652,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_GAIN]{
 }
 DEFINE_PROGRAM{
 	IF(!mySwitch.DISABLED){
+		[vdvControl,198] = (mySwitch.MICMUTE)
 		[vdvControl,199] = (mySwitch.MUTE)
 		SEND_LEVEL vdvControl,1,mySwitch.GAIN
 		[vdvControl,251] = (TIMELINE_ACTIVE(TLID_COMMS))
