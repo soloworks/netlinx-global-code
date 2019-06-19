@@ -64,12 +64,12 @@ INTEGER DEBUG_STD	= 1
 INTEGER DEBUG_DEV	= 2
 
 //HEX COMMANDS
-CHAR STX[]    = { $07 }
-CHAR IDT[]    = { $01 }
-CHAR GET[]    = { $01 }
-CHAR SET[]    = { $02 }
-CHAR ETX[]    = { $08 }
-CHAR CR[]     = { $0D }
+INTEGER STX   = $07
+INTEGER IDT   = $01
+INTEGER GET   = $01
+INTEGER SET   = $02
+INTEGER ETX   = $08
+INTEGER CR    = $0D
 CHAR POWER[]  = { $50, $4F, $57 }
 CHAR INPUT[]  = { $4D, $49, $4E }
 CHAR SERIAL[] = { $53, $45, $52 }
@@ -91,6 +91,7 @@ LONG TLT_BOOT[]		= { 5000}
 	Comms Code
 ******************************************************************************/
 DEFINE_START{
+	myAvocorDisplay.COMMS.ID = IDT
 	myAvocorDisplay.COMMS.isIP = !(dvDevice.NUMBER)
 	CREATE_BUFFER dvDevice, myAvocorDisplay.COMMS.Rx
 }
@@ -111,13 +112,11 @@ DEFINE_FUNCTION fnCloseTCPConnection(){
 }
 
 
-DEFINE_FUNCTION fnAddToQueue(CHAR pTYPE[], CHAR pCMD[], CHAR pDATA[]){
+DEFINE_FUNCTION fnAddToQueue(INTEGER pTYPE, CHAR pCMD[], CHAR pDATA[]){
 
 	STACK_VAR CHAR myMessage[25]
 
-	myAvocorDisplay.COMMS.ID = HEXTOI(IDT)
-
-	myMessage = "STX,ITOHEX(myAvocorDisplay.COMMS.ID),pTYPE,pCMD,pDATA,ETX"
+	myMessage = "STX,myAvocorDisplay.COMMS.ID,pTYPE,pCMD,pDATA,ETX"
 
 	myAvocorDisplay.COMMS.Tx = "myAvocorDisplay.COMMS.Tx,myMessage,$AA,$BB,$CC,$DD"
 	fnSendFromQueue()
@@ -128,7 +127,7 @@ DEFINE_FUNCTION fnSendFromQueue(){
 		STACK_VAR CHAR toSend[255]
 		toSend = fnStripCharsRight(REMOVE_STRING(myAvocorDisplay.COMMS.Tx,"$AA,$BB,$CC,$DD",1),4)
 		SEND_STRING dvDevice,"toSend,CR"
-		fnDebugHex(DEBUG_STD,'->Avocor',toSend)
+		fnDebugHex(DEBUG_STD,'-> Avocor ',toSend)
 		myAvocorDisplay.COMMS.PEND = TRUE
 		IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){TIMELINE_KILL(TLID_TIMEOUT)}
 		TIMELINE_CREATE(TLID_TIMEOUT,TLT_TIMEOUT,LENGTH_ARRAY(TLT_TIMEOUT),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
@@ -164,7 +163,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_BOOT]{
 
 DEFINE_FUNCTION fnDebug(INTEGER pDEBUG, CHAR Msg[], CHAR MsgData[]){
 	IF(myAvocorDisplay.COMMS.DEBUG >= pDEBUG){
-		SEND_STRING 0:0:0, "ITOA(vdvControl.Number),':',Msg, ':', MsgData"
+		SEND_STRING 0, "ITOA(vdvControl.Number),':',Msg, ':', MsgData"
 	}
 }
 DEFINE_FUNCTION fnDebugHex(INTEGER pDEBUG, CHAR Msg[], CHAR MsgData[]){
@@ -174,7 +173,7 @@ DEFINE_FUNCTION fnDebugHex(INTEGER pDEBUG, CHAR Msg[], CHAR MsgData[]){
 		FOR(x = 1; x <= LENGTH_ARRAY(MsgData); x++){
 			pHEX = "pHEX,'$',fnPadLeadingChars(ITOHEX(MsgData[x]),'0',2)"
 		}
-		SEND_STRING 0:0:0, "ITOA(vdvControl.Number),':',Msg, ':', pHEX"
+		SEND_STRING 0, "ITOA(vdvControl.Number),':',Msg, ':', pHEX"
 	}
 }
 
@@ -247,10 +246,10 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 	}
 	STRING:{
 		IF(!myAvocorDisplay.COMMS.DISABLED){
-			fnDebugHex(DEBUG_DEV,'Avocor RAW->', DATA.TEXT)
+			fnDebugHex(DEBUG_DEV,'Avocor RAW -> ', DATA.TEXT)
 			IF(LENGTH_ARRAY(myAvocorDisplay.COMMS.Rx)){
 				// Clean off possible Garbage until STX Found
-				WHILE(FIND_STRING(myAvocorDisplay.COMMS.Rx,STX,1) && myAvocorDisplay.COMMS.Rx[1] != STX){
+				WHILE(FIND_STRING(myAvocorDisplay.COMMS.Rx,"STX",1) && myAvocorDisplay.COMMS.Rx[1] != STX){
 					fnDebug(DEBUG_DEV,'WHILE 1', "'EAT GARBAGE:',ITOHEX(GET_BUFFER_CHAR(myAvocorDisplay.COMMS.Rx))")
 				}
 				// While there is enough data in the buffer to be a command
@@ -261,27 +260,28 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 					fnDebug(DEBUG_DEV,'DATA.TEXT|WHILE', "'pDataLength = ',ITOA(pDataLength)")
 
 					IF(myAvocorDisplay.COMMS.Rx[1] == STX){
-						IF(FIND_STRING(myAvocorDisplay.COMMS.Rx,CR,1)){
-							pRX = REMOVE_STRING(myAvocorDisplay.COMMS.Rx,CR,1)
-							fnDebug(DEBUG_DEV,'DATA.TEXT', "'CR found. COMMS.Rx = ',pRX")
-							fnStripCharsRight(pRX,1)
-							IF(pRX[LENGTH_ARRAY(pRX)] == ETX){
+						SELECT{
+							ACTIVE(FIND_STRING(myAvocorDisplay.COMMS.Rx,"CR",1)):{
+								pRX = REMOVE_STRING(myAvocorDisplay.COMMS.Rx,"CR",1)
+								fnDebugHex(DEBUG_DEV,'Rx: CR found. COMMS.Rx = ',pRX)
+								fnStripCharsRight(pRX,1)
+								IF(pRX[LENGTH_ARRAY(pRX)] == ETX){
+									fnProcessFeedback(pRX)
+									myAvocorDisplay.COMMS.PEND = FALSE
+									fnSendFromQueue()
+								}
+							}
+							ACTIVE(FIND_STRING(myAvocorDisplay.COMMS.Rx,"ETX",1)):{
+								pRX = REMOVE_STRING(myAvocorDisplay.COMMS.Rx,"ETX",1)
+								fnDebugHex(DEBUG_DEV,'Rx: No CR found. COMMS.Rx = ',pRX)
 								fnProcessFeedback(pRX)
 								myAvocorDisplay.COMMS.PEND = FALSE
 								fnSendFromQueue()
 							}
-						}
-						ELSE IF(myAvocorDisplay.COMMS.Rx[pDataLength] == ETX){
-							pRX = REMOVE_STRING(myAvocorDisplay.COMMS.Rx,ETX,1)
-							fnDebug(DEBUG_DEV,'DATA.TEXT', "'No CR found. COMMS.Rx = ',pRX")
-							fnProcessFeedback(pRX)
-							myAvocorDisplay.COMMS.PEND = FALSE
-							fnSendFromQueue()
-							BREAK
-						}
-						ELSE{
-							fnDebug(DEBUG_DEV,'DATA.TEXT', "'More Packet Expected'")
-							BREAK
+							ACTIVE(1):{
+								fnDebug(DEBUG_DEV,'DATA.TEXT', "'More Packet Expected'")
+								BREAK
+							}
 						}
 					}
 					ELSE{
@@ -294,9 +294,9 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 }
 DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[255]){
 	STACK_VAR INTEGER pID
-	fnDebugHex(DEBUG_STD,'Avocor->', pDATA)
+	fnDebugHex(DEBUG_STD,'Avocor Fb -> ', pDATA)
 	GET_BUFFER_CHAR(pDATA)	// Remove STX
-	pID = HEXTOI(GET_BUFFER_CHAR(pDATA))// Remove IDT
+	pID = GET_BUFFER_CHAR(pDATA)// Remove IDT
 	pDATA = fnStripCharsRight(pDATA,1)	// Remove ETX
 	IF(pID == myAvocorDisplay.COMMS.ID){	// Get ID
 		STACK_VAR INTEGER pTYPE
@@ -306,40 +306,40 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[255]){
 		pCMD   = REMOVE_STRING(pDATA,LEFT_STRING(pDATA,3),1) // Remove Command
 		SWITCH(pCMD){
 			CASE ECOMODE:{ // Wake from Sleep Mode Status
-				fnDebug(DEBUG_STD,'Avocor Response',"'Eco Mode Status = ',pDATA")
-				pVALUE = HEXTOI(GET_BUFFER_CHAR(pDATA))
+				fnDebugHex(DEBUG_STD,'Avocor Parse -> Eco Mode Status = ',pDATA)
+				pVALUE = GET_BUFFER_CHAR(pDATA)
 				myAvocorDisplay.ECOMODE = pVALUE
 				IF(myAvocorDisplay.META_MODEL == ''){
 					fnAddToQueue(GET,MODEL,"")
 				}
 			}
 			CASE POWER:{ // Power Status
-				fnDebug(DEBUG_STD,'Avocor Response',"'Power Status = ',pDATA")
-				pVALUE = HEXTOI(GET_BUFFER_CHAR(pDATA))
+				fnDebugHex(DEBUG_STD,'Avocor Parse -> Power Status = ',pDATA)
+				pVALUE =GET_BUFFER_CHAR(pDATA)
 				myAvocorDisplay.POWER = pVALUE
-				IF(myAvocorDisplay.ECOMODE == ''){
+				IF(!myAvocorDisplay.ECOMODE){
 					fnInit()
 				}
 			}
 			CASE INPUT:{ // Input Status
-				fnDebug(DEBUG_STD,'Avocor Response',"'Input Status = ',pDATA")
-				pVALUE = HEXTOI(GET_BUFFER_CHAR(pDATA))
+				fnDebugHex(DEBUG_STD,'Avocor Parse -> Input Status = ',pDATA)
+				pVALUE = GET_BUFFER_CHAR(pDATA)
 				IF(myAvocorDisplay.SOURCE != pVALUE){
 					myAvocorDisplay.SOURCE  = pVALUE
 					myAvocorDisplay.SOURCE_NAME = fnGetSourceName(myAvocorDisplay.SOURCE)
 				}
 			}
 			CASE VOLUME:{	// Volume Status
-				fnDebug(DEBUG_STD,'Avocor Response',"'Volume Status = ',pDATA")
+				fnDebugHex(DEBUG_STD,'Avocor Parse -> Volume Status = ',pDATA)
 				myAvocorDisplay.VOL = HEXTOI(pDATA)
 			}
 			CASE MUTE:{	// Mute Status
-				fnDebug(DEBUG_STD,'Avocor Response',"'Mute Status = ',pDATA")
-				pVALUE = HEXTOI(GET_BUFFER_CHAR(pDATA))
+				fnDebugHex(DEBUG_STD,'Avocor Parse -> Mute Status = ',pDATA)
+				pVALUE = GET_BUFFER_CHAR(pDATA)
 				myAvocorDisplay.MUTE = pVALUE
 			}
 			CASE MODEL:{ // Model Name
-				fnDebug(DEBUG_STD,'Avocor Response',"'Model Name = ',pDATA")
+				fnDebugHex(DEBUG_STD,'Avocor Parse -> Model Name = ',pDATA)
 				IF(myAvocorDisplay.META_MODEL != pDATA){
 					myAvocorDisplay.META_MODEL  = pDATA
 					SEND_STRING vdvControl,"'PROPERTY-META,MODEL,',myAvocorDisplay.META_MODEL"
@@ -347,7 +347,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[255]){
 				fnAddToQueue(GET,SERIAL,"")	// Get Serial Number
 			}
 			CASE SERIAL:{	// Serial Number
-				fnDebug(DEBUG_STD,'Avocor Response',"'Serial Number = ',pDATA")
+				fnDebugHex(DEBUG_STD,'Avocor Parse -> Serial Number = ',pDATA)
 				IF(myAvocorDisplay.META_SN != pDATA){
 					myAvocorDisplay.META_SN  = pDATA
 					SEND_STRING vdvControl,"'PROPERTY-META,SERIALNO,',myAvocorDisplay.META_SN"
@@ -371,7 +371,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA_COPY,',',1),1)){
 					CASE 'ENABLED':{
 						SWITCH(DATA_COPY){
-							CASE 'SAMSUNG':
+							CASE 'AVOCOR':
 							CASE 'TRUE':myAvocorDisplay.COMMS.DISABLED = FALSE
 							DEFAULT:		myAvocorDisplay.COMMS.DISABLED = TRUE
 						}
@@ -381,12 +381,14 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 		}
 		IF(!myAvocorDisplay.COMMS.DISABLED){
 			STACK_VAR CHAR pCMD[3]
+			STACK_VAR CHAR pSTRING[12]
 			SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
 				CASE 'ALL':{
 					SWITCH(DATA.TEXT){
-						CASE 'ON': SEND_STRING dvDevice,"STX,IDT,SET,POWER,$01,ETX,CR"
-						CASE 'OFF':SEND_STRING dvDevice,"STX,IDT,SET,POWER,$00,ETX,CR"
+						CASE 'ON': {pSTRING = "STX,IDT,SET,POWER,$01,ETX,CR"}
+						CASE 'OFF':{pSTRING = "STX,IDT,SET,POWER,$00,ETX,CR"}
 					}
+					SEND_STRING dvDevice,pSTRING
 				}
 				CASE 'ACTION':{
 					SWITCH(DATA.TEXT){
@@ -518,9 +520,9 @@ DEFINE_FUNCTION CHAR[255] fnGetSourceName(INTEGER pINPUT){
 	SWITCH(pINPUT){
 		CASE $00: RETURN 'VGA'
 		CASE $09: RETURN 'HDMI1'
-		CASE $0A: RETURN 'HDMI1'
-		CASE $0B: RETURN 'HDMI1'
-		CASE $0C: RETURN 'HDMI1'
+		CASE $0A: RETURN 'HDMI2'
+		CASE $0B: RETURN 'HDMI3'
+		CASE $0C: RETURN 'HDMI4'
 		CASE $0D: RETURN 'DPORT'
 		CASE $0E: RETURN 'IPC/OPS'
 		CASE $13: RETURN 'WPS'
