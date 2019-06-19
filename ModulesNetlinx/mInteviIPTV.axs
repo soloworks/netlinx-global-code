@@ -187,7 +187,6 @@ DEFINE_EVENT BUTTON_EVENT[tp,btnEndPoint]{
 }
 DEFINE_EVENT BUTTON_EVENT[tp,btnChannel]{
 	PUSH:{
-		STACK_VAR uHTTPReq newRequest
 		STACK_VAR INTEGER CH
 		STACK_VAR INTEGER EP
 		CH = GET_LAST(btnChannel)
@@ -218,9 +217,9 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_POLL]{
 	fnPoll()
 }
 DEFINE_FUNCTION fnPoll(){
-	STACK_VAR uHTTPReq newRequest
+	STACK_VAR uHTTPRequest newRequest
 	// Set Values
-	newRequest.TYPE = HTTP_REQ_TYPE_GET
+	newRequest.METHOD = HTTP_METHOD_GET
 	newRequest.PATH = "'/mobile/getendpointgroupsforpin/',FORMAT('%04d',myIPTV.PIN)"
 	// Queue Request
 	fnAddToHTTPQueue(newRequest)
@@ -229,9 +228,9 @@ DEFINE_FUNCTION fnPoll(){
 	Utility Functions
 ******************************************************************************/
 DEFINE_FUNCTION fnChangeChannel(INTEGER EP, INTEGER CH){
-	STACK_VAR uHTTPReq r
+	STACK_VAR uHTTPRequest r
 	// Set Values
-	r.TYPE = HTTP_REQ_TYPE_GET
+	r.METHOD = HTTP_METHOD_GET
 	r.PATH = "'/mobile/changechannel/',myIPTV.ENDPOINT[EP].IP,'/',myIPTV.CHAN[CH].ID"
 	// Queue Request
 	fnAddToHTTPQueue(r)
@@ -243,7 +242,7 @@ DEFINE_FUNCTION fnChangeChannel(INTEGER EP, INTEGER CH){
 /******************************************************************************
 	WebSocket Callback Events
 ******************************************************************************/
-DEFINE_FUNCTION eventHTTPResponse(uHTTPResp r){
+DEFINE_FUNCTION eventHTTPResponse(uHTTPResponse r){
 	STACK_VAR CHAR TEMP[10000]
 	STACK_VAR INTEGER CH
 	

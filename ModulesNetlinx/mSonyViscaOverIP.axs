@@ -3,12 +3,14 @@ MODULE_NAME='mSonyViscaOverIP'(DEV vdvCamera[],DEV ipCAM[], DEV ipFB, DEV ipMC)
 /******************************************************************************
 	Sony Visca Over IP
 
-	Uses Multicast to discover and configure camera via MAC Address
+	For Discovery & Assign:
+	PROPERTY-NETWORK,MAC,IP,SUBNET,GATEWAY
+	
+	For Static Set IP:
+	PROPERTY-IP,xxx
+	PROPERTY-MODE,STATIC
 
-	Set MAC address using: 	PROPERTY-MAC,xx-xx-xx-xx-xx-xx
-	Set IP address using:	PROPERTY-IP,xxx.xxx.xxx.xxx[:port]
-
-	Module will set IP address on auto discovery
+	Module will set IP address on auto discovery, or set static IP
 ******************************************************************************/
 /******************************************************************************
 	Types
@@ -20,6 +22,7 @@ DEFINE_TYPE STRUCTURE uCam{
 	CHAR		GATEWAY[30]
 	CHAR		SUBNET[30]
 	INTEGER	SEQUENCE
+	INTEGER  MODE
 
 	INTEGER	SPEED_PAN
 	INTEGER	SPEED_TILT
@@ -47,6 +50,9 @@ DEFINE_CONSTANT
 INTEGER DEBUG_ERR	= 0
 INTEGER DEBUG_STD	= 1
 INTEGER DEBUG_DEV	= 2
+
+INTEGER MODE_AUTO   = 0
+INTEGER MODE_STATIC = 1
 
 LONG TLID_POLL_MC	= 1
 
@@ -93,24 +99,27 @@ DEFINE_FUNCTION fnDebug(INTEGER pDEBUG, CHAR Msg[], CHAR MsgData[]){
 ******************************************************************************/
 DEFINE_FUNCTION fnOpenClientConnection(INTEGER pCAM){
 
-	IF(!LENGTH_ARRAY(mySonyCams.CAMS[pCAM].MAC_ADD)){
-		fnDebug(DEBUG_ERR,"'SONY CAM',FORMAT('%02d',pCAM),' ERROR'",'MAC ADDRESS NOT CONFIGURED')
-		RETURN
-	}
-
 	IF(!LENGTH_ARRAY(mySonyCams.CAMS[pCAM].IP_HOST)){
 		fnDebug(DEBUG_ERR,"'SONY CAM',FORMAT('%02d',pCAM),' ERROR'",'IP ADDRESS NOT CONFIGURED')
 		RETURN
 	}
+	
+	IF(mySonyCams.CAMS[pCAM].MODE == MODE_AUTO){
+		IF(!LENGTH_ARRAY(mySonyCams.CAMS[pCAM].MAC_ADD)){
+			fnDebug(DEBUG_ERR,"'SONY CAM',FORMAT('%02d',pCAM),' ERROR'",'MAC ADDRESS NOT CONFIGURED')
+			RETURN
+		}
 
-	IF(!LENGTH_ARRAY(mySonyCams.CAMS[pCAM].SUBNET)){
-		fnDebug(DEBUG_ERR,"'SONY CAM',FORMAT('%02d',pCAM),' ERROR'",'IP SUBNET NOT CONFIGURED')
-		RETURN
-	}
 
-	IF(!LENGTH_ARRAY(mySonyCams.CAMS[pCAM].GATEWAY)){
-		fnDebug(DEBUG_ERR,"'SONY CAM',FORMAT('%02d',pCAM),' ERROR'",'IP GATEWAY NOT CONFIGURED')
-		RETURN
+		IF(!LENGTH_ARRAY(mySonyCams.CAMS[pCAM].SUBNET)){
+			fnDebug(DEBUG_ERR,"'SONY CAM',FORMAT('%02d',pCAM),' ERROR'",'IP SUBNET NOT CONFIGURED')
+			RETURN
+		}
+
+		IF(!LENGTH_ARRAY(mySonyCams.CAMS[pCAM].GATEWAY)){
+			fnDebug(DEBUG_ERR,"'SONY CAM',FORMAT('%02d',pCAM),' ERROR'",'IP GATEWAY NOT CONFIGURED')
+			RETURN
+		}
 	}
 
 	// Start Unicast Client
@@ -334,6 +343,9 @@ DEFINE_FUNCTION fnProcessUnicast(INTEGER pCam,CHAR pDATA[]){
 							SEND_STRING vdvCamera[pCam],"'PROPERTY-META,MODEL,',mySonyCams.CAMS[pCAM].MODEL"
 
 						}
+						
+						IF(TIMELINE_ACTIVE(TLID_COMMS00+pCam)){TIMELINE_KILL(TLID_COMMS00+pCam)}
+						TIMELINE_CREATE(TLID_COMMS00+pCam,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 					}
 				}
 			}
@@ -426,6 +438,19 @@ DEFINE_EVENT DATA_EVENT[vdvCamera]{
 							CASE 'TRUE':mySonyCams.DEBUG = DEBUG_STD
 							CASE 'DEV':	mySonyCams.DEBUG = DEBUG_DEV
 							DEFAULT:		mySonyCams.DEBUG = DEBUG_ERR
+						}
+					}
+					CASE 'MODE':{
+						SWITCH(DATA.TEXT){
+							CASE 'STATIC': mySonyCams.CAMS[pCAM].MODE = MODE_STATIC
+							DEFAULT:       mySonyCams.CAMS[pCAM].MODE = MODE_AUTO
+						}
+					}
+					CASE 'IP':{
+						mySonyCams.CAMS[pCAM].IP_HOST = DATA.TEXT
+						SWITCH(mySonyCams.CAMS[pCAM].CONN_ONLINE){
+							CASE TRUE: 	fnCloseConnection(pCam)
+							CASE FALSE:	fnOpenClientConnection(pCam)
 						}
 					}
 					CASE 'NETWORK':{

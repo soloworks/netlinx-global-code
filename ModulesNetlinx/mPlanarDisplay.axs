@@ -20,6 +20,7 @@ DEFINE_TYPE STRUCTURE uPlanar{
 DEFINE_CONSTANT
 LONG TLID_POLL			= 1
 LONG TLID_COMMS		= 2
+LONG TLID_TIMEOUT		= 3
 
 INTEGER DEBUG_OFF		= 0
 INTEGER DEBUG_STD		= 1
@@ -34,6 +35,7 @@ DEFINE_VARIABLE
 VOLATILE uPlanar myPlanar
 LONG TLT_POLL[]		= {  2500 }
 LONG TLT_COMMS[]		= { 90000 }
+LONG TLT_TIMEOUT[]	= {  5000 }
 /******************************************************************************
 	Communication Helpers
 ******************************************************************************/
@@ -56,6 +58,12 @@ DEFINE_FUNCTION fnSendCommand(CHAR pDATA[]){
 DEFINE_FUNCTION fnSendQuery(CHAR pDATA[]){
 	fnDebug(DEBUG_STD,"'->PLANAR ',pDATA")
 	SEND_STRING ipUDP,"pDATA,$0D"
+	IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){ TIMELINE_KILL(TLID_TIMEOUT) }
+	TIMELINE_CREATE(TLID_TIMEOUT,TLT_TIMEOUT,LENGTH_ARRAY(TLT_TIMEOUT),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
+}
+
+DEFINE_EVENT TIMELINE_EVENT[TLID_TIMEOUT]{
+	IP_CLIENT_OPEN(ipUDP.PORT,myPlanar.IP_HOST,myPlanar.IP_PORT,IP_UDP_2WAY)
 }
 
 DEFINE_FUNCTION fnInitPoll(){
@@ -87,6 +95,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 				CASE 'ON':				myPlanar.STATE = STATE_ON
 				CASE 'POWERING.DOWN':myPlanar.STATE = STATE_COOL
 			}
+			IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){TIMELINE_KILL(TLID_TIMEOUT)}
 		}
 	}
 
@@ -119,7 +128,6 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 							myPlanar.IP_PORT = 57
 						}
 						// Open Sending UDP Port
-						//IP_BOUND_CLIENT_OPEN(ipUDP.PORT,myBACnetIP.IP_PORT,myBACnetIP.IP_HOST,myBACnetIP.IP_PORT,IP_UDP_2WAY)
 						IP_CLIENT_OPEN(ipUDP.PORT,myPlanar.IP_HOST,myPlanar.IP_PORT,IP_UDP_2WAY)
 					}
 				}
@@ -156,12 +164,6 @@ DEFINE_EVENT DATA_EVENT[ipUDP]{
 	STRING:{
 		// Remove $0D
 		fnProcessFeedback(fnStripCharsRight(DATA.TEXT,1))
-	}
-	OFFLINE:{
-		// No idea why this would close, but if it does re-open it
-		WAIT 10{
-			IP_CLIENT_OPEN(ipUDP.PORT,myPlanar.IP_HOST,myPlanar.IP_PORT,IP_UDP_2WAY)
-		}
 	}
 }
 /******************************************************************************

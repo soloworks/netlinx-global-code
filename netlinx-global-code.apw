@@ -404,6 +404,10 @@
 <FilePathName>ModulesNetlinx\mLGVideoWall.axs</FilePathName>
 <Comments></Comments>
 </File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mLindyPIP</Identifier>
+<FilePathName>ModulesNetlinx\mLindyPIP.axs</FilePathName>
+<Comments></Comments>
+</File>
 <File CompileType="Netlinx" Type="Module"><Identifier>mLumensCamera</Identifier>
 <FilePathName>ModulesNetlinx\mLumensCamera.axs</FilePathName>
 <Comments></Comments>
@@ -582,14 +586,6 @@
 </File>
 <File CompileType="Netlinx" Type="Module"><Identifier>mSim2Projector</Identifier>
 <FilePathName>ModulesNetlinx\mSim2Projector.axs</FilePathName>
-<Comments></Comments>
-</File>
-<File CompileType="Netlinx" Type="Module"><Identifier>mSIPDoorEntry</Identifier>
-<FilePathName>ModulesNetlinx\mSIPDoorEntry.axs</FilePathName>
-<Comments></Comments>
-</File>
-<File CompileType="Netlinx" Type="Module"><Identifier>mSIPGateway</Identifier>
-<FilePathName>ModulesNetlinx\mSIPGateway.axs</FilePathName>
 <Comments></Comments>
 </File>
 <File CompileType="Netlinx" Type="Module"><Identifier>mSkyControl</Identifier>
@@ -830,10 +826,6 @@
 </File>
 <File CompileType="Netlinx" Type="Module"><Identifier>RmsWePresentMonitor</Identifier>
 <FilePathName>ModulesNetlinxRms\RmsWePresentMonitor.axs</FilePathName>
-<Comments></Comments>
-</File>
-<File CompileType="Netlinx" Type="Module"><Identifier>scRMSGenericDeviceMonitor</Identifier>
-<FilePathName>ModulesNetlinxRms\scRMSGenericDeviceMonitor.axs</FilePathName>
 <Comments></Comments>
 </File>
 <File CompileType="Netlinx" Type="Module"><Identifier>scSchedulingConnectRMS</Identifier>

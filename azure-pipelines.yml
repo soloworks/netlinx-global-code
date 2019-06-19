@@ -5,15 +5,29 @@
 
 trigger:
 - master
+- develop
 
 pool:
-  vmImage: 'win1803`
+  name: 'Default'
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+- task: PowerShell@2
+  inputs:    
+    filePath: '.\getConfig.ps1'
+  displayName: 'Fetching the compiler config'
+
+- task: PowerShell@2
+  inputs:    
+    filePath: '.\runCompile.ps1'
+  displayName: 'Compiling the Project'
+
+- task: PowerShell@2
+  inputs:    
+    filePath: '.\getReport.ps1'
+  displayName: 'Getting Compile Report'
+  condition: always()
 
 - script: |
     echo Add other tasks to build, test, and deploy your project.
     echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+  displayName: 'Packing up the project'
