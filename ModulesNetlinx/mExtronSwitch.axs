@@ -76,6 +76,11 @@ INTEGER MODEL_SW8HD4K 		= 15
 INTEGER MODEL_SW6 			= 16
 INTEGER MODEL_SW8 			= 17
 INTEGER MODEL_MLAVC10 		= 18
+INTEGER MODEL_IN1804 		= 19
+INTEGER MODEL_IN1804DI		= 20
+INTEGER MODEL_IN1804DO		= 21
+INTEGER MODEL_IN1806 		= 22
+INTEGER MODEL_IN1808 		= 23
 
 DEFINE_VARIABLE
 LONG TLT_COMMS[] 			= { 90000 }
@@ -199,7 +204,10 @@ DEFINE_FUNCTION fnPollFull(){
 			IF(mySwitch.HAS_AUDIO){
 				SWITCH(mySwitch.MODEL_ID){
 					CASE MODEL_MLAVC10:
-					CASE MODEL_IN1604:{
+					CASE MODEL_IN1604:
+					CASE MODEL_IN1804:
+					CASE MODEL_IN1804DI:
+					CASE MODEL_IN1804DO:{
 						fnAddToQueue('V',TRUE)
 						fnAddToQueue('Z',TRUE)
 					}
@@ -208,6 +216,10 @@ DEFINE_FUNCTION fnPollFull(){
 					CASE MODEL_IN1608xi:{
 						fnAddToQueue("$1B,'D1GRPM',$0D",TRUE)
 						fnAddToQueue("$1B,'D2GRPM',$0D",TRUE)
+					}
+					CASE MODEL_IN1806:
+					CASE MODEL_IN1808:{
+						fnAddToQueue("$1B,'D3GRPM',$0D",TRUE)
 						fnAddToQueue("$1B,'D4GRPM',$0D",TRUE)
 					}
 				}
@@ -222,9 +234,14 @@ DEFINE_FUNCTION fnPollShort(){
 			CASE MODEL_IN1606:
 			CASE MODEL_IN1608:
 			CASE MODEL_IN1608xi:
+			CASE MODEL_IN1804:
+			CASE MODEL_IN1804DI:
+			CASE MODEL_IN1804DO:
+			CASE MODEL_IN1806:
+			CASE MODEL_IN1808:
 			CASE MODEL_MPS601:
 			CASE MODEL_MPS602:{
-				fnAddToQueue("$1B,'0LS',$0D",TRUE)
+				fnAddToQueue("$1B,'0LS',$0D",TRUE)//***Note: This may need to be 'OLS' for 1804 Series Scalers, unless it is just a typo in the manual!
 			}
 			CASE MODEL_SW2HD4k:
 			CASE MODEL_SW2HD4kPlus:
@@ -294,7 +311,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 			SELECT{
 				ACTIVE(mySwitch.LAST_SENT == 'N'):{
 					STACK_VAR CHAR PartNo[30]
-					
+
 					PartNo = fnStripCharsRight(DATA.TEXT,2)
 					IF(LEFT_STRING(PartNo,3) == 'Pno'){
 						GET_BUFFER_STRING(PartNo,3)
@@ -313,6 +330,11 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 							CASE '60-1238-51':													// IN1608
 							CASE '60-1238-71':mySwitch.MODEL_ID = MODEL_IN1608			// IN1608
 							CASE '60-1238-81':mySwitch.MODEL_ID = MODEL_IN1608xi		// IN1608xi
+							CASE '60-1699-01':mySwitch.MODEL_ID = MODEL_IN1804			// IN1804
+							CASE '60-1699-02':mySwitch.MODEL_ID = MODEL_IN1804DI		// IN1804DI
+							CASE '60-1699-03':mySwitch.MODEL_ID = MODEL_IN1804DO		// IN1804DO
+							CASE '60-1663-01':mySwitch.MODEL_ID = MODEL_IN1806			// IN1806
+							CASE '60-1615-01':mySwitch.MODEL_ID = MODEL_IN1808			// IN1808
 							CASE '60-1377-01':mySwitch.MODEL_ID = MODEL_MPS601			// MPS601
 							CASE '60-1313-01':mySwitch.MODEL_ID = MODEL_MPS602			// MPS602
 							CASE '60-952-02': mySwitch.MODEL_ID = MODEL_SW2USB			// SW2USB
@@ -334,6 +356,11 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 							CASE MODEL_IN1606:		mySwitch.META_MODEL = 'IN1606'
 							CASE MODEL_IN1608:		mySwitch.META_MODEL = 'IN1608'
 							CASE MODEL_IN1608xi:		mySwitch.META_MODEL = 'IN1608xi'
+							CASE MODEL_IN1804:		mySwitch.META_MODEL = 'IN1804'
+							CASE MODEL_IN1804DI:		mySwitch.META_MODEL = 'IN1804DI'
+							CASE MODEL_IN1804DO:		mySwitch.META_MODEL = 'IN1804DO'
+							CASE MODEL_IN1806:		mySwitch.META_MODEL = 'IN1806'
+							CASE MODEL_IN1808:		mySwitch.META_MODEL = 'IN1808'
 							CASE MODEL_MPS601:		mySwitch.META_MODEL = 'MPS601'
 							CASE MODEL_MPS602:		mySwitch.META_MODEL = 'MPS602'
 							CASE MODEL_SW2USB:		mySwitch.META_MODEL = 'SW2USB'
@@ -350,6 +377,11 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 							DEFAULT:						mySwitch.META_MODEL = 'NOT IMPLEMENTED'
 						}
 						SWITCH(mySwitch.MODEL_ID){
+							CASE MODEL_IN1804:
+							CASE MODEL_IN1804DI:
+							CASE MODEL_IN1804DO:
+							CASE MODEL_IN1806:
+							CASE MODEL_IN1808:
 							CASE MODEL_IN1606:
 							CASE MODEL_IN1608:
 							CASE MODEL_IN1608xi: mySwitch.HAS_NETWORK = TRUE
@@ -360,7 +392,12 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 							CASE MODEL_IN1604:
 							CASE MODEL_IN1606:
 							CASE MODEL_IN1608:
-							CASE MODEL_IN1608xi:{
+							CASE MODEL_IN1608xi:
+							CASE MODEL_IN1804:
+							CASE MODEL_IN1804DI:
+							CASE MODEL_IN1804DO:
+							CASE MODEL_IN1806:
+							CASE MODEL_IN1808:{
 								mySwitch.HAS_AUDIO 	= TRUE
 								SEND_STRING vdvControl, 'RANGE-0,100'
 							}
@@ -510,7 +547,7 @@ DEFINE_FUNCTION fnResetModule(){
 	mySwitch.Tx 					= ''
 	mySwitch.LAST_SENT			= ''
 	mySwitch.DIAG_INT_TEMP 		= ''
-	mySwitch.AUDIO[AUDIO_PRO] = blankGain
+	mySwitch.AUDIO[AUDIO_PRO]  = blankGain
 	mySwitch.AUDIO[AUDIO_MIC]  = blankGain
 	mySwitch.HAS_AUDIO 			= FALSE
 	mySwitch.HAS_NETWORK 		= FALSE
@@ -565,13 +602,54 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 						}
 					}
 				}
-				CASE 'INPUT': fnAddToQueue("DATA.TEXT,'!'",FALSE)
-				CASE 'AINPUT': fnAddToQueue("DATA.TEXT,'$'",FALSE)
-				CASE 'VINPUT': fnAddToQueue("DATA.TEXT,'&'",FALSE)
+				CASE 'INPUT':{
+					SWITCH(mySwitch.MODEL_ID){
+						CASE MODEL_IN1806:
+						CASE MODEL_IN1808:{
+							SWITCH(DATA.TEXT){
+								CASE '0':{
+									fnAddToQueue("'1B'",FALSE)						// Video Mute
+									fnAddToQueue("$1B,'D10*1GRPM',$0D",FALSE)	//Master Audio Mute
+								}
+								DEFAULT:{
+									fnAddToQueue("'0B'",FALSE)						// Video Unmute
+									fnAddToQueue("$1B,'D10*0GRPM',$0D",FALSE)	// Master Audio Unmute
+									fnAddToQueue("DATA.TEXT,'*1!'",FALSE)
+								}
+							}
+						}
+						DEFAULT:{
+							fnAddToQueue("DATA.TEXT,'!'",FALSE)
+						}
+					}
+				}
+				CASE 'AINPUT':{
+					SWITCH(mySwitch.MODEL_ID){
+						CASE MODEL_IN1804:
+						CASE MODEL_IN1804DI:
+						CASE MODEL_IN1804DO:	send_string 0, 'seperate audio switching not supported'
+						CASE MODEL_IN1806:
+						CASE MODEL_IN1808:	fnAddToQueue("DATA.TEXT,'*1$'",FALSE)
+						DEFAULT:					fnAddToQueue("DATA.TEXT,'$'",FALSE)
+					}
+				}
+				CASE 'VINPUT':{
+					SWITCH(mySwitch.MODEL_ID){
+						CASE MODEL_IN1804:
+						CASE MODEL_IN1804DI:
+						CASE MODEL_IN1804DO:	send_string 0, 'seperate video switching not supported'
+						CASE MODEL_IN1806:
+						CASE MODEL_IN1808:	fnAddToQueue("DATA.TEXT,'*1%'",FALSE)
+						DEFAULT:					fnAddToQueue("DATA.TEXT,'&'",FALSE)
+					}
+				}
 				CASE 'VOLUME':{
 					SWITCH(mySwitch.MODEL_ID){
 						CASE MODEL_MLAVC10:
-						CASE MODEL_IN1604:{
+						CASE MODEL_IN1604:
+						CASE MODEL_IN1804:
+						CASE MODEL_IN1804DI:
+						CASE MODEL_IN1804DO:{
 							SWITCH(DATA.TEXT){
 								CASE 'INC':	fnAddToQueue('+V',FALSE)
 								CASE 'DEC':	fnAddToQueue('-V',FALSE)
@@ -602,6 +680,26 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 									VOL = VOL + (ATOI(DATA.TEXT) * 10)
 									IF(!TIMELINE_ACTIVE(TLID_GAIN_00+AUDIO_PRO)){
 										fnAddToQueue("$1B,'D1*',ITOA(VOL),'GRPM',$0D",FALSE)
+										TIMELINE_CREATE(TLID_GAIN_00+AUDIO_PRO,TLT_GAIN,LENGTH_ARRAY(TLT_GAIN),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
+									}
+									ELSE{
+										mySwitch.AUDIO[AUDIO_PRO].LAST_GAIN = VOL
+										mySwitch.AUDIO[AUDIO_PRO].GAIN_PEND = TRUE
+									}
+								}
+							}
+						}
+						CASE MODEL_IN1806:
+						CASE MODEL_IN1808:{
+							SWITCH(DATA.TEXT){
+								CASE 'INC':	fnAddToQueue("$1B,'D3*20+GRPM',$0D",FALSE)
+								CASE 'DEC':	fnAddToQueue("$1B,'D3*20-GRPM',$0D",FALSE)
+								DEFAULT:{
+									SINTEGER VOL
+									VOL = -1000
+									VOL = VOL + (ATOI(DATA.TEXT) * 10)
+									IF(!TIMELINE_ACTIVE(TLID_GAIN_00+AUDIO_PRO)){
+										fnAddToQueue("$1B,'D3*',ITOA(VOL),'GRPM',$0D",FALSE)
 										TIMELINE_CREATE(TLID_GAIN_00+AUDIO_PRO,TLT_GAIN,LENGTH_ARRAY(TLT_GAIN),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 									}
 									ELSE{
@@ -646,7 +744,12 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 					}
 					SWITCH(mySwitch.MODEL_ID){
 						CASE MODEL_MLAVC10:
-						CASE MODEL_IN1604:   fnAddToQueue("ITOA(mySwitch.AUDIO[AUDIO_PRO].MUTE),'Z'",FALSE)
+						CASE MODEL_IN1604:
+						CASE MODEL_IN1804:
+						CASE MODEL_IN1804DI:
+						CASE MODEL_IN1804DO: fnAddToQueue("ITOA(mySwitch.AUDIO[AUDIO_PRO].MUTE),'Z'",FALSE)
+						CASE MODEL_IN1806:
+						CASE MODEL_IN1808:	fnAddToQueue("$1B,'D4*',ITOA(mySwitch.AUDIO[AUDIO_PRO].MUTE),'GRPM',$0D",FALSE)
 						CASE MODEL_IN1606:
 						CASE MODEL_IN1608:
 						CASE MODEL_IN1608xi: fnAddToQueue("$1B,'D2*',ITOA(mySwitch.AUDIO[AUDIO_PRO].MUTE),'GRPM',$0D",FALSE)
@@ -681,7 +784,12 @@ DEFINE_EVENT CHANNEL_EVENT[vdvControl,199]{
 DEFINE_EVENT TIMELINE_EVENT[TLID_GAIN_01]{
 	IF(mySwitch.AUDIO[AUDIO_PRO].GAIN_PEND){
 		SWITCH(mySwitch.MODEL_ID){
-			CASE MODEL_IN1604:   fnAddToQueue("ITOA(mySwitch.AUDIO[AUDIO_PRO].LAST_GAIN),'V'",FALSE)
+			CASE MODEL_IN1604:
+			CASE MODEL_IN1804:   fnAddToQueue("ITOA(mySwitch.AUDIO[AUDIO_PRO].LAST_GAIN),'V'",FALSE)
+			CASE MODEL_IN1804DI:
+			CASE MODEL_IN1804DO:
+			CASE MODEL_IN1806:
+			CASE MODEL_IN1808:   fnAddToQueue("$1B,'D3*',ITOA(mySwitch.AUDIO[AUDIO_PRO].LAST_GAIN),'GRPM',$0D",FALSE)
 			CASE MODEL_IN1606:
 			CASE MODEL_IN1608:
 			CASE MODEL_IN1608xi: fnAddToQueue("$1B,'D1*',ITOA(mySwitch.AUDIO[AUDIO_PRO].LAST_GAIN),'GRPM',$0D",FALSE)

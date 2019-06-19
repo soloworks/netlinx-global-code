@@ -36,8 +36,8 @@ INTEGER STATE_LOGIC		= 3
 DEFINE_TYPE STRUCTURE uBiAmp{
 	(** Comms Variables **)
 	CHAR 		Rx[5000]
-	CHAR 		TxPoll[2500]
-	CHAR 		TxCmd[2500]
+	CHAR 		TxPoll[5000]
+	CHAR 		TxCmd[5000]
 	INTEGER 	DEBUG
 	CHAR		TxPend[500]
 	(** RS232 Properties **)
