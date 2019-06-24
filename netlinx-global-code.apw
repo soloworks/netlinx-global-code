@@ -700,6 +700,10 @@
 <FilePathName>ModulesNetlinx\mYamahaRX.axs</FilePathName>
 <Comments></Comments>
 </File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mZeeVee</Identifier>
+<FilePathName>ModulesNetlinx\mZeeVee.axs</FilePathName>
+<Comments></Comments>
+</File>
 <File CompileType="Netlinx" Type="Module"><Identifier>mZero88ChilliNet</Identifier>
 <FilePathName>ModulesNetlinx\mZero88ChilliNet.axs</FilePathName>
 <Comments></Comments>
