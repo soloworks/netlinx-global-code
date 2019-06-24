@@ -1068,21 +1068,28 @@ DEFINE_PROGRAM{
 												)
 			}
 			CASE OBJ_IO_VOIP:{
+				STACK_VAR INTEGER c
+				STACK_VAR INTEGER CALL_ACTIVE
+				
+				FOR(c = 1; c <= 6; c++){
+					CALL_ACTIVE = CALL_ACTIVE || (
+						myObjects[o].CALLSTATE[c] == 'VOIP_CALL_STATE_INVALID_NUMBER' ||
+						myObjects[o].CALLSTATE[c] == 'VOIP_CALL_STATE_DIALTONE' ||
+						myObjects[o].CALLSTATE[c] == 'VOIP_CALL_STATE_SILENT' ||
+						myObjects[o].CALLSTATE[c] == 'VOIP_CALL_STATE_DIALING' ||
+						myObjects[o].CALLSTATE[c] == 'VOIP_CALL_STATE_RINGBACK' ||
+						myObjects[o].CALLSTATE[c] == 'VOIP_CALL_STATE_BUSY' ||
+						myObjects[o].CALLSTATE[c] == 'VOIP_CALL_STATE_ACTIVE' ||
+						myObjects[o].CALLSTATE[c] == 'VOIP_CALL_STATE_ACTIVE_MUTED' ||
+						myObjects[o].CALLSTATE[c] == 'VOIP_CALL_STATE_ON_HOLD' ||
+						myObjects[o].CALLSTATE[c] == 'VOIP_CALL_STATE_CONF_ACTIVE' ||
+						myObjects[o].CALLSTATE[c] == 'VOIP_CALL_STATE_CONF_HOLD'
+					)
+				}
+				
 				[vdvObjects[o],235] 	= 	( myObjects[o].VAL_STATE[02])
 				[vdvObjects[o],236]	= 	( myObjects[o].CALLSTATE[1] == 'VOIP_CALL_STATE_RINGING' )
-				[vdvObjects[o],238]	= 	(
-													myObjects[o].CALLSTATE[1] == 'VOIP_CALL_STATE_INVALID_NUMBER' ||
-													myObjects[o].CALLSTATE[1] == 'VOIP_CALL_STATE_DIALTONE' ||
-													myObjects[o].CALLSTATE[1] == 'VOIP_CALL_STATE_SILENT' ||
-													myObjects[o].CALLSTATE[1] == 'VOIP_CALL_STATE_DIALING' ||
-													myObjects[o].CALLSTATE[1] == 'VOIP_CALL_STATE_RINGBACK' ||
-													myObjects[o].CALLSTATE[1] == 'VOIP_CALL_STATE_BUSY' ||
-													myObjects[o].CALLSTATE[1] == 'VOIP_CALL_STATE_ACTIVE' ||
-													myObjects[o].CALLSTATE[1] == 'VOIP_CALL_STATE_ACTIVE_MUTED' ||
-													myObjects[o].CALLSTATE[1] == 'VOIP_CALL_STATE_ON_HOLD' ||
-													myObjects[o].CALLSTATE[1] == 'VOIP_CALL_STATE_CONF_ACTIVE' ||
-													myObjects[o].CALLSTATE[1] == 'VOIP_CALL_STATE_CONF_HOLD'
-												)
+				[vdvObjects[o],238]	= 	CALL_ACTIVE
 			}
 		}
 	}
