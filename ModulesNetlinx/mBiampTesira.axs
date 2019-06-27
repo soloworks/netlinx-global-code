@@ -631,7 +631,11 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pFBData[4000]){
 ******************************************************************************/
 DEFINE_FUNCTION fnDebug(INTEGER pLevel, CHAR Msg[], CHAR MsgData[]){
 	IF(myBiAmp.DEBUG >= pLevel)	{
-		SEND_STRING 0:1:0, "ITOA(vdvControl.Number),':',Msg, ':', MsgData"
+		STACK_VAR CHAR pCOPY[5000]
+		pCOPY = MsgData
+		WHILE(LENGTH_ARRAY(pCOPY)){
+			SEND_STRING 0:1:0, "ITOA(vdvControl.Number),':',Msg, ':', GET_BUFFER_STRING(pCOPY,150)"
+		}
 	}
 }
 /******************************************************************************
@@ -957,7 +961,12 @@ DEFINE_EVENT DATA_EVENT[vdvObjects]{
 								fnSendServiceCommand(FALSE,myObjects[o].TAG1,'answer',myObjects[o].INDEX1,myObjects[o].INDEX2,'')
 							}
 							CASE 'HANGUP':{
-								fnSendServiceCommand(FALSE,myObjects[o].TAG1,'end',myObjects[o].INDEX1,myObjects[o].INDEX2,'')
+								fnSendServiceCommand(FALSE,myObjects[o].TAG1,'end',myObjects[o].INDEX1,'1','')
+								fnSendServiceCommand(FALSE,myObjects[o].TAG1,'end',myObjects[o].INDEX1,'2','')
+								fnSendServiceCommand(FALSE,myObjects[o].TAG1,'end',myObjects[o].INDEX1,'3','')
+								fnSendServiceCommand(FALSE,myObjects[o].TAG1,'end',myObjects[o].INDEX1,'4','')
+								fnSendServiceCommand(FALSE,myObjects[o].TAG1,'end',myObjects[o].INDEX1,'5','')
+								fnSendServiceCommand(FALSE,myObjects[o].TAG1,'end',myObjects[o].INDEX1,'6','')
 								myObjects[o].ON_HOOK = TRUE;
 							}
 							DEFAULT:{
