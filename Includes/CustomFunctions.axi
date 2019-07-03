@@ -173,6 +173,10 @@ DEFINE_FUNCTION CHAR[200] fnJSONEncode(CHAR pString[]){
 
 	RETURN pReturn
 }
+
+DEFINE_FUNCTION INTEGER fnCompareSuffix(CHAR pString[], CHAR pSuffix[]){
+	RETURN (LEFT_STRING(pString,LENGTH_ARRAY(pSuffix)) == pSuffix)
+}
 /******************************************************************************
 Functions for Logic Handling
 ******************************************************************************/
