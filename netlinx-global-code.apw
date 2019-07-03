@@ -320,6 +320,10 @@
 <FilePathName>ModulesNetlinx\mEyeVis.axs</FilePathName>
 <Comments></Comments>
 </File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mGreenHippo</Identifier>
+<FilePathName>ModulesNetlinx\mGreenHippo.axs</FilePathName>
+<Comments></Comments>
+</File>
 <File CompileType="Netlinx" Type="Module"><Identifier>mHelvar</Identifier>
 <FilePathName>ModulesNetlinx\mHelvar.axs</FilePathName>
 <Comments></Comments>
