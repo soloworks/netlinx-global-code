@@ -1,4 +1,4 @@
-MODULE_NAME='mZeeVee'(DEV vdvServer, DEV vdvEndPoint[], DEV dvIP)
+MODULE_NAME='mZeeVee'(DEV vdvServer, DEV vdvDevice[], DEV dvIP)
 INCLUDE 'CustomFunctions'
 /******************************************************************************
 	Hushbutton Control Module
@@ -6,22 +6,33 @@ INCLUDE 'CustomFunctions'
 /******************************************************************************
 	Structures
 ******************************************************************************/
-DEFINE_TYPE STRUCTURE uEndPoint{
-	CHAR     NAME[100]
-	CHAR     MAC[17]
+DEFINE_TYPE STRUCTURE uServer{
+	CHAR     HOST_NAME[30]
+	CHAR     VERSION[10]
+	CHAR     MAC_ADDRESS[20]
+	CHAR     SERIAL_NO[20]
+	CHAR     UPTIME[20]
+	CHAR     productID[50]
+}
+DEFINE_TYPE STRUCTURE uDevice{
+	INTEGER  TYPE
 	CHAR     MODEL[25]
-	CHAR     TYPE[25]
-	CHAR     STATE[10]
+	CHAR     MAC[17]
+	CHAR     NAME[30]
+	INTEGER  STATE
 	CHAR     UPTIME[20]
 	FLOAT    TEMPERATURE
 	CHAR     SERIAL_NO[25]
 }
 DEFINE_TYPE STRUCTURE uZeeVee{
 	// Communications
-	CHAR 		RX[2000]						// Receieve Buffer
+	CHAR 		Rx[2000]						// Receieve Buffer
+	CHAR     TxCmd[2000]					// Send Buffer - Commands
+	CHAR     TxQry[2000]					// Send Buffer - Queries
 	INTEGER 	IP_PORT						// Telnet Port 23
 	CHAR		IP_HOST[255]				//
 	INTEGER 	IP_STATE						//
+	INTEGER  RESPONSE_PENDING        // True if waiting on a response
 	INTEGER	DEBUG
 	CHAR 		USERNAME[20]
 	CHAR 		PASSWORD[20]
@@ -29,8 +40,9 @@ DEFINE_TYPE STRUCTURE uZeeVee{
 	CHAR     UPTIME[20]
 	FLOAT    TEMPERATURE
 	CHAR     SERIAL_NO[25]
-	
-	uEndPoint ENDPOINT[250]
+	uServer  SERVER
+	uDevice  DEVICE[250]
+	uDevice  ProcessingDevice
 }
 /******************************************************************************
 	Constants
@@ -50,12 +62,19 @@ INTEGER IP_STATE_CONNECTED		= 3
 INTEGER DEBUG_ERR = 0
 INTEGER DEBUG_STD = 1
 INTEGER DEBUG_DEV = 2
+
+INTEGER DEVICE_TYPE_ENCODER = 1
+INTEGER DEVICE_TYPE_DECODER = 2
+
+INTEGER DEVICE_STATE_UNKNOWN = 0
+INTEGER DEVICE_STATE_DOWN    = 1
+INTEGER DEVICE_STATE_UP      = 2
 /******************************************************************************
 	Variables
 ******************************************************************************/
 DEFINE_VARIABLE
 LONG TLT_COMMS[] 			= { 45000}
-LONG TLT_POLL[] 			= { 10000}
+LONG TLT_POLL[] 			= { 15000}
 LONG TLT_RETRY[]			= {  5000 }
 VOLATILE uZeeVee myZeeVee
 /******************************************************************************
@@ -81,10 +100,31 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(dvIP.port)
 }
-DEFINE_FUNCTION fnSendCommand(CHAR pDATA[]){
-	fnDebug(DEBUG_STD,'->ZV', "pDATA");
-	SEND_STRING dvIP, "pDATA"
+DEFINE_FUNCTION fnAddToQueue(CHAR pDATA[],CHAR IsCmd){
+	SWITCH(IsCmd){
+		CASE TRUE:  myZeeVee.TxCmd = "myZeeVee.TxCmd,pDATA,$0D,$0A"
+		CASE FALSE: myZeeVee.TxQry = "myZeeVee.TxQry,pDATA,$0D,$0A"
+	}
+	fnSendFromQueue()
 	fnInitPoll()
+}
+DEFINE_FUNCTION fnSendFromQueue(){
+	IF(myZeeVee.IP_STATE == IP_STATE_CONNECTED && !myZeeVee.RESPONSE_PENDING){
+		STACK_VAR CHAR toSend[250]
+		SELECT{
+			ACTIVE(LENGTH_ARRAY(myZeeVee.TxCmd)):{
+				toSend = REMOVE_STRING(myZeeVee.TxCmd,"$0D,$0A",1)
+			}
+			ACTIVE(LENGTH_ARRAY(myZeeVee.TxQry)):{
+				toSend = REMOVE_STRING(myZeeVee.TxQry,"$0D,$0A",1)
+			}
+		}
+		IF(LENGTH_ARRAY(toSend)){
+			fnDebug(DEBUG_STD,'->ZV', "toSend");
+			SEND_STRING dvIP, "toSend"
+			myZeeVee.RESPONSE_PENDING = TRUE
+		}
+	}
 }
 /******************************************************************************
 	Helper Functions - Polling
@@ -98,21 +138,20 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_POLL]{
 }
 
 DEFINE_FUNCTION fnPoll(){
-	LOCAL_VAR CHAR syVAL
-	SWITCH(myZeeVee.IP_STATE){
-		CASE IP_STATE_NEGOTIATE: fnSendCommand('*')
-		DEFAULT:{
-			fnSendCommand("ITOA(syVAL),'SYpig'")
-			syVAL++
-		}
-	}
+	fnAddToQueue('show server info',FALSE)
+	fnAddToQueue('show device status encoders',FALSE)
+	fnAddToQueue('show device status decoders',FALSE)
 }
 /******************************************************************************
 	Helper Functions - Debug
 ******************************************************************************/
 DEFINE_FUNCTION fnDebug(INTEGER DEBUG_TYPE,CHAR Msg[], CHAR MsgData[]){
 	IF(myZeeVee.DEBUG >= DEBUG_TYPE){
-		SEND_STRING 0:0:0, "ITOA(vdvServer.Number),':',Msg, ':', MsgData"
+		STACK_VAR CHAR pCOPY[5000]
+		pCOPY = MsgData
+		WHILE(LENGTH_ARRAY(pCOPY)){
+			SEND_STRING 0:0:0, "ITOA(vdvServer.Number),':',Msg, ':', GET_BUFFER_STRING(pCOPY,200)"
+		}
 	}
 }
 /******************************************************************************
@@ -155,24 +194,170 @@ DEFINE_EVENT DATA_EVENT[dvIP]{
 				fnRetryConnection()
 			}
 		}
-		fnDebug(TRUE,"'Midra IP Error:[',myZeeVee.IP_HOST,']'","'[',ITOA(DATA.NUMBER),'][',_MSG,']'")
+		fnDebug(TRUE,"'ZeeVee IP Error:[',myZeeVee.IP_HOST,']'","'[',ITOA(DATA.NUMBER),'][',_MSG,']'")
 	}
 	STRING:{
-		fnDebug(DEBUG_DEV,'MIDRA_RAW->',DATA.TEXT)
+		fnDebug(DEBUG_DEV,'ZV_RAW->',DATA.TEXT)
+		
+		// Telnet Negotiation
+		WHILE(myZeeVee.Rx[1] == $FF && LENGTH_ARRAY(myZeeVee.Rx) >= 3){
+			STACK_VAR CHAR NEG_PACKET[3]
+			NEG_PACKET = GET_BUFFER_STRING(myZeeVee.Rx,3)
+			fnDebug(DEBUG_DEV,'ZV.Telnet->',fnHexToString(NEG_PACKET))
+			SWITCH(NEG_PACKET[2]){
+				CASE $FB:fnDebug(DEBUG_DEV,'ZV.Telnet->','WILL')
+				CASE $FC:fnDebug(DEBUG_DEV,'ZV.Telnet->','WONT')
+				CASE $FD:fnDebug(DEBUG_DEV,'ZV.Telnet->','DO')
+				CASE $FE:fnDebug(DEBUG_DEV,'ZV.Telnet->','DONT')
+			}
+			fnDebug(DEBUG_DEV,'ZV.Telnet->',ITOA(NEG_PACKET[3]))
+			SWITCH(NEG_PACKET[3]){
+				CASE 01:fnDebug(DEBUG_DEV,'ZV.Telnet->','Echo')
+			}
+			SWITCH(NEG_PACKET[2]){
+				CASE $FB:
+				CASE $FC:NEG_PACKET[2] = $FE
+				CASE $FD:
+				CASE $FE:NEG_PACKET[2] = $FC
+			}
+			fnDebug(DEBUG_DEV,'->ZV.Telnet',fnHexToString(NEG_PACKET))
+			SEND_STRING DATA.DEVICE,NEG_PACKET
+		}
+		
+		// Data Communication
 		WHILE(FIND_STRING(myZeeVee.Rx,"$0D,$0A",1)){
 			fnProcessFeedback(fnStripCharsRight(REMOVE_STRING(myZeeVee.Rx,"$0D,$0A",1),2))
+		}	
+		
+		// Connection Established
+		IF(FIND_STRING(myZeeVee.Rx,'Zyper$ ',1)){
+			REMOVE_STRING(myZeeVee.Rx,'Zyper$ ',1)
+			myZeeVee.IP_STATE = IP_STATE_CONNECTED
+			fnSendFromQueue()
 		}
 	}
 }
 /******************************************************************************
 	Feedback
 ******************************************************************************/
-DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
-	fnDebug(DEBUG_STD,'ZV->',pDATA)
-
-	IF(TIMELINE_ACTIVE(TLID_COMMS)){ TIMELINE_KILL(TLID_COMMS) }
-	TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
+DEFINE_FUNCTION fnStoreProcessingDevice(){
+	// Store Device if processing one
+	IF(myZeeVee.ProcessingDevice.TYPE){
+		STACK_VAR INTEGER d
+		STACK_VAR INTEGER Found
+		// Find and Store 
+		fnDebug(DEBUG_DEV,'Storing Device',ITOA(myZeeVee.ProcessingDevice.NAME))
+		FOR(d = 1; d <= LENGTH_ARRAY(vdvDevice); d++){
+			IF(LENGTH_ARRAY(myZeeVee.DEVICE[d].NAME) && myZeeVee.DEVICE[d].NAME == myZeeVee.ProcessingDevice.NAME){
+				myZeeVee.DEVICE[d] = myZeeVee.ProcessingDevice
+				Found = TRUE
+			}
+		}
+		// Report devices we aren't handling
+		IF(!Found){
+			fnDebug(DEBUG_ERR,'Found Unhandled Device:',"myZeeVee.ProcessingDevice.MAC,' (',myZeeVee.ProcessingDevice.NAME,')'")
+		}
+	}
+	// Clear Out Device
+	IF(1){
+		STACK_VAR uDevice blankDevice
+		myZeeVee.ProcessingDevice = blankDevice
+	}
 }
+DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
+	
+	fnDebug(DEBUG_STD,'ZV->',"'[',pDATA,']'")
+
+	SWITCH(pDATA){
+		CASE 'Success':{
+			fnDebug(DEBUG_DEV,'Response Ended',pDATA)
+			// Store Device if processing
+			fnStoreProcessingDevice()
+			// Send next command
+			myZeeVee.RESPONSE_PENDING = FALSE
+			fnSendFromQueue()
+		}
+		DEFAULT:{
+			// Get Line Header
+			STACK_VAR CHAR HEAD[50]
+			HEAD = fnRemoveWhiteSpace(fnStripCharsRight(REMOVE_STRING(pDATA,';',1),1))
+			SELECT{
+				ACTIVE(fnCompareSuffix(HEAD,'server(')):{
+					fnDebug(DEBUG_DEV,'Response Started',HEAD)
+					IF(TIMELINE_ACTIVE(TLID_COMMS)){ TIMELINE_KILL(TLID_COMMS) }
+					TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
+				}
+				ACTIVE(fnCompareSuffix(HEAD,'device(')):{
+					fnDebug(DEBUG_DEV,'Response Started',HEAD)
+					// Store device if processing
+					fnStoreProcessingDevice()
+					// Do new device
+					REMOVE_STRING(HEAD,'(',1)
+					myZeeVee.ProcessingDevice.MAC = fnStripCharsRight(REMOVE_STRING(HEAD,')',1),1)
+				}
+				ACTIVE(1):{
+					fnDebug(DEBUG_DEV,'Response Segment',HEAD)
+					// Process KeyValue Pairs
+					WHILE(LENGTH_ARRAY(pDATA)){
+						STACK_VAR CHAR KEY[30]
+						STACK_VAR CHAR VAL[50]
+						KEY = fnRemoveWhiteSpace(fnStripCharsRight(REMOVE_STRING(pDATA,'=',1),1))
+						IF(FIND_STRING(pDATA,',',1)){
+							VAL = fnRemoveWhiteSpace(fnStripCharsRight(REMOVE_STRING(pDATA,',',1),1))
+						}
+						ELSE{
+							VAL = fnRemoveWhiteSpace(pDATA)
+							pDATA = ''
+						}
+						fnDebug(DEBUG_DEV,'Response Pair',"KEY,'=',VAL")
+						SWITCH(HEAD){
+							CASE 'server.gen':{
+								SWITCH(KEY){
+									CASE 'hostname':     myZeeVee.SERVER.HOST_NAME   = VAL
+									CASE 'macAddress':   myZeeVee.SERVER.MAC_ADDRESS = VAL
+									CASE 'serialNumber': myZeeVee.SERVER.SERIAL_NO   = VAL
+									CASE 'uptime':       myZeeVee.SERVER.UPTIME      = VAL
+									CASE 'version':      myZeeVee.SERVER.VERSION     = VAL
+								}
+							}
+							CASE 'server.license':{
+								SWITCH(KEY){
+									CASE 'productID':    myZeeVee.SERVER.productID   = VAL
+								}
+							}
+							CASE 'device.gen':{
+								SWITCH(KEY){
+									CASE 'type':{
+										SWITCH(VAL){
+											CASE 'encoder':myZeeVee.ProcessingDevice.TYPE = DEVICE_TYPE_ENCODER
+											CASE 'decoder':myZeeVee.ProcessingDevice.TYPE = DEVICE_TYPE_DECODER
+										}
+									}
+									CASE 'state':{
+										SWITCH(VAL){
+											CASE 'Down':myZeeVee.ProcessingDevice.STATE  = DEVICE_STATE_DOWN
+											CASE 'Up':  myZeeVee.ProcessingDevice.STATE  = DEVICE_STATE_UP
+										}
+									}
+									CASE 'model':     myZeeVee.ProcessingDevice.MODEL  = VAL
+									CASE 'name':      myZeeVee.ProcessingDevice.NAME   = VAL
+									CASE 'uptime':    myZeeVee.ProcessingDevice.UPTIME = VAL
+								}
+							}
+							CASE 'device.temperature':{
+								SWITCH(KEY){
+									CASE 'main':		myZeeVee.ProcessingDevice.TEMPERATURE = ATOF(fnStripCharsRight(VAL,1))
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+
 /******************************************************************************
 	Control Events - Server
 ******************************************************************************/
@@ -203,7 +388,7 @@ DEFINE_EVENT DATA_EVENT[vdvServer]{
 				}
 			}
 			CASE 'RAW':{
-				fnSendCommand(DATA.TEXT)
+				fnAddToQueue(DATA.TEXT,TRUE)
 			}
 		}
 	}
@@ -211,30 +396,30 @@ DEFINE_EVENT DATA_EVENT[vdvServer]{
 /******************************************************************************
 	Control Events - Endpoints
 ******************************************************************************/
-DEFINE_EVENT DATA_EVENT[vdvEndpoint]{
+DEFINE_EVENT DATA_EVENT[vdvDevice]{
 	COMMAND:{
 		STACK_VAR INTEGER e
 		STACK_VAR CHAR name[25]
-		e = GET_LAST(vdvEndPoint)
-		name = myZeeVee.ENDPOINT[e].NAME
+		e = GET_LAST(vdvDevice)
+		name = myZeeVee.DEVICE[e].NAME
 		// Enable / Disable Module
 		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
 			CASE 'PROPERTY':{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
 					CASE 'NAME':{
-						myZeeVee.ENDPOINT[e].NAME = DATA.TEXT
+						myZeeVee.DEVICE[e].NAME = DATA.TEXT
 					}
 				}
 			}
 			CASE 'CHAN':{
 				SWITCH(DATA.TEXT){
-					CASE 'INC': fnSendCommand("'channel up ',name")
-					CASE 'DEC': fnSendCommand("'channel down ',name")
-					DEFAULT:    fnSendCommand("'join ',DATA.TEXT,' ',name,' fast-switched'")
+					CASE 'INC': fnAddToQueue("'channel up ',name",TRUE)
+					CASE 'DEC': fnAddToQueue("'channel down ',name",TRUE)
+					DEFAULT:    fnAddToQueue("'join ',DATA.TEXT,' ',name,' fast-switched'",TRUE)
 				}
 			}
 			CASE 'RAW':{
-				fnSendCommand(DATA.TEXT)
+				fnAddToQueue(DATA.TEXT,TRUE)
 			}
 		}
 	}
@@ -243,19 +428,19 @@ DEFINE_EVENT DATA_EVENT[vdvEndpoint]{
 	Feedback
 ******************************************************************************/
 DEFINE_PROGRAM{
-	STACK_VAR INTEGER x
+	STACK_VAR INTEGER d
 	// Endpoints
 	IF(TIMELINE_ACTIVE(TLID_COMMS)){
-		FOR(x = 1; x <= LENGTH_ARRAY(vdvEndPoint); x++){
-			[vdvEndPoint,251] = myZeeVee.ENDPOINT[x].STATE == 'Up'
-			[vdvEndPoint,252] = [vdvEndPoint,251]
+		FOR(d = 1; d <= LENGTH_ARRAY(vdvDevice); d++){
+			[vdvDevice[d],251] = (myZeeVee.DEVICE[d].STATE == DEVICE_STATE_UP)
+			[vdvDevice[d],252] = (myZeeVee.DEVICE[d].STATE == DEVICE_STATE_UP)
 		}
 	}
 	ELSE{
-		[vdvEndPoint,251] = FALSE
-		[vdvEndPoint,252] = FALSE
+		[vdvDevice,251] = FALSE
+		[vdvDevice,252] = FALSE
 	}
-	
+
 	// Server
 	[vdvServer,251] = (TIMELINE_ACTIVE(TLID_COMMS))
 	[vdvServer,252] = (TIMELINE_ACTIVE(TLID_COMMS))
