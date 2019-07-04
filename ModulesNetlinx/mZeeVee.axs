@@ -73,8 +73,8 @@ INTEGER DEVICE_STATE_UP      = 2
 	Variables
 ******************************************************************************/
 DEFINE_VARIABLE
-LONG TLT_COMMS[] 			= { 45000}
-LONG TLT_POLL[] 			= { 15000}
+LONG TLT_COMMS[] 			= { 90000 }
+LONG TLT_POLL[] 			= { 45000 }
 LONG TLT_RETRY[]			= {  5000 }
 VOLATILE uZeeVee myZeeVee
 /******************************************************************************
@@ -117,6 +117,7 @@ DEFINE_FUNCTION fnSendFromQueue(){
 			}
 			ACTIVE(LENGTH_ARRAY(myZeeVee.TxQry)):{
 				toSend = REMOVE_STRING(myZeeVee.TxQry,"$0D,$0A",1)
+				fnDebug(DEBUG_STD,'Sending Query',toSend)
 			}
 		}
 		IF(LENGTH_ARRAY(toSend)){
@@ -270,7 +271,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 
 	SWITCH(pDATA){
 		CASE 'Success':{
-			fnDebug(DEBUG_DEV,'Response Ended',pDATA)
+			fnDebug(DEBUG_STD,'Response Ended',pDATA)
 			// Store Device if processing
 			fnStoreProcessingDevice()
 			// Send next command
