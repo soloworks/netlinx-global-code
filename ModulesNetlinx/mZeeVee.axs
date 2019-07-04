@@ -282,12 +282,12 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 			STACK_VAR CHAR HEAD[50]
 			HEAD = fnRemoveWhiteSpace(fnStripCharsRight(REMOVE_STRING(pDATA,';',1),1))
 			SELECT{
-				ACTIVE(fnCompareSuffix(HEAD,'server(')):{
+				ACTIVE(fnComparePrefix(HEAD,'server(')):{
 					fnDebug(DEBUG_DEV,'Response Started',HEAD)
 					IF(TIMELINE_ACTIVE(TLID_COMMS)){ TIMELINE_KILL(TLID_COMMS) }
 					TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 				}
-				ACTIVE(fnCompareSuffix(HEAD,'device(')):{
+				ACTIVE(fnComparePrefix(HEAD,'device(')):{
 					fnDebug(DEBUG_DEV,'Response Started',HEAD)
 					// Store device if processing
 					fnStoreProcessingDevice()
