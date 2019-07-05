@@ -180,6 +180,10 @@
 <FilePathName>ModulesNetlinx\mBoseESP.axs</FilePathName>
 <Comments></Comments>
 </File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mBrightsign</Identifier>
+<FilePathName>ModulesNetlinx\mBrightsign.axs</FilePathName>
+<Comments></Comments>
+</File>
 <File CompileType="Netlinx" Type="Module"><Identifier>mCanonProj</Identifier>
 <FilePathName>ModulesNetlinx\mCanonProj.axs</FilePathName>
 <Comments></Comments>
