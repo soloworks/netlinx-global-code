@@ -16,7 +16,7 @@ DEFINE_TYPE STRUCTURE uDebug{
 /******************************************************************************
 	Debugging Utlity Functions
 ******************************************************************************/
-DEFINE_FUNCTION fnDebug(uDebug d, INTEGER l, CHAR pMsg[]){
+DEFINE_FUNCTION fnDebug(uDebug d, INTEGER l, CHAR pMsg[10000]){
 	STACK_VAR INTEGER x
 	STACK_VAR CHAR pMsgCopy[10000]
 	pMsgCopy = pMsg
@@ -26,21 +26,6 @@ DEFINE_FUNCTION fnDebug(uDebug d, INTEGER l, CHAR pMsg[]){
 			x++
 		}
 	}
-}
-DEFINE_FUNCTION fnDebugHTTP(uDebug d, INTEGER l, CHAR pData[10000]){
-	STACK_VAR CHAR myData[10000]
-	myData = pData
-	fnDebug(d,DEBUG_DEV,"'fnDebugHTTP Called'")
-	IF(d.log_level >= l){
-
-		WHILE(FIND_STRING(myData,"$0D,$0A,$0D,$0A",1)){
-			fnDebug(d,l,"'HEADER->',REMOVE_STRING(myData,"$0D,$0A",1)")
-		}
-		// Body
-		fnDebug(d,l,"'BODY->',myData")
-
-	}
-	fnDebug(d,DEBUG_DEV,"'fnDebugHTTP Ended'")
 }
 /******************************************************************************
 	EoF
