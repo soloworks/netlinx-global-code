@@ -180,6 +180,10 @@
 <FilePathName>ModulesNetlinx\mBoseESP.axs</FilePathName>
 <Comments></Comments>
 </File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mBrightsign</Identifier>
+<FilePathName>ModulesNetlinx\mBrightsign.axs</FilePathName>
+<Comments></Comments>
+</File>
 <File CompileType="Netlinx" Type="Module"><Identifier>mCanonProj</Identifier>
 <FilePathName>ModulesNetlinx\mCanonProj.axs</FilePathName>
 <Comments></Comments>
@@ -624,10 +628,6 @@
 <FilePathName>ModulesNetlinx\mSonyProj.axs</FilePathName>
 <Comments></Comments>
 </File>
-<File CompileType="Netlinx" Type="Module"><Identifier>mSonyViscaOverIP</Identifier>
-<FilePathName>ModulesNetlinx\mSonyViscaOverIP.axs</FilePathName>
-<Comments></Comments>
-</File>
 <File CompileType="Netlinx" Type="Module"><Identifier>mSoundStructure</Identifier>
 <FilePathName>ModulesNetlinx\mSoundStructure.axs</FilePathName>
 <Comments></Comments>
@@ -686,6 +686,10 @@
 </File>
 <File CompileType="Netlinx" Type="Module"><Identifier>mVbrick</Identifier>
 <FilePathName>ModulesNetlinx\mVbrick.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mViscaOverIP</Identifier>
+<FilePathName>ModulesNetlinx\mViscaOverIP.axs</FilePathName>
 <Comments></Comments>
 </File>
 <File CompileType="Netlinx" Type="Module"><Identifier>mWakeOnLan</Identifier>

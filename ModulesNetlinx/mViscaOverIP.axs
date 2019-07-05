@@ -1,7 +1,7 @@
-MODULE_NAME='mSonyViscaOverIP'(DEV vdvCamera[],DEV ipCAM[], DEV ipFB, DEV ipMC)
+MODULE_NAME='mViscaOverIP'(DEV vdvCamera[],DEV ipCAM[], DEV ipFB, DEV ipMC)
 #INCLUDE 'CustomFunctions'
 /******************************************************************************
-	Sony Visca Over IP
+	Visca Over IP (Developed and tested on Sony)
 
 	For Discovery & Assign:
 	PROPERTY-NETWORK,MAC,IP,SUBNET,GATEWAY
@@ -12,6 +12,8 @@ MODULE_NAME='mSonyViscaOverIP'(DEV vdvCamera[],DEV ipCAM[], DEV ipFB, DEV ipMC)
 
 	Module will set IP address on auto discovery, or set static IP
 ******************************************************************************/
+DEFINE_CONSTANT
+INTEGER QUEUE_LENGTH = 10
 /******************************************************************************
 	Types
 ******************************************************************************/
@@ -21,27 +23,28 @@ DEFINE_TYPE STRUCTURE uCam{
 	CHAR 		IP_HOST[15]
 	CHAR		GATEWAY[30]
 	CHAR		SUBNET[30]
-	INTEGER	SEQUENCE
 	INTEGER  MODE
+	INTEGER	SEQUENCE
+	CHAR     TxLast[10]
+	CHAR     TxCmd[QUEUE_LENGTH][10]
+	CHAR     TxQry[QUEUE_LENGTH][10]
 
 	INTEGER	SPEED_PAN
 	INTEGER	SPEED_TILT
 
 	// Meta
-	INTEGER  VENDOR_ID
 	CHAR     VENDOR[20]
-	INTEGER  MODEL_ID
 	CHAR		MODEL[20]
 
 	// Status
 	INTEGER	POWER
 }
-DEFINE_TYPE STRUCTURE uSonyCams{
+DEFINE_TYPE STRUCTURE uVisca{
 	INTEGER	DEBUG
 	INTEGER	IP_PORT_MC
 	INTEGER	IP_PORT_FB
 
-	uCam		CAMS[5]
+	uCam		CAM[5]
 }
 /******************************************************************************
 	Constants
@@ -76,21 +79,29 @@ LONG TLID_TIMEOUT02	= 32
 LONG TLID_TIMEOUT03	= 33
 LONG TLID_TIMEOUT04	= 34
 LONG TLID_TIMEOUT05	= 35
+
+LONG TLID_SEND00	= 40
+LONG TLID_SEND01	= 41
+LONG TLID_SEND02	= 42
+LONG TLID_SEND03	= 43
+LONG TLID_SEND04	= 44
+LONG TLID_SEND05	= 45
 /******************************************************************************
 	Variables
 ******************************************************************************/
 DEFINE_VARIABLE
-VOLATILE uSonyCams mySonyCams
+VOLATILE uVisca myViscaIP
 
 LONG TLT_POLL_MC[] 	= {  30000 }
 LONG TLT_POLL_FB[] 	= {  15000 }
 LONG TLT_COMMS[]   	= {  90000 }
 LONG TLT_TIMEOUT[]   = {   2000 }
+LONG TLT_SEND[]   	= {    100 }
 /******************************************************************************
 	General Utilities
 ******************************************************************************/
 DEFINE_FUNCTION fnDebug(INTEGER pDEBUG, CHAR Msg[], CHAR MsgData[]){
-	IF(mySonyCams.DEBUG >= pDEBUG){
+	IF(myViscaIP.DEBUG >= pDEBUG){
 		SEND_STRING 0:0:0, "ITOA(vdvCamera[1].Number),':',Msg, ':', MsgData"
 	}
 }
@@ -99,24 +110,24 @@ DEFINE_FUNCTION fnDebug(INTEGER pDEBUG, CHAR Msg[], CHAR MsgData[]){
 ******************************************************************************/
 DEFINE_FUNCTION fnOpenClientConnection(INTEGER pCAM){
 
-	IF(!LENGTH_ARRAY(mySonyCams.CAMS[pCAM].IP_HOST)){
+	IF(!LENGTH_ARRAY(myViscaIP.CAM[pCAM].IP_HOST)){
 		fnDebug(DEBUG_ERR,"'SONY CAM',FORMAT('%02d',pCAM),' ERROR'",'IP ADDRESS NOT CONFIGURED')
 		RETURN
 	}
 	
-	IF(mySonyCams.CAMS[pCAM].MODE == MODE_AUTO){
-		IF(!LENGTH_ARRAY(mySonyCams.CAMS[pCAM].MAC_ADD)){
+	IF(myViscaIP.CAM[pCAM].MODE == MODE_AUTO){
+		IF(!LENGTH_ARRAY(myViscaIP.CAM[pCAM].MAC_ADD)){
 			fnDebug(DEBUG_ERR,"'SONY CAM',FORMAT('%02d',pCAM),' ERROR'",'MAC ADDRESS NOT CONFIGURED')
 			RETURN
 		}
 
 
-		IF(!LENGTH_ARRAY(mySonyCams.CAMS[pCAM].SUBNET)){
+		IF(!LENGTH_ARRAY(myViscaIP.CAM[pCAM].SUBNET)){
 			fnDebug(DEBUG_ERR,"'SONY CAM',FORMAT('%02d',pCAM),' ERROR'",'IP SUBNET NOT CONFIGURED')
 			RETURN
 		}
 
-		IF(!LENGTH_ARRAY(mySonyCams.CAMS[pCAM].GATEWAY)){
+		IF(!LENGTH_ARRAY(myViscaIP.CAM[pCAM].GATEWAY)){
 			fnDebug(DEBUG_ERR,"'SONY CAM',FORMAT('%02d',pCAM),' ERROR'",'IP GATEWAY NOT CONFIGURED')
 			RETURN
 		}
@@ -124,7 +135,7 @@ DEFINE_FUNCTION fnOpenClientConnection(INTEGER pCAM){
 
 	// Start Unicast Client
 	fnDebug(DEBUG_DEV,'DEFINE_START','Opening UDP Client (Unicast UDP 2WAY)')
-	IP_CLIENT_OPEN(ipCAM[pCAM].PORT,mySonyCams.CAMS[pCAM].IP_HOST,mySonyCams.IP_PORT_FB,IP_UDP_2WAY)
+	IP_CLIENT_OPEN(ipCAM[pCAM].PORT,myViscaIP.CAM[pCAM].IP_HOST,myViscaIP.IP_PORT_FB,IP_UDP_2WAY)
 
 }
 
@@ -132,24 +143,77 @@ DEFINE_FUNCTION fnCloseConnection(INTEGER pCAM){
 	IP_CLIENT_CLOSE(ipCAM[pCAM].PORT)
 }
 
-DEFINE_FUNCTION fnSendQuery(INTEGER pCAM, CHAR pDATA[]){
-	pDATA = "$01,$10,$00,$02+LENGTH_ARRAY(pDATA),$00,$00,$00,mySonyCams.CAMS[pCAM].SEQUENCE,$81,pDATA,$FF"
-	fnDebug(DEBUG_DEV,"'->CAM',FORMAT('%02d',pCAM)",fnBytesToString(pDATA))
-	// Send Command to Device
-	SEND_STRING ipCAM[pCAM],pDATA
-	mySonyCams.CAMS[pCAM].SEQUENCE++
-	fnInitTimeoutSequence(pCAM)
+DEFINE_FUNCTION fnAddToQueue(INTEGER pCAM,CHAR pData[],INTEGER isQuery){
+	STACK_VAR INTEGER x
+	fnDebug(DEBUG_STD,'pData Length',LENGTH_ARRAY(pData))
+	fnDebug(DEBUG_STD,'pData Value',pData)
+	fnDebug(DEBUG_STD,'pData Length',LENGTH_ARRAY(pData))
+	
+	SWITCH(isQuery){
+		CASE TRUE:{
+			FOR(x = 1; x <= QUEUE_LENGTH; x++){
+				IF(myViscaIP.CAM[pCAM].TxQry[x] == ''){
+					myViscaIP.CAM[pCAM].TxQry[x] = pDATA
+					BREAK
+				}
+				
+			}
+		}
+		CASE FALSE:{
+			FOR(x = 1; x <= QUEUE_LENGTH; x++){
+				IF(myViscaIP.CAM[pCAM].TxCmd[x] == ''){
+					myViscaIP.CAM[pCAM].TxCmd[x] = pDATA
+					BREAK
+				}
+			}
+		}
+	}
+	fnSendFromQueue(pCAM)
 }
-DEFINE_FUNCTION fnSendCommand(INTEGER pCAM, CHAR pDATA[]){
-	// Build command
-	pDATA = "$01,$10,$00,$02+LENGTH_ARRAY(pDATA),$00,$00,$00,mySonyCams.CAMS[pCAM].SEQUENCE,$81,pDATA,$FF"
-	fnDebug(DEBUG_DEV,"'->CAM',FORMAT('%02d',pCAM)",fnBytesToString(pDATA))
-	// Send Command to Device
-	SEND_STRING ipCAM[pCAM],pDATA
-	mySonyCams.CAMS[pCAM].SEQUENCE++
-	fnInitTimeoutSequence(pCAM)
-	fnInitPoll_FB(pCAM)
+
+DEFINE_FUNCTION fnSendFromQueue(INTEGER pCAM){
+	IF(!TIMELINE_ACTIVE(TLID_SEND00+pCAM)){
+		STACK_VAR CHAR pDATA[50]
+		STACK_VAR INTEGER x
+		SELECT{
+			ACTIVE(LENGTH_ARRAY(myViscaIP.CAM[pCAM].TxQry[1])):{
+				pDATA = myViscaIP.CAM[pCAM].TxQry[1]
+				FOR(x = 1; x < QUEUE_LENGTH; x++){
+					myViscaIP.CAM[pCAM].TxQry[x] = myViscaIP.CAM[pCAM].TxQry[x+1]
+				}
+				myViscaIP.CAM[pCAM].TxQry[QUEUE_LENGTH] = ''
+			}
+			ACTIVE(LENGTH_ARRAY(myViscaIP.CAM[pCAM].TxCmd[1])):{
+				pDATA = myViscaIP.CAM[pCAM].TxCmd[1]
+				FOR(x = 1; x < QUEUE_LENGTH; x++){
+					myViscaIP.CAM[pCAM].TxCmd[x] = myViscaIP.CAM[pCAM].TxCmd[x+1]
+				}
+				myViscaIP.CAM[pCAM].TxCmd[QUEUE_LENGTH] = ''
+			}
+		}
+		IF(LENGTH_ARRAY(pDATA)){
+			STACK_VAR CHAR toSend[200]
+			myViscaIP.CAM[pCAM].SEQUENCE++
+			myViscaIP.CAM[pCAm].TxLast = pDATA
+			toSend = "$01,$10,$00,$02+LENGTH_ARRAY(pDATA),$00,$00,$00,myViscaIP.CAM[pCAM].SEQUENCE,$81,pDATA,$FF"
+			SEND_STRING ipCAM[pCAM],toSend
+			fnDebug(DEBUG_STD,"'->CAM',FORMAT('%02d',pCAM)",fnBytesToString(toSend))
+			fnInitTimeoutSequence(pCAM)
+			fnInitPoll_FB(pCAM)
+			TIMELINE_CREATE(TLID_SEND00+pCAM,TLT_SEND,LENGTH_ARRAY(TLT_SEND),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
+		}
+	}
 }
+
+DEFINE_EVENT
+TIMELINE_EVENT[TLID_SEND01]
+TIMELINE_EVENT[TLID_SEND02]
+TIMELINE_EVENT[TLID_SEND03]
+TIMELINE_EVENT[TLID_SEND04]
+TIMELINE_EVENT[TLID_SEND05]{
+	fnSendFromQueue(TIMELINE.ID-TLID_SEND00)
+}
+
 /******************************************************************************
 	Polling Utilities
 ******************************************************************************/
@@ -170,13 +234,13 @@ TIMELINE_EVENT[TLID_POLL_FB_05]{
 }
 DEFINE_FUNCTION fnPoll_FB(INTEGER pCAM){
 	// Poll out
-	IF(mySonyCams.CAMS[pCam].VENDOR_ID){
-		fnSendCommand(pCAM,"$09,$00,$02")	// Vesion Enquiry
+	IF(myViscaIP.CAM[pCam].VENDOR = ''){
+		fnAddToQueue(pCAM,"$09,$00,$02",TRUE)	// Vesion Enquiry
 	}
 	ELSE{
-		fnSendCommand(pCAM,"$09,$04,$00")	// Power State Enquiry
-		fnSendCommand(pCAM,"$09,$06,$12")	// PanTilt Pos Enquiry
-		fnSendCommand(pCAM,"$09,$04,$47")	// Zoom Pos Enquiry
+		fnAddToQueue(pCAM,"$09,$04,$00",TRUE)	// Power State Enquiry
+		fnAddToQueue(pCAM,"$09,$06,$12",TRUE)	// PanTilt Pos Enquiry
+		fnAddToQueue(pCAM,"$09,$04,$47",TRUE)		// Zoom Pos Enquiry
 	}
 }
 
@@ -213,9 +277,9 @@ TIMELINE_EVENT[TLID_TIMEOUT05]{
 	STACK_VAR INTEGER pCAM
 	pCAM = TIMELINE.ID - TLID_TIMEOUT00
 	toSend = "$02,$00,$00,$01,$00,$00,$00,$01,$01"
-	fnDebug(DEBUG_DEV,"'->CAM',FORMAT('%02d',pCAM)",fnBytesToString(toSend))
+	fnDebug(DEBUG_STD,"'->CAM',FORMAT('%02d',pCAM)",fnBytesToString(toSend))
 	SEND_STRING ipCAM[pCAM],toSend
-	mySonyCams.CAMS[pCAM].SEQUENCE = 1
+	myViscaIP.CAM[pCAM].SEQUENCE = 0
 }
 /******************************************************************************
 	Feedback Handlers
@@ -246,7 +310,7 @@ DEFINE_FUNCTION fnProcessMulticast(CHAR pDATA[]){
 				STACK_VAR INTEGER x
 				// Camera Configured
 				FOR(x = 1; x <= LENGTH_ARRAY(vdvCamera); x++){
-					IF(pCHUNK == mySonyCams.CAMS[x].MAC_ADD){
+					IF(pCHUNK == myViscaIP.CAM[x].MAC_ADD){
 						fnDebug(DEBUG_STD,"'Camera ',ITOA(x)",'Configured')
 					}
 				}
@@ -267,16 +331,16 @@ DEFINE_FUNCTION fnProcessMulticast(CHAR pDATA[]){
 		STACK_VAR INTEGER x
 		fnDebug(DEBUG_DEV,'fnProcessMulticast()','INFO == network')
 		FOR(x = 1; x <= LENGTH_ARRAY(vdvCamera); x++){
-			IF(MAC_ADD == mySonyCams.CAMS[x].MAC_ADD){
+			IF(MAC_ADD == myViscaIP.CAM[x].MAC_ADD){
 				fnDebug(DEBUG_DEV,'fnProcessMulticast()','MAC_ADD == myCamera.MAC_ADD')
 
-				IF(IP_HOST != mySonyCams.CAMS[x].IP_HOST || SUBNET != mySonyCams.CAMS[x].SUBNET || GATEWAY != mySonyCams.CAMS[x].GATEWAY){
+				IF(IP_HOST != myViscaIP.CAM[x].IP_HOST || SUBNET != myViscaIP.CAM[x].SUBNET || GATEWAY != myViscaIP.CAM[x].GATEWAY){
 					STACK_VAR CHAR pSetNetwork[255]
 					fnDebug(DEBUG_DEV,'fnProcessMulticast()','Configure Network Settings')
-					pSetNetwork = "'MAC:',mySonyCams.CAMS[x].MAC_ADD,$FF"
-					pSetNetwork = "pSetNetwork,'IPADR:',mySonyCams.CAMS[x].IP_HOST,$FF"
-					pSetNetwork = "pSetNetwork,'MASK:',mySonyCams.CAMS[x].SUBNET,$FF"
-					pSetNetwork = "pSetNetwork,'GATEWAY:',mySonyCams.CAMS[x].GATEWAY,$FF"
+					pSetNetwork = "'MAC:',myViscaIP.CAM[x].MAC_ADD,$FF"
+					pSetNetwork = "pSetNetwork,'IPADR:',myViscaIP.CAM[x].IP_HOST,$FF"
+					pSetNetwork = "pSetNetwork,'MASK:',myViscaIP.CAM[x].SUBNET,$FF"
+					pSetNetwork = "pSetNetwork,'GATEWAY:',myViscaIP.CAM[x].GATEWAY,$FF"
 					pSetNetwork = "pSetNetwork,'NAME:',NAME,$FF"
 					pSetNetwork = "$02,pSetNetwork,$03"
 					fnDebug(DEBUG_DEV,'->CAMMC',pSetNetwork)
@@ -302,48 +366,66 @@ DEFINE_FUNCTION fnProcessUnicast(INTEGER pCam,CHAR pDATA[]){
 		fnDebug(DEBUG_DEV,"'fnProcessUnicast() PAYLOAD_TYPE'",fnBytesToString(PAYLOAD_TYPE))
 		// Get Visca Payload Type
 		SWITCH(fnBytesToString(PAYLOAD_TYPE)){
-			CASE '$02,$01':{}
+			CASE '$02,$01':{
+				fnDebug(DEBUG_DEV,"'Control Reply'",fnBytesToString(pDATA))
+				// Control Reply
+			}
 			CASE '$01,$11':{
-				fnDebug(DEBUG_DEV,"'fnProcessUnicast() Visca Reply'",fnBytesToString(pDATA))
-				GET_BUFFER_STRING(pDATA,2)	// Eat Length Values
-				GET_BUFFER_STRING(pDATA,4)	// Eat Sequence Number
-				pDATA = fnStripCharsRight(pDATA,1)
-				// Actual Response is here
-				GET_BUFFER_CHAR(pDATA)	// Address (Locked)
-				SWITCH(GET_BUFFER_CHAR(pDATA)){
-					CASE $50:{	// VersionInq
-						STACK_VAR INTEGER VENDOR_ID
-						STACK_VAR INTEGER MODEL_ID
-						fnDebug(DEBUG_DEV,"'fnProcessUnicast() VersionInq Reply'",fnBytesToString(pDATA))
+				STACK_VAR INTEGER LEN
+				STACK_VAR INTEGER SEQ
+				STACK_VAR INTEGER ADD
+				
+				fnDebug(DEBUG_DEV,"'Visca Reply Data'",fnBytesToString(pDATA))
+				// Extract and calculate Length
+				LEN = GET_BUFFER_CHAR(pDATA)*GET_BUFFER_CHAR(pDATA)
+				fnDebug(DEBUG_DEV,"'Visca Reply Len '",ITOA(LEN))
+				// Extract and calculate Sequence
+				SEQ = GET_BUFFER_CHAR(pDATA)*GET_BUFFER_CHAR(pDATA)*GET_BUFFER_CHAR(pDATA)*GET_BUFFER_CHAR(pDATA)
+				fnDebug(DEBUG_DEV,"'Visca Reply Seq '",ITOA(SEQ))
+				// Extract the Address
+				ADD = GET_BUFFER_CHAR(pDATA)
+				fnDebug(DEBUG_DEV,"'Visca Reply Add '",ITOA(ADD))
+				
+				// Remove Return Marker char (these are standard matched on command/query
+				GET_BUFFER_STRING(pDATA,1)
+				// Remove the end $FF
+				SET_LENGTH_ARRAY(pDATA,LENGTH_ARRAY(pDATA)-1)
+				
+				// Process Response based on last sent 
+				SELECT{
+					ACTIVE("$09,$00,$02" == myViscaIP.CAM[pCAM].TxLast):{	// VersionInq
+						STACK_VAR CHAR VENDOR_ID[2]
+						STACK_VAR CHAR MODEL_CODE[2]
+						fnDebug(DEBUG_DEV,"'Visca VersionInq Reply'",fnBytesToString(pDATA))
 
-						VENDOR_ID = (GET_BUFFER_CHAR(pDATA) * 256) + GET_BUFFER_CHAR(pDATA)	// Vender ID
-						MODEL_ID  = (GET_BUFFER_CHAR(pDATA) * 256) + GET_BUFFER_CHAR(pDATA)	// Model ID
+						VENDOR_ID   = GET_BUFFER_STRING(pDATA,2)
+						MODEL_CODE  = GET_BUFFER_STRING(pDATA,2)
 
-						IF(mySonyCams.CAMS[pCam].VENDOR_ID != VENDOR_ID){
-
-							mySonyCams.CAMS[pCam].VENDOR_ID =  VENDOR_ID
-							mySonyCams.CAMS[pCam].MODEL_ID  =  MODEL_ID
-
-							SEND_STRING vdvCamera[pCam],'PROPERTY-META,TYPE,Camera'
-
-							SWITCH(VENDOR_ID){
-								CASE 1:{	// Sony
-
-									mySonyCams.CAMS[pCam].VENDOR = 'Sony'
-
-									SWITCH(MODEL_ID){
-										CASE 1299:{	// SRG-300H
-											mySonyCams.CAMS[pCam].MODEL = 'SRG-300H'
+						IF(myViscaIP.CAM[pCam].VENDOR = ''){
+							SELECT{
+								ACTIVE(VENDOR_ID == "$00,$01"):{	// Sony
+									myViscaIP.CAM[pCam].VENDOR = 'Sony'
+									SELECT{
+										ACTIVE(MODEL_CODE == "$05,$13"):{	// SRG-300H
+											myViscaIP.CAM[pCam].MODEL = 'SRG-300H'
+										}
+										ACTIVE(MODEL_CODE == "$05,$19"):{	// BRC-X1000
+											myViscaIP.CAM[pCam].MODEL = 'BRC-X1000'
 										}
 									}
 								}
+								ACTIVE(1):{
+									myViscaIP.CAM[pCam].VENDOR = "'Unknown: ',fnHexToString(VENDOR_ID)"
+									myViscaIP.CAM[pCam].MODEL = "'Unknown: ',fnHexToString(MODEL_CODE)"
+								}
 							}
-
-							SEND_STRING vdvCamera[pCam],"'PROPERTY-META,MAKE,',mySonyCams.CAMS[pCAM].VENDOR"
-							SEND_STRING vdvCamera[pCam],"'PROPERTY-META,MODEL,',mySonyCams.CAMS[pCAM].MODEL"
-
+							SEND_STRING vdvCamera[pCam], 'PROPERTY-META,TYPE,Camera'
+							SEND_STRING vdvCamera[pCam],"'PROPERTY-META,MAKE,',myViscaIP.CAM[pCAM].VENDOR"
+							SEND_STRING vdvCamera[pCam],"'PROPERTY-META,MODEL,',myViscaIP.CAM[pCAM].MODEL"
 						}
-						
+					}
+					ACTIVE("$09,$04,$00" == myViscaIP.CAM[pCAM].TxLast):{	// Power Query
+						myViscaIP.CAM[pCAM].POWER = pDATA[1] == 02
 						IF(TIMELINE_ACTIVE(TLID_COMMS00+pCam)){TIMELINE_KILL(TLID_COMMS00+pCam)}
 						TIMELINE_CREATE(TLID_COMMS00+pCam,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 					}
@@ -358,7 +440,7 @@ DEFINE_FUNCTION fnProcessUnicast(INTEGER pCam,CHAR pDATA[]){
 DEFINE_EVENT DATA_EVENT[ipCAM]{
 	ONLINE:{
 		fnDebug(DEBUG_DEV,"'DATA_EVENT[ipCAM',FORMAT('%02d',GET_LAST(ipCam)),']'",'ONLINE')
-		mySonyCams.CAMS[GET_LAST(ipCAM)].CONN_ONLINE = TRUE
+		myViscaIP.CAM[GET_LAST(ipCAM)].CONN_ONLINE = TRUE
 		fnPoll_FB(GET_LAST(ipCAM))
 		fnInitPoll_FB(GET_LAST(ipCAM))
 	}
@@ -367,7 +449,7 @@ DEFINE_EVENT DATA_EVENT[ipCAM]{
 	}
 	OFFLINE:{
 		fnDebug(DEBUG_DEV,"'DATA_EVENT[ipCAM',FORMAT('%02d',GET_LAST(ipCam)),']'",'OFFLINE')
-		mySonyCams.CAMS[GET_LAST(ipCAM)].CONN_ONLINE = FALSE
+		myViscaIP.CAM[GET_LAST(ipCAM)].CONN_ONLINE = FALSE
 		fnOpenClientConnection(GET_LAST(ipCam))
 	}
 }
@@ -388,7 +470,7 @@ DEFINE_EVENT DATA_EVENT[ipFB]{
 		REMOVE_STRING(pIP,':',1)
 		REMOVE_STRING(pIP,':',1)
 		FOR(x =1 ; x<=LENGTH_ARRAY(vdvCamera);x++){
-			IF(mySonyCams.CAMS[x].IP_HOST == pIP){
+			IF(myViscaIP.CAM[x].IP_HOST == pIP){
 				fnProcessUnicast(x,DATA.TEXT)
 			}
 		}
@@ -416,13 +498,13 @@ DEFINE_EVENT DATA_EVENT[ipMC]{
 ******************************************************************************/
 DEFINE_EVENT DATA_EVENT[vdvCamera]{
 	ONLINE:{
-		IF(!mySonyCams.CAMS[GET_LAST(vdvCamera)].SPEED_PAN){
-			mySonyCams.CAMS[GET_LAST(vdvCamera)].SPEED_PAN = $08
+		IF(!myViscaIP.CAM[GET_LAST(vdvCamera)].SPEED_PAN){
+			myViscaIP.CAM[GET_LAST(vdvCamera)].SPEED_PAN = $08
 		}
-		IF(!mySonyCams.CAMS[GET_LAST(vdvCamera)].SPEED_TILT){
-			mySonyCams.CAMS[GET_LAST(vdvCamera)].SPEED_TILT = $08
+		IF(!myViscaIP.CAM[GET_LAST(vdvCamera)].SPEED_TILT){
+			myViscaIP.CAM[GET_LAST(vdvCamera)].SPEED_TILT = $08
 		}
-		mySonyCams.CAMS[GET_LAST(vdvCamera)].SEQUENCE = 1
+		myViscaIP.CAM[GET_LAST(vdvCamera)].SEQUENCE = 1
 	}
 	COMMAND:{
 		STACK_VAR INTEGER pCAM
@@ -435,30 +517,30 @@ DEFINE_EVENT DATA_EVENT[vdvCamera]{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
 					CASE 'DEBUG':{
 						SWITCH(DATA.TEXT){
-							CASE 'TRUE':mySonyCams.DEBUG = DEBUG_STD
-							CASE 'DEV':	mySonyCams.DEBUG = DEBUG_DEV
-							DEFAULT:		mySonyCams.DEBUG = DEBUG_ERR
+							CASE 'TRUE':myViscaIP.DEBUG = DEBUG_STD
+							CASE 'DEV':	myViscaIP.DEBUG = DEBUG_DEV
+							DEFAULT:		myViscaIP.DEBUG = DEBUG_ERR
 						}
 					}
 					CASE 'MODE':{
 						SWITCH(DATA.TEXT){
-							CASE 'STATIC': mySonyCams.CAMS[pCAM].MODE = MODE_STATIC
-							DEFAULT:       mySonyCams.CAMS[pCAM].MODE = MODE_AUTO
+							CASE 'STATIC': myViscaIP.CAM[pCAM].MODE = MODE_STATIC
+							DEFAULT:       myViscaIP.CAM[pCAM].MODE = MODE_AUTO
 						}
 					}
 					CASE 'IP':{
-						mySonyCams.CAMS[pCAM].IP_HOST = DATA.TEXT
-						SWITCH(mySonyCams.CAMS[pCAM].CONN_ONLINE){
+						myViscaIP.CAM[pCAM].IP_HOST = DATA.TEXT
+						SWITCH(myViscaIP.CAM[pCAM].CONN_ONLINE){
 							CASE TRUE: 	fnCloseConnection(pCam)
 							CASE FALSE:	fnOpenClientConnection(pCam)
 						}
 					}
 					CASE 'NETWORK':{
-						mySonyCams.CAMS[pCAM].MAC_ADD 	= fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)
-						mySonyCams.CAMS[pCAM].IP_HOST 	= fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)
-						mySonyCams.CAMS[pCAM].SUBNET 		= fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)
-						mySonyCams.CAMS[pCAM].GATEWAY 	= DATA.TEXT
-						SWITCH(mySonyCams.CAMS[pCAM].CONN_ONLINE){
+						myViscaIP.CAM[pCAM].MAC_ADD 	= fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)
+						myViscaIP.CAM[pCAM].IP_HOST 	= fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)
+						myViscaIP.CAM[pCAM].SUBNET 		= fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)
+						myViscaIP.CAM[pCAM].GATEWAY 	= DATA.TEXT
+						SWITCH(myViscaIP.CAM[pCAM].CONN_ONLINE){
 							CASE TRUE: 	fnCloseConnection(pCam)
 							CASE FALSE:	fnOpenClientConnection(pCam)
 						}
@@ -467,35 +549,35 @@ DEFINE_EVENT DATA_EVENT[vdvCamera]{
 			}
 			CASE 'PRESET':{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
-					CASE 'RECALL':fnSendCommand(pCAM,"$01,$04,$3F,$02,ATOI(DATA.TEXT)-1")
-					CASE 'STORE': fnSendCommand(pCAM,"$01,$04,$3F,$01,ATOI(DATA.TEXT)-1")
+					CASE 'RECALL':fnAddToQueue(pCAM,"$01,$04,$3F,$02,ATOI(DATA.TEXT)-1",FALSE)
+					CASE 'STORE': fnAddToQueue(pCAM,"$01,$04,$3F,$01,ATOI(DATA.TEXT)-1",FALSE)
 				}
 			}
 			CASE 'CONTROL':{
 				STACK_VAR INTEGER x
 				STACK_VAR INTEGER y
-				x = mySonyCams.CAMS[pCAM].SPEED_PAN
-				y = mySonyCams.CAMS[pCAM].SPEED_TILT
+				x = myViscaIP.CAM[pCAM].SPEED_PAN
+				y = myViscaIP.CAM[pCAM].SPEED_TILT
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
 					CASE 'PAN':{
 						SWITCH(DATA.TEXT){
-							CASE 'LEFT':	fnSendCommand(pCAM,"$01,$06,$01,x,y,$01,$03")
-							CASE 'RIGHT':	fnSendCommand(pCAM,"$01,$06,$01,x,y,$02,$03")
-							CASE 'STOP':	fnSendCommand(pCAM,"$01,$06,$01,x,y,$03,$03")
+							CASE 'LEFT':	fnAddToQueue(pCAM,"$01,$06,$01,x,y,$01,$03",FALSE)
+							CASE 'RIGHT':	fnAddToQueue(pCAM,"$01,$06,$01,x,y,$02,$03",FALSE)
+							CASE 'STOP':	fnAddToQueue(pCAM,"$01,$06,$01,x,y,$03,$03",FALSE)
 						}
 					}
 					CASE 'TILT':{
 						SWITCH(DATA.TEXT){
-							CASE 'UP':	fnSendCommand(pCAM,"$01,$06,$01,x,y,$03,$01")
-							CASE 'DOWN':fnSendCommand(pCAM,"$01,$06,$01,x,y,$03,$02")
-							CASE 'STOP':fnSendCommand(pCAM,"$01,$06,$01,x,y,$03,$03")
+							CASE 'UP':	fnAddToQueue(pCAM,"$01,$06,$01,x,y,$03,$01",FALSE)
+							CASE 'DOWN':fnAddToQueue(pCAM,"$01,$06,$01,x,y,$03,$02",FALSE)
+							CASE 'STOP':fnAddToQueue(pCAM,"$01,$06,$01,x,y,$03,$03",FALSE)
 						}
 					}
 					CASE 'ZOOM':{
 						SWITCH(DATA.TEXT){
-							CASE 'IN':  fnSendCommand(pCAM,"$01,$04,$07,$02")
-							CASE 'OUT': fnSendCommand(pCAM,"$01,$04,$07,$03")
-							CASE 'STOP':fnSendCommand(pCAM,"$01,$04,$07,$00")
+							CASE 'IN':  fnAddToQueue(pCAM,"$01,$04,$07,$02",FALSE)
+							CASE 'OUT': fnAddToQueue(pCAM,"$01,$04,$07,$03",FALSE)
+							CASE 'STOP':fnAddToQueue(pCAM,"$01,$04,$07,$00",FALSE)
 						}
 					}
 				}
@@ -508,14 +590,14 @@ DEFINE_EVENT DATA_EVENT[vdvCamera]{
 ******************************************************************************/
 DEFINE_START{
 	// Set Default Ports
-	mySonyCams.IP_PORT_MC = 52380
-	mySonyCams.IP_PORT_FB = 52381
+	myViscaIP.IP_PORT_MC = 52380
+	myViscaIP.IP_PORT_FB = 52381
 	// Start Multicast Client/Server
 	fnDebug(DEBUG_DEV,'DEFINE_START','Opening UDP Client (Multicast UDP 2WAY)')
-	IP_CLIENT_OPEN(ipMC.PORT,'255.255.255.255',mySonyCams.IP_PORT_MC,IP_UDP_2WAY)
+	IP_CLIENT_OPEN(ipMC.PORT,'255.255.255.255',myViscaIP.IP_PORT_MC,IP_UDP_2WAY)
 	// Start Feedback Server
 	fnDebug(DEBUG_DEV,'DEFINE_START','Opening UDP Server (Feedback)')
-	IP_SERVER_OPEN(ipFB.PORT,mySonyCams.IP_PORT_FB,IP_UDP)
+	IP_SERVER_OPEN(ipFB.PORT,myViscaIP.IP_PORT_FB,IP_UDP)
 
 }
 /******************************************************************************
