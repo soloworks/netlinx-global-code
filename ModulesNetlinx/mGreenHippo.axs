@@ -27,6 +27,7 @@ DEFINE_TYPE STRUCTURE uHippo{
 	INTEGER 	IP_PORT						// Telnet Port 23
 	CHAR		IP_HOST[255]				//
 	INTEGER 	IP_STATE						//
+	CHAR     StatusPinTrigger[50]		// Name of 
 	INTEGER	DEBUG
 	uServer  SERVER
 }
@@ -36,6 +37,7 @@ DEFINE_TYPE STRUCTURE uHippo{
 DEFINE_CONSTANT
 LONG TLID_COMMS 	= 1
 LONG TLID_POLL	 	= 2
+LONG TLID_TIMEOUT	= 3
 
 // IP States
 INTEGER IP_STATE_OFFLINE		= 0
@@ -53,6 +55,7 @@ INTEGER DEBUG_DEV = 2
 DEFINE_VARIABLE
 LONG TLT_COMMS[] 			= { 45000}
 LONG TLT_POLL[] 			= { 15000}
+LONG TLT_TIMEOUT[] 		= {  5000}
 VOLATILE uHippo myHippo
 
 /******************************************************************************
@@ -60,10 +63,10 @@ VOLATILE uHippo myHippo
 ******************************************************************************/
 DEFINE_FUNCTION fnOpenTCPConnection(){
 	IF(myHippo.IP_HOST == ''){
-		fnDebug(DEBUG_ERR,'ZeeVee IP','Not Set')
+		fnDebug(DEBUG_ERR,'Hippo IP','Not Set')
 	}
 	ELSE{
-		fnDebug(DEBUG_STD,'Connecting to ZeeVee on ',"myHippo.IP_HOST,':',ITOA(myHippo.IP_PORT)")
+		fnDebug(DEBUG_STD,'Connecting to Hippo on ',"myHippo.IP_HOST,':',ITOA(myHippo.IP_PORT)")
 		myHippo.IP_STATE = IP_STATE_CONNECTING
 		ip_client_open(ipTCP.port, myHippo.IP_HOST, myHippo.IP_PORT, IP_TCP)
 	}
@@ -108,21 +111,26 @@ DEFINE_FUNCTION fnDebug(INTEGER DEBUG_TYPE,CHAR Msg[], CHAR MsgData[]){
 ******************************************************************************/
 DEFINE_START{
 	CREATE_BUFFER ipTCP, myHippo.Rx
+	myHippo.StatusPinTrigger = 'SystemStatus'
 }
 /******************************************************************************
 	Device Events
 ******************************************************************************/
 DEFINE_EVENT DATA_EVENT[ipTCP]{
 	ONLINE:{
+		STACK_VAR CHAR toSend[50]
 		myHippo.IP_STATE	= IP_STATE_CONNECTED
+		toSend = "myHippo.StatusPinTrigger,$0D"
 		IF(LENGTH_ARRAY(myHippo.Tx)){
-			SEND_STRING DATA.DEVICE,"REMOVE_STRING(myHippo.Tx,"$0D,$0A",1)"
+			toSend = REMOVE_STRING(myHippo.Tx,"$0D",1)
 		}
-		ELSE{
-			SEND_STRING DATA.DEVICE,"'SystemStatus ?'"
-		}
+		fnDebug(DEBUG_STD,'->GH',"toSend")
+		SEND_STRING DATA.DEVICE,"toSend"
+		IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){TIMELINE_KILL(TLID_TIMEOUT)}
+		TIMELINE_CREATE(TLID_TIMEOUT,TLT_TIMEOUT,LENGTH_ARRAY(TLT_TIMEOUT),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 	}
 	OFFLINE:{
+		IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){TIMELINE_KILL(TLID_TIMEOUT)}
 		myHippo.IP_STATE	= IP_STATE_OFFLINE
 		fnProcessFeedback()
 		fnSendFromQueue()
@@ -153,13 +161,16 @@ DEFINE_EVENT DATA_EVENT[ipTCP]{
 		fnDebug(DEBUG_DEV,'GH_RAW->',DATA.TEXT)
 	}
 }
+DEFINE_EVENT TIMELINE_EVENT[TLID_TIMEOUT]{
+	fnCloseTCPConnection()
+}
 /******************************************************************************
 	Feedback
 ******************************************************************************/
 DEFINE_FUNCTION fnProcessFeedback(){
 
 	fnDebug(DEBUG_STD,'GH->',"'[',myHippo.Rx,']'")
-
+	myHippo.Rx = ''
 }
 
 
@@ -191,9 +202,15 @@ DEFINE_EVENT DATA_EVENT[vdvServer]{
 						fnInitPoll()
 						fnOpenTCPConnection()
 					}
+					CASE 'STATUSTRIGGER':{
+						myHippo.StatusPinTrigger = DATA.TEXT
+					}
 				}
 			}
 			CASE 'RAW':{
+				fnAddToQueue(DATA.TEXT)
+			}
+			CASE 'TRIGGER':{
 				fnAddToQueue(DATA.TEXT)
 			}
 		}
