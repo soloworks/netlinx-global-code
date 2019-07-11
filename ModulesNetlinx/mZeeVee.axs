@@ -256,7 +256,7 @@ DEFINE_FUNCTION fnStoreProcessingDevice(){
 		}
 		// Report devices we aren't handling
 		IF(!Found){
-			fnDebug(DEBUG_ERR,'Found Unhandled Device:',"myZeeVee.ProcessingDevice.MAC,' (',myZeeVee.ProcessingDevice.NAME,')'")
+			fnDebug(DEBUG_ERR,'ZeeVee Unhandled Device:',"myZeeVee.ProcessingDevice.MAC,' (',myZeeVee.ProcessingDevice.NAME,')'")
 		}
 	}
 	// Clear Out Device
@@ -391,6 +391,9 @@ DEFINE_EVENT DATA_EVENT[vdvServer]{
 			CASE 'RAW':{
 				fnAddToQueue(DATA.TEXT,TRUE)
 			}
+			CASE 'JOIN':{
+				fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,1),' ',fnGetCSV(DATA.TEXT,2),' fast-switched'",TRUE)
+			}
 		}
 	}
 }
@@ -414,6 +417,15 @@ DEFINE_EVENT DATA_EVENT[vdvDevice]{
 			}
 			CASE 'CHAN':{
 				SWITCH(DATA.TEXT){
+					CASE 'ENC':{
+						STACK_VAR INTEGER x
+						FOR(x = 1; x <= LENGTH_ARRAY(vdvDevice); x++){
+							IF(DEVTOA(vdvDevice[x]) == DATA.TEXT){
+								fnAddToQueue("'join ',myZeeVee.DEVICE[x].NAME,' ',name,' fast-switched'",TRUE)
+								BREAK
+							}
+						}
+					}
 					CASE 'INC': fnAddToQueue("'channel up ',name",TRUE)
 					CASE 'DEC': fnAddToQueue("'channel down ',name",TRUE)
 					DEFAULT:    fnAddToQueue("'join ',DATA.TEXT,' ',name,' fast-switched'",TRUE)
