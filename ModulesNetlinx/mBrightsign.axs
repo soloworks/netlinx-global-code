@@ -42,8 +42,6 @@ DEFINE_START{
 DEFINE_FUNCTION eventHTTPResponse(uHTTPResponse r){
 	STACK_VAR CHAR uOutput[8]
 	
-	SEND_STRING 0, 'Feedback Happening'
-	
 	// Check for a title that shows this is a brightsign
 	IF(FIND_STRING(r.body,'BrightSign',1)){
 		// Reset Communication Timeout
@@ -53,8 +51,6 @@ DEFINE_FUNCTION eventHTTPResponse(uHTTPResponse r){
 	ELSE{
 		RETURN
 	}
-	
-	SEND_STRING 0, 'Brightsign Found'
 	
 	// Whilst closing tags for tables exist
 	WHILE(FIND_STRING(r.Body,'<td>',1)){
