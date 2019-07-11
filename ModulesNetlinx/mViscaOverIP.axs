@@ -145,9 +145,6 @@ DEFINE_FUNCTION fnCloseConnection(INTEGER pCAM){
 
 DEFINE_FUNCTION fnAddToQueue(INTEGER pCAM,CHAR pData[],INTEGER isQuery){
 	STACK_VAR INTEGER x
-	fnDebug(DEBUG_STD,'pData Length',LENGTH_ARRAY(pData))
-	fnDebug(DEBUG_STD,'pData Value',pData)
-	fnDebug(DEBUG_STD,'pData Length',LENGTH_ARRAY(pData))
 	
 	SWITCH(isQuery){
 		CASE TRUE:{
