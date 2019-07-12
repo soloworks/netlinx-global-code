@@ -162,10 +162,10 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMEOUT]{
 DEFINE_FUNCTION fnProcessFeedback(){
 	fnDebug(DEBUG_STD,'GH->',"'[',myHippo.Rx,']'")
 	IF(LENGTH_ARRAY(myHippo.Rx)){
-		SET_LENGTH_ARRAY(Hippo.Rx,LENGTH_ARRAY(Hippo.Rx)-1)
-		REMOVE_STRING(Hippo.Rx,'=',1)
-		REMOVE_STRING(Hippo.Rx,'=',1)
-		myHippo.SystemStatus = REMOVE_STRING(Hippo.Rx,',',1)
+		SET_LENGTH_ARRAY(myHippo.Rx,LENGTH_ARRAY(myHippo.Rx)-1)
+		REMOVE_STRING(myHippo.Rx,'=',1)
+		REMOVE_STRING(myHippo.Rx,'=',1)
+		myHippo.SystemStatus = REMOVE_STRING(myHippo.Rx,',',1)
 		SET_LENGTH_ARRAY(myHippo.SystemStatus,LENGTH_ARRAY(myHippo.SystemStatus)-1)
 		myHippo.Rx = ''
 		SWITCH(myHippo.Rx){
