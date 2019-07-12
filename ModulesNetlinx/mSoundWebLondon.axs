@@ -8,6 +8,9 @@ INCLUDE 'CustomFunctions'
 /******************************************************************************
 	Structures for Object Data
 ******************************************************************************/
+DEFINE_CONSTANT 
+INTEGER _MAX_OBJECTS_ = 50
+
 DEFINE_TYPE STRUCTURE uObject{
 	INTEGER	TYPE				// Object Type
 	CHAR 		HiQ[12]			// HiQ ID - Debug Readable
@@ -43,7 +46,7 @@ DEFINE_TYPE STRUCTURE uComms{
 DEFINE_TYPE STRUCTURE uBSS{
 	INTEGER 	DEBUG				// Debug State
 	uComms	COMMS
-	uObject	OBJECT[40]
+	uObject	OBJECT[_MAX_OBJECTS_]
 }
 /******************************************************************************
 	Module Constants
