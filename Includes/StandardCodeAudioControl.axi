@@ -41,12 +41,14 @@ DEFINE_START{
 		CREATE_LEVEL vdvGains[g],2,myGains[g].VALUE_100
 		CREATE_LEVEL vdvGains[g],3,myGains[g].VALUE_255
 	}
-	FOR(g = 1; g <= LENGTH_ARRAY(lvlGain); g++){
-		STACK_VAR INTEGER p
-		FOR(p = 1; p <= LENGTH_ARRAY(tpMain); p++){
-			myAudioPanels[p].GAIN_OBJECT_LINK[g] = g
+	#IF_DEFINED lvlGain
+		FOR(g = 1; g <= LENGTH_ARRAY(lvlGain); g++){
+			STACK_VAR INTEGER p
+			FOR(p = 1; p <= LENGTH_ARRAY(tpMain); p++){
+				myAudioPanels[p].GAIN_OBJECT_LINK[g] = g
+			}
 		}
-	}
+	#END_IF
 }
 
 /******************************************************************************
@@ -78,14 +80,16 @@ DEFINE_FUNCTION fnSetGainScales(INTEGER pPanel, INTEGER pGain){
 		}
 		RETURN
 	}
-	IF(myGains[pGain].RANGE[1] != myGains[pGain].RANGE[2] ){
-		STACK_VAR INTEGER l
-		FOR(l = 1; l <= LENGTH_ARRAY(lvlGain); l++){
-			IF(myAudioPanels[pPanel].GAIN_OBJECT_LINK[l] == pGain){
-				SEND_COMMAND tpMain[pPanel],"'^BMF-',ITOA(lvlGain[l]),',0,%GL',ITOA(myGains[pGain].RANGE[1]),'%GH',ITOA(myGains[pGain].RANGE[2])"
+	#IF_DEFINED lvlGain
+		IF(myGains[pGain].RANGE[1] != myGains[pGain].RANGE[2] ){
+			STACK_VAR INTEGER l
+			FOR(l = 1; l <= LENGTH_ARRAY(lvlGain); l++){
+				IF(myAudioPanels[pPanel].GAIN_OBJECT_LINK[l] == pGain){
+					SEND_COMMAND tpMain[pPanel],"'^BMF-',ITOA(lvlGain[l]),',0,%GL',ITOA(myGains[pGain].RANGE[1]),'%GH',ITOA(myGains[pGain].RANGE[2])"
+				}
 			}
 		}
-	}
+	#END_IF
 }
 
 DEFINE_FUNCTION fnSetGainNames(INTEGER pPanel, INTEGER pGain){
@@ -114,7 +118,7 @@ DEFINE_FUNCTION fnSetGainNames(INTEGER pPanel, INTEGER pGain){
 		}
 	}
 	#ELSE
-		#WARN 'StandardAudio - addGainName Not Declared'
+		#WARN 'StandardCodeAudioControl - addGainName Not Declared'
 	#END_IF
 }
 
@@ -145,6 +149,7 @@ DEFINE_EVENT DATA_EVENT[vdvGains]{
 /******************************************************************************
 	Standard Audio - Level Bar Handling
 ******************************************************************************/
+#IF_DEFINED lvlGain
 DEFINE_EVENT BUTTON_EVENT[tpMain,lvlGain]{
 	PUSH:{
 		STACK_VAR INTEGER p
@@ -182,6 +187,9 @@ DEFINE_EVENT LEVEL_EVENT[tpMain,lvlGain]{
 		SEND_COMMAND vdvGains[fnGetLinkedObject(p,GET_LAST(lvlGain))],"'VOLUME-',ITOA(LEVEL.VALUE)"
 	}
 }
+#ELSE
+	#WARN 'StandardCodeAudioControl - lvlGain Not Declared'
+#END_IF
 /******************************************************************************
 	Standard Audio - Buttons Handling
 ******************************************************************************/
@@ -195,7 +203,7 @@ DEFINE_EVENT BUTTON_EVENT[tpMain,btnGainINC]{
 	}
 }
 #ELSE
-	#WARN 'StandardAudio - btnGainINC Not Declared'
+	#WARN 'StandardCodeAudioControl - btnGainINC Not Declared'
 #END_IF
 
 #IF_DEFINED btnGainDEC
@@ -208,7 +216,7 @@ DEFINE_EVENT BUTTON_EVENT[tpMain,btnGainDEC]{
 	}
 }
 #ELSE
-	#WARN 'StandardAudio - btnGainDEC Not Declared'
+	#WARN 'StandardCodeAudioControl - btnGainDEC Not Declared'
 #END_IF
 
 #IF_DEFINED btnGainMute
@@ -218,7 +226,7 @@ DEFINE_EVENT BUTTON_EVENT[tpMain,btnGainMute]{
 	}
 }
 #ELSE
-	#WARN 'StandardAudio - btnGainMute Not Declared'
+	#WARN 'StandardCodeAudioControl - btnGainMute Not Declared'
 #END_IF
 
 /******************************************************************************
@@ -228,16 +236,22 @@ DEFINE_PROGRAM{
 	STACK_VAR INTEGER p
 	FOR(p = 1; p <= LENGTH_ARRAY(tpMain); p++){
 		STACK_VAR INTEGER g
-		FOR(g = 1; g <= LENGTH_ARRAY(lvlGain); g++){
-			IF(fnGetLinkedObject(p,g) && g <= LENGTH_ARRAY(vdvGains)){
-				IF(!myAudioPanels[p].GAIN_UNDER_CONTROL){
-					SEND_LEVEL tpMain[p],lvlGain[g],myGains[fnGetLinkedObject(p,g)].VALUE
+		#IF_DEFINED lvlGain
+			FOR(g = 1; g <= LENGTH_ARRAY(lvlGain); g++){
+				IF(fnGetLinkedObject(p,g) && g <= LENGTH_ARRAY(vdvGains)){
+					IF(!myAudioPanels[p].GAIN_UNDER_CONTROL){
+						SEND_LEVEL tpMain[p],lvlGain[g],myGains[fnGetLinkedObject(p,g)].VALUE
+					}
 				}
-				#IF_DEFINED btnGainMute
-				[tpMain[p],btnGainMute[g]] 			= [vdvGains[fnGetLinkedObject(p,g)],199]
-				#END_IF
 			}
-		}
+		#END_IF
+		#IF_DEFINED btnGainMute
+			FOR(g = 1; g <= LENGTH_ARRAY(btnGainMute); g++){
+				IF(fnGetLinkedObject(p,g) && g <= LENGTH_ARRAY(vdvGains)){
+					[tpMain[p],btnGainMute[g]] 			= [vdvGains[fnGetLinkedObject(p,g)],199]
+				}
+			}
+		#END_IF
 	}
 }
 /******************************************************************************

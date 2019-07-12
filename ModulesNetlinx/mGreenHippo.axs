@@ -11,15 +11,6 @@ INCLUDE 'CustomFunctions'
 /******************************************************************************
 	Structures
 ******************************************************************************/
-DEFINE_TYPE STRUCTURE uServer{
-	CHAR     HOST_NAME[30]
-	CHAR     VERSION[10]
-	CHAR     MAC_ADDRESS[20]
-	CHAR     SERIAL_NO[20]
-	CHAR     UPTIME[20]
-	CHAR     productID[50]
-}
-
 DEFINE_TYPE STRUCTURE uHippo{
 	// Communications
 	CHAR 		Rx[2000]						// Receieve Buffer
@@ -30,6 +21,7 @@ DEFINE_TYPE STRUCTURE uHippo{
 	CHAR     StatusPinTrigger[50]		// Name of 
 	INTEGER	DEBUG
 	uServer  SERVER
+	CHAR     SystemStatus[30]
 }
 /******************************************************************************
 	Constants
@@ -120,7 +112,7 @@ DEFINE_EVENT DATA_EVENT[ipTCP]{
 	ONLINE:{
 		STACK_VAR CHAR toSend[50]
 		myHippo.IP_STATE	= IP_STATE_CONNECTED
-		toSend = "myHippo.StatusPinTrigger,$0D"
+		toSend = "myHippo.StatusPinTrigger,',?',$0D"
 		IF(LENGTH_ARRAY(myHippo.Tx)){
 			toSend = REMOVE_STRING(myHippo.Tx,"$0D",1)
 		}
@@ -168,9 +160,22 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMEOUT]{
 	Feedback
 ******************************************************************************/
 DEFINE_FUNCTION fnProcessFeedback(){
-
 	fnDebug(DEBUG_STD,'GH->',"'[',myHippo.Rx,']'")
-	myHippo.Rx = ''
+	IF(LENGTH_ARRAY(myHippo.Rx)){
+		SET_LENGTH_ARRAY(Hippo.Rx,LENGTH_ARRAY(Hippo.Rx)-1)
+		REMOVE_STRING(Hippo.Rx,'=',1)
+		REMOVE_STRING(Hippo.Rx,'=',1)
+		myHippo.SystemStatus = REMOVE_STRING(Hippo.Rx,',',1)
+		SET_LENGTH_ARRAY(myHippo.SystemStatus,LENGTH_ARRAY(myHippo.SystemStatus)-1)
+		myHippo.Rx = ''
+		SWITCH(myHippo.Rx){
+			CASE 'run':
+			CASE 'limited':{
+				IF(TIMELINE_ACTIVE(TLID_COMMS)){ TIMELINE_KILL(TLID_COMMS) }
+				TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
+			}
+		}
+	}
 }
 
 
