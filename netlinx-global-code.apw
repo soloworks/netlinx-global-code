@@ -572,6 +572,10 @@
 <FilePathName>ModulesNetlinx\mSamsungDisplay.axs</FilePathName>
 <Comments></Comments>
 </File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mSamsungExLink</Identifier>
+<FilePathName>ModulesNetlinx\mSamsungExLink.axs</FilePathName>
+<Comments></Comments>
+</File>
 <File CompileType="Netlinx" Type="Module"><Identifier>mSamsungVidWall</Identifier>
 <FilePathName>ModulesNetlinx\mSamsungVidWall.axs</FilePathName>
 <Comments></Comments>

@@ -9,25 +9,58 @@ trigger:
 
 pool:
   name: 'Default'
+workspace:
+    clean: all # what to clean up before the job runs
 
 steps:
 - task: PowerShell@2
-  inputs:    
-    filePath: '.\getConfig.ps1'
+  inputs:
+    targetType: 'inline'
+    script: |
+      $ROOT = (Get-Item -Path ".\").FullName
+      $URI = $env:GCF_PATH
+      $URI = "$($URI)GenerateNetlinxCompileCfg?"
+      $URI = "$($URI)root=$($ROOT)"
+      $URI = "$($URI)&logfile=compile.log"
+      $URI = "$($URI)&logconsole=false"
+      
+      # Fetching compile.cfg
+      $R = Invoke-WebRequest -Uri $URI -Method POST -InFile ".\netlinx-global-code.apw" -OutFile ".\compile.cfg" -PassThru -UseBasicParsing
+      
+      # Output to Console
+      Get-Content -Path ".\compile.cfg"
+      
+      # Exit wtith Compiler Exit Code
+      IF($R.StatusCode -ne 200){
+          Exit 1
+      }
   displayName: 'Fetching the compiler config'
-
+  
 - task: PowerShell@2
   inputs:    
-    filePath: '.\runCompile.ps1'
+    targetType: 'inline'
+    script: |
+      # Set Absoulte Root to files
+      $ROOT = (Get-Item -Path ".\").FullName
+      # Compile the Workspace from the Compiler .cfg file
+      $P = Start-Process -FilePath "C:\Program Files (x86)\Common Files\AMXShare\COM\NLRC.exe" -ArgumentList  "-CFG""$($ROOT)\compile.cfg""" -NoNewWindow -Wait -PassThru
+      # Exit wtith Compiler Exit Code
+      exit $P.ExitCode
   displayName: 'Compiling the Project'
 
 - task: PowerShell@2
   inputs:    
-    filePath: '.\getReport.ps1'
+    targetType: 'inline'
+    script: |
+      # Set Root File
+      $ROOT = (Get-Item -Path ".\").FullName
+      # Get a clean log report
+      $URI = $env:GCF_PATH
+      $URI = "$($URI)ProcessNetlinxCompileLog?"
+      $URI = "$($URI)root=$($ROOT)"
+      # Fetch the Report
+      $R = Invoke-WebRequest -Uri $URI -Method POST -InFile ".\compile.log" -OutFile ".\clean.log" -PassThru -UseBasicParsing
+      # Output to Console
+      Get-Content -Path ".\clean.log"
   displayName: 'Getting Compile Report'
   condition: always()
-
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Packing up the project'
