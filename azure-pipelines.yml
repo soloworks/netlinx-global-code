@@ -50,7 +50,8 @@ steps:
 
 - task: PowerShell@2
   inputs:    
-    targetType: 'inline'script: |
+    targetType: 'inline'
+    script: |
       # Set Root File
       $ROOT = (Get-Item -Path ".\").FullName
       # Get a clean log report
