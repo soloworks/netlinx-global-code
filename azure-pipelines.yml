@@ -9,18 +9,32 @@ trigger:
 
 pool:
   name: 'Default'
+workspace:
+    clean: all # what to clean up before the job runs
 
 steps:
 - task: PowerShell@2
-  inputs:    
-    filePath: '.\getConfig.ps1'
+    targetType: 'inline'
+    script: |
+      $ROOT = (Get-Item -Path ".\").FullName
+      $URI = $env:GCF_PATH
+      $URI = "$($URI)GenerateNetlinxCompileCfg?"
+      $URI = "$($URI)root=$($ROOT)"
+      $URI = "$($URI)&logfile=compile.log"
+      $URI = "$($URI)&logconsole=false"
+      
+      # Fetching compile.cfg
+      $R = Invoke-WebRequest -Uri $URI -Method POST -InFile ".\netlinx-global-code.apw" -OutFile ".\compile.cfg" -PassThru -UseBasicParsing
+      
+      # Output to Console
+      Get-Content -Path ".\compile.cfg"
+      
+      # Exit wtith Compiler Exit Code
+      IF($R.StatusCode -ne 200){
+          Exit 1
+      }
   displayName: 'Fetching the compiler config'
-
-- task: PowerShell@2
-  inputs:    
-    filePath: '.\runCompile.ps1'
-  displayName: 'Compiling the Project'
-
+  
 - task: PowerShell@2
   inputs:    
     filePath: '.\getReport.ps1'
