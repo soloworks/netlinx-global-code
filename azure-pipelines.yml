@@ -48,7 +48,6 @@ steps:
       exit $P.ExitCode
   displayName: 'Compiling the Project'
 
-
 - task: PowerShell@2
   inputs:    
     targetType: 'inline'script: |
