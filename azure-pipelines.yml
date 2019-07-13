@@ -14,6 +14,7 @@ workspace:
 
 steps:
 - task: PowerShell@2
+  inputs:
     targetType: 'inline'
     script: |
       $ROOT = (Get-Item -Path ".\").FullName
