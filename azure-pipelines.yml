@@ -38,11 +38,29 @@ steps:
   
 - task: PowerShell@2
   inputs:    
-    filePath: '.\getReport.ps1'
+    targetType: 'inline'
+    script: |
+      # Set Absoulte Root to files
+      $ROOT = (Get-Item -Path ".\").FullName
+      # Compile the Workspace from the Compiler .cfg file
+      $P = Start-Process -FilePath "C:\Program Files (x86)\Common Files\AMXShare\COM\NLRC.exe" -ArgumentList  "-CFG""$($ROOT)\compile.cfg""" -NoNewWindow -Wait -PassThru
+      # Exit wtith Compiler Exit Code
+      exit $P.ExitCode
+  displayName: 'Compiling the Project'
+
+
+- task: PowerShell@2
+  inputs:    
+    targetType: 'inline'script: |
+      # Set Root File
+      $ROOT = (Get-Item -Path ".\").FullName
+      # Get a clean log report
+      $URI = $env:GCF_PATH
+      $URI = "$($URI)ProcessNetlinxCompileLog?"
+      $URI = "$($URI)root=$($ROOT)"
+      # Fetch the Report
+      $R = Invoke-WebRequest -Uri $URI -Method POST -InFile ".\compile.log" -OutFile ".\clean.log" -PassThru -UseBasicParsing
+      # Output to Console
+      Get-Content -Path ".\clean.log"
   displayName: 'Getting Compile Report'
   condition: always()
-
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Packing up the project'
