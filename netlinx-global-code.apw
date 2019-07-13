@@ -664,6 +664,10 @@
 <FilePathName>ModulesNetlinx\mTimeEvents.axs</FilePathName>
 <Comments></Comments>
 </File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mTrinnov</Identifier>
+<FilePathName>ModulesNetlinx\mTrinnov.axs</FilePathName>
+<Comments></Comments>
+</File>
 <File CompileType="Netlinx" Type="Module"><Identifier>mTVOne1TMV</Identifier>
 <FilePathName>ModulesNetlinx\mTVOne1TMV.axs</FilePathName>
 <Comments></Comments>
