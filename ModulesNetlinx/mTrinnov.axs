@@ -10,16 +10,20 @@ INCLUDE 'Debug'
 	Module Structures
 ******************************************************************************/
 DEFINE_TYPE STRUCTURE uTrinnov{
-	INTEGER POWER
-	INTEGER MUTE
-	INTEGER VOL
+	INTEGER  POWER
+	INTEGER  MUTE
+	SINTEGER VOL
 	(** Comms Data **)
 	CHAR 	  RX[250]
 	INTEGER isIP
-	INTEGER CONN_STATE
+	INTEGER ConnState
 	INTEGER IP_PORT
 	CHAR	  IP_HOST[255]
 	uDebug  DEBUG
+	
+	CHAR    Version[10]
+	INTEGER ModelID
+	INTEGER SerialNo
 }
 /******************************************************************************
 	Module Constants
@@ -31,9 +35,9 @@ LONG TLID_RETRY		= 3
 LONG TLID_VOL			= 4
 
 // Connection State Constants
-INTEGER CONN_STATE_OFFLINE		= 0
-INTEGER CONN_STATE_CONNECTING	= 1
-INTEGER CONN_STATE_CONNECTED		= 2
+INTEGER ConnState_OFFLINE		= 0
+INTEGER ConnState_CONNECTING	= 1
+INTEGER ConnState_CONNECTED		= 2
 /******************************************************************************
 	Module Variables
 ******************************************************************************/
@@ -55,9 +59,9 @@ DEFINE_START{
 	Helper Functions
 ******************************************************************************/
 DEFINE_FUNCTION fnSendCommand(CHAR CMD[]){
-	IF(myTrinnov.CONN_STATE == CONN_STATE_CONNECTED){
-		fnDebug(myTrinnov.DEBUG,DEBUG_STD,"'->TRN ',CMD,$0D")
-		SEND_STRING dvDEVICE,"CMD,$0D"
+	IF(myTrinnov.ConnState == ConnState_CONNECTED){
+		fnDebug(myTrinnov.DEBUG,DEBUG_STD,"'->TRN ',CMD,$0A")
+		SEND_STRING dvDEVICE,"CMD,$0A"
 		fnInitPoll()
 	}
 }
@@ -79,8 +83,8 @@ DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(dvDevice.port)
 }
 DEFINE_FUNCTION fnOpenTCPConnection(){
-	IF(myTrinnov.CONN_STATE == CONN_STATE_OFFLINE){
-		myTrinnov.CONN_STATE = CONN_STATE_CONNECTING
+	IF(myTrinnov.ConnState == ConnState_OFFLINE){
+		myTrinnov.ConnState = ConnState_CONNECTING
 		fnDebug(myTrinnov.DEBUG,DEBUG_STD,"'Connecting to AVR on ',myTrinnov.IP_HOST,':',ITOA(myTrinnov.IP_PORT)")
 		ip_client_open(dvDevice.port, myTrinnov.IP_HOST, myTrinnov.IP_PORT, IP_TCP)
 	}
@@ -97,9 +101,30 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_RETRY]{
 ******************************************************************************/
 (** Feedback Processing **)
 DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
+	// Log out incoming message
 	fnDebug(myTrinnov.DEBUG,DEBUG_STD,"'TRN-> ',pDATA")
+	// Check if message is initial greeting
+	IF(fnComparePrefix(pDATA,'Welcome on Trinnov Optimizer')){
+		STACK_VAR CHAR ID[20]
+		REMOVE_STRING(pDATA,'Version ',1)	// Remove Preamble
+		myTrinnov.Version = REMOVE_STRING(pDATA,',',1)
+		SET_LENGTH_ARRAY(myTrinnov.Version,LENGTH_ARRAY(myTrinnov.Version)-1)
+		REMOVE_STRING(pDATA,'ID ',1)
+		ID = ITOHEX(ATOI(fnStripCharsRight(pDATA,1)))
+		myTrinnov.ModelID  = HEXTOI("GET_BUFFER_CHAR(ID)")
+		myTrinnov.SerialNo = HEXTOI(ID)
+		// Respond
+		fnSendCommand('id AMX')
+		fnPoll()
+		// Return MetaData
+		SEND_COMMAND vdvPreAmp,'PROPERTY-META,MAKE,Trinnov'
+		SWITCH(myTrinnov.ModelID){
+			CASE $0E: SEND_COMMAND vdvPreAmp,'PROPERTY-META,MODEL,Altitude 16'
+		}
+	}
 	SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
-		CASE 'VOLUME':myTrinnov.VOL = ATOI(pDATA)
+		CASE 'VOLUME': myTrinnov.VOL  = ATOI(pDATA)
+		CASE 'MUTE':   myTrinnov.MUTE = ATOI(pDATA)
 	}
 	IF(TIMELINE_ACTIVE(TLID_COMMS)){ TIMELINE_KILL(TLID_COMMS) }
 	TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
@@ -114,11 +139,11 @@ DEFINE_EVENT DATA_EVENT[dvDEVICE]{
 			SEND_COMMAND DATA.DEVICE, 'SET MODE DATA'
 			SEND_COMMAND DATA.DEVICE, 'SET BAUD 19200 N 8 1 485 DISABLE'
 		}
-		myTrinnov.CONN_STATE = CONN_STATE_CONNECTED
+		myTrinnov.ConnState = ConnState_CONNECTED
 	}
 	OFFLINE:{
 		IF(myTrinnov.isIP){
-			myTrinnov.CONN_STATE = CONN_STATE_OFFLINE
+			myTrinnov.ConnState = ConnState_OFFLINE
 			fnRetryConnection()
 		}
 	}
@@ -144,16 +169,16 @@ DEFINE_EVENT DATA_EVENT[dvDEVICE]{
 			SWITCH(DATA.NUMBER){
 				CASE 14:{}
 				DEFAULT:{
-					myTrinnov.CONN_STATE = CONN_STATE_OFFLINE
+					myTrinnov.ConnState = ConnState_OFFLINE
 					fnRetryConnection()
 				}
 			}
 		}
 	}
 	STRING:{
-		fnDebug(myTrinnov.DEBUG,DEBUG_DEV,"'RAW->',DATA.TEXT")
-		WHILE(FIND_STRING(myTrinnov.RX,"$0D",1)){
-			fnProcessFeedback(fnStripCharsRight(REMOVE_STRING(myTrinnov.RX,"$0D",1),1))
+		fnDebug(myTrinnov.DEBUG,DEBUG_DEV,"'RAW-> ',DATA.TEXT")
+		WHILE(FIND_STRING(myTrinnov.RX,"$0A",1)){
+			fnProcessFeedback(fnStripCharsRight(REMOVE_STRING(myTrinnov.RX,"$0A",1),1))
 		}
 	}
 }
