@@ -47,7 +47,7 @@ DEFINE_FUNCTION fnSendCommand(CHAR CMD[3],INTEGER VAL){
 	STACK_VAR INTEGER CHK
 	STACK_VAR INTEGER x
 	toSend = "$08,$22,CMD,VAL"
-	FOR(x = 1; LENGTH_ARRAY(toSend); x++){
+	FOR(x = 1; x <= LENGTH_ARRAY(toSend); x++){
 		CHK = CHK + toSend[x]
 	}
 	CHK = $FF-CHK+1
@@ -61,6 +61,7 @@ DEFINE_EVENT DATA_EVENT[dvExLink]{
 		IF(dvExLink.NUMBER){
 			SEND_COMMAND dvExLink, "'SET BAUD 9600, N, 8, 1 485 Disable'"
 		}
+		fnPoll()
 	}
 	STRING:{
 		IF(TIMELINE_ACTIVE(TLID_COMMS)){TIMELINE_KILL(TLID_COMMS)}
