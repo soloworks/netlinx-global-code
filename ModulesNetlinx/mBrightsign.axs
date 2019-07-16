@@ -13,6 +13,8 @@ LONG     TLID_COMMS		= 2
 ******************************************************************************/
 DEFINE_TYPE STRUCTURE uSystem{
 	uDebug   DEBUG
+	CHAR     UDP_HOST[20]
+	INTEGER  UDP_PORT
 
 	CHAR		MODEL[20]		// Device Model
 	CHAR		MAC[20]			// MAC Address
@@ -124,12 +126,17 @@ DEFINE_EVENT DATA_EVENT[vdvPlayer]{
 			CASE 'PROPERTY':{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
 					CASE 'IP':{
-						HTTP.IP_HOST = fnGetSplitStringValue(DATA.TEXT,':',1)
-						IF(ATOI(fnGetSplitStringValue(DATA.TEXT,':',2))){
-							STACK_VAR INTEGER UDP_PORT
-							UDP_PORT = ATOI(fnGetSplitStringValue(DATA.TEXT,':',2))
+						IF(FIND_STRING(DATA.TEXT,':',1)){
+							myBrightsign.UDP_HOST = REMOVE_STRING(DATA.TEXT,':',1)
+							SET_LENGTH_ARRAY(myBrightsign.UDP_HOST,LENGTH_ARRAY(myBrightsign.UDP_HOST)-1)
+							myBrightsign.UDP_PORT = ATOI(DATA.TEXT)
 							// Open UDP Sender
-							IP_CLIENT_OPEN(ipUDP.PORT,HTTP.IP_HOST,UDP_PORT,IP_UDP)
+							IP_CLIENT_OPEN(ipUDP.PORT,myBrightsign.UDP_HOST,myBrightsign.UDP_PORT,IP_UDP)
+							// Set HTTP
+							HTTP.IP_HOST = myBrightsign.UDP_HOST
+						}
+						ELSE{
+							HTTP.IP_HOST = DATA.TEXT
 						}
 						fnPoll()
 						fnInitPoll()
