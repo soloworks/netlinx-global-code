@@ -392,7 +392,8 @@ DEFINE_EVENT DATA_EVENT[vdvServer]{
 				fnAddToQueue(DATA.TEXT,TRUE)
 			}
 			CASE 'JOIN':{
-				fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,1),' ',fnGetCSV(DATA.TEXT,2),' fast-switched'",TRUE)
+				// fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,1),' ',fnGetCSV(DATA.TEXT,2),' fast-switched'",TRUE)
+				fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,1),' ',fnGetCSV(DATA.TEXT,2),' genlocked'",TRUE)
 			}
 		}
 	}
