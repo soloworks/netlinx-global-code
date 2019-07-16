@@ -67,7 +67,7 @@ DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(ipTCP.port)
 }
 DEFINE_FUNCTION fnAddToQueue(CHAR pDATA[]){
-	myHippo.Tx = "myHippo.Tx,pDATA,$0D,$0A"
+	myHippo.Tx = "myHippo.Tx,pDATA,$0D"
 	fnInitPoll()
 	fnSendFromQueue()
 }
@@ -151,6 +151,7 @@ DEFINE_EVENT DATA_EVENT[ipTCP]{
 	}
 	STRING:{
 		fnDebug(DEBUG_DEV,'GH_RAW->',DATA.TEXT)
+		IF(FIND_STRING(DATA.TEXT,"$0D",1)){fnCloseTCPConnection()}
 	}
 }
 DEFINE_EVENT TIMELINE_EVENT[TLID_TIMEOUT]{
@@ -169,7 +170,7 @@ DEFINE_FUNCTION fnProcessFeedback(){
 		SET_LENGTH_ARRAY(myHippo.SystemStatus,LENGTH_ARRAY(myHippo.SystemStatus)-1)
 		myHippo.Rx = ''
 		SWITCH(myHippo.Rx){
-			CASE 'run':
+			CASE 'Run':
 			CASE 'limited':{
 				IF(TIMELINE_ACTIVE(TLID_COMMS)){ TIMELINE_KILL(TLID_COMMS) }
 				TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
