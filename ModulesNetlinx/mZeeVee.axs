@@ -41,7 +41,7 @@ DEFINE_TYPE STRUCTURE uZeeVee{
 	FLOAT    TEMPERATURE
 	CHAR     SERIAL_NO[25]
 	uServer  SERVER
-	uDevice  DEVICE[250]
+	uDevice  DEVICE[125]
 	uDevice  ProcessingDevice
 }
 /******************************************************************************
@@ -269,8 +269,8 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 	
 	fnDebug(DEBUG_STD,'ZV->',"'[',pDATA,']'")
 
-	SWITCH(pDATA){
-		CASE 'Success':{
+	SELECT{
+		ACTIVE('Success' = pDATA):{
 			fnDebug(DEBUG_STD,'Response Ended',pDATA)
 			// Store Device if processing
 			fnStoreProcessingDevice()
@@ -278,7 +278,14 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 			myZeeVee.RESPONSE_PENDING = FALSE
 			fnSendFromQueue()
 		}
-		DEFAULT:{
+		ACTIVE(fnComparePrefix(pDATA,'Error')):{
+			REMOVE_STRING(pDATA,':',1)
+			SEND_STRING vdvServer,"'ERROR-',pDATA"
+			// Send next command
+			myZeeVee.RESPONSE_PENDING = FALSE
+			fnSendFromQueue()
+		}
+		ACTIVE(1):{
 			// Get Line Header
 			STACK_VAR CHAR HEAD[50]
 			HEAD = fnRemoveWhiteSpace(fnStripCharsRight(REMOVE_STRING(pDATA,';',1),1))
@@ -414,6 +421,9 @@ DEFINE_EVENT DATA_EVENT[vdvDevice]{
 					CASE 'NAME':{
 						myZeeVee.DEVICE[e].NAME = DATA.TEXT
 					}
+					CASE 'RS232':{
+						fnAddToQueue("'set device ',name,' rs232 ',DATA.TEXT",TRUE)
+					}
 				}
 			}
 			CASE 'CHAN':{
@@ -434,6 +444,16 @@ DEFINE_EVENT DATA_EVENT[vdvDevice]{
 			}
 			CASE 'RAW':{
 				fnAddToQueue(DATA.TEXT,TRUE)
+			}
+			CASE 'RS232':{
+				// In format with \n \r \t \\ \xnn
+				fnAddToQueue("'send ',name,' rs232 ',DATA.TEXT",TRUE)
+			}
+			CASE 'CEC':{
+				SWITCH(DATA.TEXT){
+					CASE 'ON':  fnAddToQueue("'send ',name,' cec on'",TRUE)
+					CASE 'OFF': fnAddToQueue("'send ',name,' cec off'",TRUE)
+				}
 			}
 		}
 	}
