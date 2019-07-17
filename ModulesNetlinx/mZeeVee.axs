@@ -26,9 +26,9 @@ DEFINE_TYPE STRUCTURE uDevice{
 }
 DEFINE_TYPE STRUCTURE uZeeVee{
 	// Communications
-	CHAR 		Rx[2000]						// Receieve Buffer
-	CHAR     TxCmd[2000]					// Send Buffer - Commands
-	CHAR     TxQry[2000]					// Send Buffer - Queries
+	CHAR 		Rx[200]						// Receieve Buffer
+	CHAR     TxCmd[10000]					// Send Buffer - Commands
+	CHAR     TxQry[1000]					// Send Buffer - Queries
 	INTEGER 	IP_PORT						// Telnet Port 23
 	CHAR		IP_HOST[255]				//
 	INTEGER 	IP_STATE						//
@@ -73,9 +73,9 @@ INTEGER DEVICE_STATE_UP      = 2
 	Variables
 ******************************************************************************/
 DEFINE_VARIABLE
-LONG TLT_COMMS[] 			= { 90000 }
-LONG TLT_POLL[] 			= { 45000 }
-LONG TLT_RETRY[]			= {  5000 }
+LONG TLT_COMMS[] 			= { 180000 }
+LONG TLT_POLL[] 			= {  75000 }
+LONG TLT_RETRY[]			= {   5000 }
 VOLATILE uZeeVee myZeeVee
 /******************************************************************************
 	Helper Functions - Comms
@@ -100,11 +100,14 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(dvIP.port)
 }
-DEFINE_FUNCTION fnAddToQueue(CHAR pDATA[],CHAR IsCmd){
+DEFINE_FUNCTION fnAddToQueue(CHAR pDATA[],INTEGER IsCmd){
+	fnDebug(DEBUG_STD,'Queing',pDATA)
 	SWITCH(IsCmd){
 		CASE TRUE:  myZeeVee.TxCmd = "myZeeVee.TxCmd,pDATA,$0D,$0A"
 		CASE FALSE: myZeeVee.TxQry = "myZeeVee.TxQry,pDATA,$0D,$0A"
 	}
+	fnDebug(DEBUG_STD,'Queue Length Cmd',ITOA(LENGTH_ARRAY(myZeeVee.TxCmd)))
+	fnDebug(DEBUG_STD,'Queue Length Qry',ITOA(LENGTH_ARRAY(myZeeVee.TxQry)))
 	fnSendFromQueue()
 	fnInitPoll()
 }
@@ -117,7 +120,6 @@ DEFINE_FUNCTION fnSendFromQueue(){
 			}
 			ACTIVE(LENGTH_ARRAY(myZeeVee.TxQry)):{
 				toSend = REMOVE_STRING(myZeeVee.TxQry,"$0D,$0A",1)
-				fnDebug(DEBUG_STD,'Sending Query',toSend)
 			}
 		}
 		IF(LENGTH_ARRAY(toSend)){
@@ -198,7 +200,7 @@ DEFINE_EVENT DATA_EVENT[dvIP]{
 		fnDebug(TRUE,"'ZeeVee IP Error:[',myZeeVee.IP_HOST,']'","'[',ITOA(DATA.NUMBER),'][',_MSG,']'")
 	}
 	STRING:{
-		fnDebug(DEBUG_DEV,'ZV_RAW->',DATA.TEXT)
+		//fnDebug(DEBUG_DEV,'ZV_RAW->',DATA.TEXT)
 		
 		// Telnet Negotiation
 		WHILE(myZeeVee.Rx[1] == $FF && LENGTH_ARRAY(myZeeVee.Rx) >= 3){
@@ -267,11 +269,11 @@ DEFINE_FUNCTION fnStoreProcessingDevice(){
 }
 DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 	
-	fnDebug(DEBUG_STD,'ZV->',"'[',pDATA,']'")
+	fnDebug(DEBUG_DEV,'ZV->',"'[',pDATA,']'")
 
 	SELECT{
 		ACTIVE('Success' = pDATA):{
-			fnDebug(DEBUG_STD,'Response Ended',pDATA)
+			fnDebug(DEBUG_STD,'Response Success',pDATA)
 			// Store Device if processing
 			fnStoreProcessingDevice()
 			// Send next command
@@ -279,8 +281,17 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 			fnSendFromQueue()
 		}
 		ACTIVE(fnComparePrefix(pDATA,'Error')):{
+			fnDebug(DEBUG_STD,'Response Error',pDATA)
 			REMOVE_STRING(pDATA,':',1)
 			SEND_STRING vdvServer,"'ERROR-',pDATA"
+			// Send next command
+			myZeeVee.RESPONSE_PENDING = FALSE
+			fnSendFromQueue()
+		}
+		ACTIVE(fnComparePrefix(pDATA,'Warning')):{
+			fnDebug(DEBUG_STD,'Response Warning',pDATA)
+			REMOVE_STRING(pDATA,':',1)
+			SEND_STRING vdvServer,"'WARNING-',pDATA"
 			// Send next command
 			myZeeVee.RESPONSE_PENDING = FALSE
 			fnSendFromQueue()
@@ -399,8 +410,11 @@ DEFINE_EVENT DATA_EVENT[vdvServer]{
 				fnAddToQueue(DATA.TEXT,TRUE)
 			}
 			CASE 'JOIN':{
+				fnDebug(DEBUG_DEV,'Joining',"fnGetCSV(DATA.TEXT,1),' to ',fnGetCSV(DATA.TEXT,2)")
 				// fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,1),' ',fnGetCSV(DATA.TEXT,2),' fast-switched'",TRUE)
 				fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,1),' ',fnGetCSV(DATA.TEXT,2),' genlocked'",TRUE)
+				fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,1),' ',fnGetCSV(DATA.TEXT,2),' analog-audio'",TRUE)
+				fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,1),' ',fnGetCSV(DATA.TEXT,2),' hdmi-downmix-audio'",TRUE)
 			}
 		}
 	}
@@ -455,6 +469,18 @@ DEFINE_EVENT DATA_EVENT[vdvDevice]{
 					CASE 'OFF': fnAddToQueue("'send ',name,' cec off'",TRUE)
 				}
 			}
+		}
+	}
+}
+/******************************************************************************
+	Decoder Audio follow Video
+******************************************************************************/
+DEFINE_EVENT CHANNEL_EVENT[vdvDevice,251]{
+	ON:{
+		STACK_VAR INTEGER d
+		d = GET_LAST(vdvDevice)
+		IF(myZeeVee.DEVICE[d].TYPE == DEVICE_TYPE_DECODER){
+			//fnAddToQueue("'join video-source ',myZeeVee.DEVICE[d].NAME,' hdmi-audio'",TRUE)
 		}
 	}
 }
