@@ -20,7 +20,6 @@ DEFINE_TYPE STRUCTURE uHippo{
 	INTEGER 	IP_STATE						//
 	CHAR     StatusPinTrigger[50]		// Name of 
 	INTEGER	DEBUG
-	uServer  SERVER
 	CHAR     SystemStatus[30]
 }
 /******************************************************************************
