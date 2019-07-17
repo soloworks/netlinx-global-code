@@ -24,11 +24,11 @@ DEFINE_TYPE STRUCTURE uGain{
 }
 DEFINE_TYPE STRUCTURE uAudioPanel{
 	INTEGER	GAIN_UNDER_CONTROL		// High when User is controlling Audio Value
-	INTEGER  GAIN_OBJECT_LINK[50]			// Which Gain object each button controls - defaults to numerical order
+	INTEGER  GAIN_OBJECT_LINK[60]			// Which Gain object each button controls - defaults to numerical order
 }
 
 DEFINE_VARIABLE
-VOLATILE uGain 		myGains[50]
+VOLATILE uGain 		myGains[60]
 VOLATILE uAudioPanel myAudioPanels[10]
 VOLATILE LONG 			TLT_PANEL_VOLUME[]  = {500}
 /******************************************************************************

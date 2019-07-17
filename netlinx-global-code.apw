@@ -688,6 +688,10 @@
 <FilePathName>ModulesNetlinx\mUtilDateTime.axs</FilePathName>
 <Comments></Comments>
 </File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mUVSLucidity</Identifier>
+<FilePathName>ModulesNetlinx\mUVSLucidity.axs</FilePathName>
+<Comments></Comments>
+</File>
 <File CompileType="Netlinx" Type="Module"><Identifier>mVaddioCamera</Identifier>
 <FilePathName>ModulesNetlinx\mVaddioCamera.axs</FilePathName>
 <Comments></Comments>
