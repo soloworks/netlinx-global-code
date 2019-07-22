@@ -1,4 +1,4 @@
-MODULE_NAME='mZeeVee'(DEV vdvServer, DEV vdvDevice[], DEV dvIP)
+ODULE_NAME='mZeeVee'(DEV vdvServer, DEV vdvDevice[], DEV dvIP)
 INCLUDE 'CustomFunctions'
 /******************************************************************************
 	Hushbutton Control Module
@@ -35,6 +35,7 @@ DEFINE_TYPE STRUCTURE uZeeVee{
 	INTEGER 	IP_STATE				//
 	INTEGER  PENDING
 	INTEGER  PROCESSING	      // True if waiting on a response
+
 	INTEGER	DEBUG
 	CHAR 		USERNAME[20]
 	CHAR 		PASSWORD[20]
@@ -114,6 +115,8 @@ DEFINE_FUNCTION fnAddToQueue(CHAR pDATA[],INTEGER IsCmd){
 		CASE TRUE:  myZeeVeeServer.TxCmd = "myZeeVeeServer.TxCmd,pDATA,$0D,$0A"
 		CASE FALSE: myZeeVeeServer.TxQry = "myZeeVeeServer.TxQry,pDATA,$0D,$0A"
 	}
+	fnDebug(DEBUG_STD,'Queue Length Cmd',ITOA(LENGTH_ARRAY(myZeeVee.TxCmd)))
+	fnDebug(DEBUG_STD,'Queue Length Qry',ITOA(LENGTH_ARRAY(myZeeVee.TxQry)))
 	fnSendFromQueue()
 	fnInitPoll()
 }
@@ -216,7 +219,7 @@ DEFINE_EVENT DATA_EVENT[dvIP]{
 		fnDebug(TRUE,"'ZeeVee IP Error:[',myZeeVeeServer.IP_HOST,']'","'[',ITOA(DATA.NUMBER),'][',_MSG,']'")
 	}
 	STRING:{
-		fnDebug(DEBUG_DEV,'ZV_RAW->',DATA.TEXT)
+		//fnDebug(DEBUG_DEV,'ZV_RAW->',DATA.TEXT)
 		
 		// Telnet Negotiation
 		WHILE(myZeeVeeServer.Rx[1] == $FF && LENGTH_ARRAY(myZeeVeeServer.Rx) >= 3){
@@ -312,7 +315,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[1000]){
 
 	SELECT{
 		ACTIVE('Success' = pDATA):{
-			fnDebug(DEBUG_STD,'Response Ended',pDATA)
+			fnDebug(DEBUG_STD,'Response Success',pDATA)
 			// Store Device if processing
 			SWITCH(myZeeVeeServer.PROCESSING){
 				CASE PROCESSING_DATA_RELAYS: 
@@ -368,6 +371,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[1000]){
 			// Statr a new one
 			fnDebug(DEBUG_STD,'Response Started',pDATA)
 			myZeeVeeServer.PROCESSING = PROCESSING_DATA_RELAYS
+
 		}
 		ACTIVE(1):{
 			// Get Line Header
