@@ -1,4 +1,4 @@
-ODULE_NAME='mZeeVee'(DEV vdvServer, DEV vdvDevice[], DEV dvIP)
+MODULE_NAME='mZeeVee'(DEV vdvServer, DEV vdvDevice[], DEV dvIP)
 INCLUDE 'CustomFunctions'
 /******************************************************************************
 	Hushbutton Control Module
