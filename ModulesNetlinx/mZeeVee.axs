@@ -1,4 +1,4 @@
-ODULE_NAME='mZeeVee'(DEV vdvServer, DEV vdvDevice[], DEV dvIP)
+MODULE_NAME='mZeeVee'(DEV vdvServer, DEV vdvDevice[], DEV dvIP)
 INCLUDE 'CustomFunctions'
 /******************************************************************************
 	Hushbutton Control Module
@@ -35,7 +35,6 @@ DEFINE_TYPE STRUCTURE uZeeVee{
 	INTEGER 	IP_STATE				//
 	INTEGER  PENDING
 	INTEGER  PROCESSING	      // True if waiting on a response
-
 	INTEGER	DEBUG
 	CHAR 		USERNAME[20]
 	CHAR 		PASSWORD[20]
@@ -115,8 +114,6 @@ DEFINE_FUNCTION fnAddToQueue(CHAR pDATA[],INTEGER IsCmd){
 		CASE TRUE:  myZeeVeeServer.TxCmd = "myZeeVeeServer.TxCmd,pDATA,$0D,$0A"
 		CASE FALSE: myZeeVeeServer.TxQry = "myZeeVeeServer.TxQry,pDATA,$0D,$0A"
 	}
-	fnDebug(DEBUG_STD,'Queue Length Cmd',ITOA(LENGTH_ARRAY(myZeeVee.TxCmd)))
-	fnDebug(DEBUG_STD,'Queue Length Qry',ITOA(LENGTH_ARRAY(myZeeVee.TxQry)))
 	fnSendFromQueue()
 	fnInitPoll()
 }
@@ -219,8 +216,8 @@ DEFINE_EVENT DATA_EVENT[dvIP]{
 		fnDebug(TRUE,"'ZeeVee IP Error:[',myZeeVeeServer.IP_HOST,']'","'[',ITOA(DATA.NUMBER),'][',_MSG,']'")
 	}
 	STRING:{
-		//fnDebug(DEBUG_DEV,'ZV_RAW->',DATA.TEXT)
-		
+		fnDebug(DEBUG_DEV,'ZV_RAW->',DATA.TEXT)
+
 		// Telnet Negotiation
 		WHILE(myZeeVeeServer.Rx[1] == $FF && LENGTH_ARRAY(myZeeVeeServer.Rx) >= 3){
 			STACK_VAR CHAR NEG_PACKET[3]
@@ -245,12 +242,12 @@ DEFINE_EVENT DATA_EVENT[dvIP]{
 			fnDebug(DEBUG_DEV,'->ZV.Telnet',fnHexToString(NEG_PACKET))
 			SEND_STRING DATA.DEVICE,NEG_PACKET
 		}
-		
+
 		// Data Communication
 		WHILE(FIND_STRING(myZeeVeeServer.Rx,"$0D,$0A",1)){
 			fnProcessFeedback(fnStripCharsRight(REMOVE_STRING(myZeeVeeServer.Rx,"$0D,$0A",1),2))
-		}	
-		
+		}
+
 		// Connection Established
 		IF(FIND_STRING(myZeeVeeServer.Rx,'Zyper$ ',1)){
 			REMOVE_STRING(myZeeVeeServer.Rx,'Zyper$ ',1)
@@ -266,7 +263,7 @@ DEFINE_FUNCTION fnStoreProcessingDevice(){
 	// Store Device if processing one
 	STACK_VAR INTEGER d
 	STACK_VAR INTEGER Found
-	// Find and Store 
+	// Find and Store
 	fnDebug(DEBUG_DEV,'Storing Device',ITOA(myZeeVeeServer.ProcessingDevice.NAME))
 	FOR(d = 1; d <= LENGTH_ARRAY(vdvDevice); d++){
 		IF(LENGTH_ARRAY(myZeeVeeDevice[d].NAME) && myZeeVeeDevice[d].NAME == myZeeVeeServer.ProcessingDevice.NAME){
@@ -302,7 +299,7 @@ DEFINE_FUNCTION fnStoreProcessingDevice(){
 	IF(!Found && myZeeVeeServer.ProcessingDevice.NAME != ''){
 		fnDebug(DEBUG_ERR,'ZeeVee Unhandled Device:',"myZeeVeeServer.ProcessingDevice.MAC,' (',myZeeVeeServer.ProcessingDevice.NAME,')'")
 	}
-	
+
 	// Clear Out Device
 	IF(1){
 		STACK_VAR uDevice blankDevice
@@ -310,15 +307,15 @@ DEFINE_FUNCTION fnStoreProcessingDevice(){
 	}
 }
 DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[1000]){
-	
+
 	fnDebug(DEBUG_DEV,'ZV->',"'[',pDATA,']'")
 
 	SELECT{
 		ACTIVE('Success' = pDATA):{
-			fnDebug(DEBUG_STD,'Response Success',pDATA)
+			fnDebug(DEBUG_STD,'Response Ended',pDATA)
 			// Store Device if processing
 			SWITCH(myZeeVeeServer.PROCESSING){
-				CASE PROCESSING_DATA_RELAYS: 
+				CASE PROCESSING_DATA_RELAYS:
 				CASE PROCESSING_DEVICE_STATUS: fnStoreProcessingDevice()
 			}
 			// Send next command
@@ -371,7 +368,6 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[1000]){
 			// Statr a new one
 			fnDebug(DEBUG_STD,'Response Started',pDATA)
 			myZeeVeeServer.PROCESSING = PROCESSING_DATA_RELAYS
-
 		}
 		ACTIVE(1):{
 			// Get Line Header
