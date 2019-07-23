@@ -1,4 +1,4 @@
-MODULE_NAME='mZeeVee'(DEV vdvServer, DEV vdvDevice[], DEV dvIP)
+ODULE_NAME='mZeeVee'(DEV vdvServer, DEV vdvDevice[], DEV dvIP)
 INCLUDE 'CustomFunctions'
 /******************************************************************************
 	Hushbutton Control Module
@@ -35,6 +35,7 @@ DEFINE_TYPE STRUCTURE uZeeVee{
 	INTEGER 	IP_STATE				//
 	INTEGER  PENDING
 	INTEGER  PROCESSING	      // True if waiting on a response
+
 	INTEGER	DEBUG
 	CHAR 		USERNAME[20]
 	CHAR 		PASSWORD[20]
@@ -246,8 +247,7 @@ DEFINE_EVENT DATA_EVENT[dvIP]{
 		// Data Communication
 		WHILE(FIND_STRING(myZeeVeeServer.Rx,"$0D,$0A",1)){
 			fnProcessFeedback(fnStripCharsRight(REMOVE_STRING(myZeeVeeServer.Rx,"$0D,$0A",1),2))
-		}
-
+		}	
 		// Connection Established
 		IF(FIND_STRING(myZeeVeeServer.Rx,'Zyper$ ',1)){
 			REMOVE_STRING(myZeeVeeServer.Rx,'Zyper$ ',1)
@@ -299,7 +299,6 @@ DEFINE_FUNCTION fnStoreProcessingDevice(){
 	IF(!Found && myZeeVeeServer.ProcessingDevice.NAME != ''){
 		fnDebug(DEBUG_ERR,'ZeeVee Unhandled Device:',"myZeeVeeServer.ProcessingDevice.MAC,' (',myZeeVeeServer.ProcessingDevice.NAME,')'")
 	}
-
 	// Clear Out Device
 	IF(1){
 		STACK_VAR uDevice blankDevice
@@ -308,14 +307,14 @@ DEFINE_FUNCTION fnStoreProcessingDevice(){
 }
 DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[1000]){
 
-	fnDebug(DEBUG_DEV,'ZV->',"'[',pDATA,']'")
+  fnDebug(DEBUG_DEV,'ZV->',"'[',pDATA,']'")
 
 	SELECT{
 		ACTIVE('Success' = pDATA):{
 			fnDebug(DEBUG_STD,'Response Ended',pDATA)
 			// Store Device if processing
 			SWITCH(myZeeVeeServer.PROCESSING){
-				CASE PROCESSING_DATA_RELAYS:
+				CASE PROCESSING_DATA_RELAYS: 
 				CASE PROCESSING_DEVICE_STATUS: fnStoreProcessingDevice()
 			}
 			// Send next command
