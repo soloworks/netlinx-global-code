@@ -524,6 +524,10 @@
 <FilePathName>ModulesNetlinx\mPinAuth.axs</FilePathName>
 <Comments></Comments>
 </File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mPioneerBluRay</Identifier>
+<FilePathName>ModulesNetlinx\mPioneerBluRay.axs</FilePathName>
+<Comments></Comments>
+</File>
 <File CompileType="Netlinx" Type="Module"><Identifier>mPJLink</Identifier>
 <FilePathName>ModulesNetlinx\mPJLink.axs</FilePathName>
 <Comments></Comments>
