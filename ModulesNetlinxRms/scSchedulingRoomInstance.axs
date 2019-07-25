@@ -754,7 +754,7 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 					}
 					thisSlot.START_TIME    = pStartTime
 					thisSlot.END_TIME      = pEndTime
-					
+
 					IF(thisSlot.ALLDAY){
 						thisSlot.START_REF  = 0
 						thisSlot.END_REF    = MIDNIGHT_SECS
@@ -1596,6 +1596,7 @@ DEFINE_FUNCTION fnSetupPanel(INTEGER pPanel){
 	// Send the room name
 	IF(LENGTH_ARRAY(myRoom.LOC_NAME)){
 		// Send the location
+		SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addDiagSettingsLocation),',0,',FORMAT('%04d',myRoom.LOC_ID),':',WC_TO_CH(myRoom.LOC_NAME)"
 		//SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addDiagSettingsLocation),',0,',FORMAT('%04d',myRoom.LOC_ID),':',myRoom.LOC_NAME"
 		//SEND_COMMAND tp[pPanel], "'^UNI-',ITOA(addDiagSettingsLocation),',0,',FORMAT('%04d',myRoom.LOC_ID),':',WC_TP_ENCODE(myRoom.LOC_NAME)"
 		pC1  = FORMAT('%04d',myRoom.LOC_ID)
@@ -1603,7 +1604,7 @@ DEFINE_FUNCTION fnSetupPanel(INTEGER pPanel){
 		pC2  = ': '
 		pWC2 = CH_TO_WC(PC2)
 		pWC = _WC("pWC1,pWC2,myRoom.LOC_NAME")
-		SEND_COMMAND tp[pPanel], "'^UNI-',ITOA(addDiagSettingsLocation),',0,',WC_TP_ENCODE(pWC)"
+		//SEND_COMMAND tp[pPanel], "'^UNI-',ITOA(addDiagSettingsLocation),',0,',WC_TP_ENCODE(pWC)"
 		// RMS supplied Room Name
 		//SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addRoomName),',0,',myRoom.LOC_NAME"
 		SEND_COMMAND tp[pPanel], "'^UNI-',ITOA(addRoomName),',0,',WC_TP_ENCODE(myRoom.LOC_NAME)"
