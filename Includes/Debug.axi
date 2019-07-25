@@ -22,7 +22,7 @@ DEFINE_FUNCTION fnDebug(uDebug d, INTEGER l, CHAR pMsg[10000]){
 	pMsgCopy = pMsg
 	IF(d.log_level >= l){
 		WHILE(LENGTH_ARRAY(pMsgCopy) || !x){
-			SEND_STRING 0, "d.uid,'[',FORMAT('%02d',x),']->',GET_BUFFER_STRING(pMsgCopy,100)"
+			SEND_STRING 0, "d.uid,'[',FORMAT('%02d',x),']::',GET_BUFFER_STRING(pMsgCopy,100)"
 			x++
 		}
 	}
