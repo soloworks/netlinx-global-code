@@ -21,6 +21,7 @@ DEFINE_TYPE STRUCTURE uGain{
 	SINTEGER VALUE_255
 	SINTEGER RANGE[2]
 	CHAR     NAME[30]
+	INTEGER  MASTER			// If set, this gain should follow what it's master does
 }
 DEFINE_TYPE STRUCTURE uAudioPanel{
 	INTEGER	GAIN_UNDER_CONTROL		// High when User is controlling Audio Value
@@ -229,6 +230,55 @@ DEFINE_EVENT BUTTON_EVENT[tpMain,btnGainMute]{
 	#WARN 'StandardCodeAudioControl - btnGainMute Not Declared'
 #END_IF
 
+/******************************************************************************
+	Standard Audio - Set Gain to follow another
+******************************************************************************/
+DEFINE_FUNCTION fnGainChase(DEV vdvSlave, DEV vdvMaster){
+	myGains[fnGetGainIndex(vdvSlave)].MASTER = fnGetGainIndex(vdvMaster)
+}
+
+DEFINE_FUNCTION INTEGER fnGetGainIndex(DEV vdvGain){
+	STACK_VAR INTEGER x
+	FOR(x = 1; x <= LENGTH_ARRAY(vdvGains); x++){
+		IF(vdvGains[x] == vdvGain){RETURN x}
+	}
+}
+
+DEFINE_EVENT LEVEL_EVENT[vdvGains,1]{
+	STACK_VAR INTEGER x
+	FOR(x = 1; x <= LENGTH_ARRAY(vdvGains); x++){
+		IF(myGains[x].MASTER == GET_LAST(vdvGains)){
+			SEND_COMMAND vdvGains[x],"'VOLUME-',ITOA(LEVEL.VALUE)"
+		}
+	}
+}
+
+DEFINE_EVENT
+CHANNEL_EVENT[vdvGains,199]
+CHANNEL_EVENT[vdvGains,198]{
+	ON:{
+		STACK_VAR INTEGER x
+		FOR(x = 1; x <= LENGTH_ARRAY(vdvGains); x++){
+			IF(myGains[x].MASTER == GET_LAST(vdvGains)){
+				SWITCH(CHANNEL.CHANNEL){
+					CASE 198:SEND_COMMAND vdvGains[x],"'MICMUTE-ON'"
+					CASE 199:SEND_COMMAND vdvGains[x],"'MUTE-ON'"
+				}
+			}
+		}
+	}
+	OFF:{
+		STACK_VAR INTEGER x
+		FOR(x = 1; x <= LENGTH_ARRAY(vdvGains); x++){
+			IF(myGains[x].MASTER == GET_LAST(vdvGains)){
+				SWITCH(CHANNEL.CHANNEL){
+					CASE 198:SEND_COMMAND vdvGains[x],"'MICMUTE-OFF'"
+					CASE 199:SEND_COMMAND vdvGains[x],"'MUTE-OFF'"
+				}
+			}
+		}
+	}
+}
 /******************************************************************************
 	Standard Audio - Feedback
 ******************************************************************************/

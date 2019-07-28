@@ -16,7 +16,7 @@ DEFINE_TYPE STRUCTURE uServer{
 }
 DEFINE_TYPE STRUCTURE uDevice{
 	INTEGER  TYPE
-	INTEGER  STATE
+	CHAR     STATE[10]
 	CHAR     MODEL[25]
 	CHAR     MAC[17]
 	CHAR     NAME[30]
@@ -247,7 +247,8 @@ DEFINE_EVENT DATA_EVENT[dvIP]{
 		// Data Communication
 		WHILE(FIND_STRING(myZeeVeeServer.Rx,"$0D,$0A",1)){
 			fnProcessFeedback(fnStripCharsRight(REMOVE_STRING(myZeeVeeServer.Rx,"$0D,$0A",1),2))
-		}	
+		}
+
 		// Connection Established
 		IF(FIND_STRING(myZeeVeeServer.Rx,'Zyper$ ',1)){
 			REMOVE_STRING(myZeeVeeServer.Rx,'Zyper$ ',1)
@@ -314,7 +315,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[1000]){
 			fnDebug(DEBUG_STD,'Response Ended',pDATA)
 			// Store Device if processing
 			SWITCH(myZeeVeeServer.PROCESSING){
-				CASE PROCESSING_DATA_RELAYS: 
+				CASE PROCESSING_DATA_RELAYS:
 				CASE PROCESSING_DEVICE_STATUS: fnStoreProcessingDevice()
 			}
 			// Send next command
@@ -422,10 +423,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[1000]){
 												}
 											}
 											CASE 'state':{
-												SWITCH(VAL){
-													CASE 'Down':myZeeVeeServer.ProcessingDevice.STATE  = DEVICE_STATE_DOWN
-													CASE 'Up':  myZeeVeeServer.ProcessingDevice.STATE  = DEVICE_STATE_UP
-												}
+												myZeeVeeServer.ProcessingDevice.STATE = VAL
 											}
 											CASE 'model':     myZeeVeeServer.ProcessingDevice.MODEL  = VAL
 											CASE 'name':      myZeeVeeServer.ProcessingDevice.NAME   = VAL
@@ -606,8 +604,8 @@ DEFINE_PROGRAM{
 	// Endpoints
 	IF(TIMELINE_ACTIVE(TLID_COMMS)){
 		FOR(d = 1; d <= LENGTH_ARRAY(vdvDevice); d++){
-			[vdvDevice[d],251] = (myZeeVeeDevice[d].STATE == DEVICE_STATE_UP)
-			[vdvDevice[d],252] = (myZeeVeeDevice[d].STATE == DEVICE_STATE_UP)
+			[vdvDevice[d],251] = (myZeeVeeDevice[d].STATE == 'Up')
+			[vdvDevice[d],252] = (myZeeVeeDevice[d].STATE == 'Down')
 		}
 	}
 	ELSE{

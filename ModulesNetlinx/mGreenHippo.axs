@@ -21,6 +21,7 @@ DEFINE_TYPE STRUCTURE uHippo{
 	CHAR     StatusPinTrigger[50]		// Name of 
 	INTEGER	DEBUG
 	CHAR     SystemStatus[30]
+	CHAR     SystemStatusMsg[30]
 }
 /******************************************************************************
 	Constants
@@ -160,22 +161,41 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMEOUT]{
 	Feedback
 ******************************************************************************/
 DEFINE_FUNCTION fnProcessFeedback(){
-	fnDebug(DEBUG_STD,'GH->',"'[',myHippo.Rx,']'")
+	fnDebug(DEBUG_STD,'GH->',"myHippo.Rx")
 	IF(LENGTH_ARRAY(myHippo.Rx)){
+		STACK_VAR CHAR PinName[100]
+		// Remove $0D
 		SET_LENGTH_ARRAY(myHippo.Rx,LENGTH_ARRAY(myHippo.Rx)-1)
-		REMOVE_STRING(myHippo.Rx,'=',1)
-		REMOVE_STRING(myHippo.Rx,'=',1)
-		myHippo.SystemStatus = REMOVE_STRING(myHippo.Rx,',',1)
-		SET_LENGTH_ARRAY(myHippo.SystemStatus,LENGTH_ARRAY(myHippo.SystemStatus)-1)
-		myHippo.Rx = ''
-		SWITCH(myHippo.Rx){
-			CASE 'Run':
-			CASE 'limited':{
-				IF(TIMELINE_ACTIVE(TLID_COMMS)){ TIMELINE_KILL(TLID_COMMS) }
-				TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
+		// Remove and gather string between [..]
+		REMOVE_STRING(myHippo.Rx,'[',1)
+		PinName = REMOVE_STRING(myHippo.Rx,']',1)
+		SET_LENGTH_ARRAY(PinName,LENGTH_ARRAY(PinName)-1)
+		IF(myHippo.StatusPinTrigger == PinName){
+			// Remove "_(string)="
+			REMOVE_STRING(myHippo.Rx,'=',1)
+			// Check for  "System Status="
+			SWITCH(REMOVE_STRING(myHippo.Rx,'=',1)){
+				CASE 'System Status=':{
+					// Extract System Status
+					myHippo.SystemStatus = REMOVE_STRING(myHippo.Rx,',',1)
+					SET_LENGTH_ARRAY(myHippo.SystemStatus,LENGTH_ARRAY(myHippo.SystemStatus)-1)
+					// Extract Message
+					REMOVE_STRING(myHippo.Rx,'=',1)
+					myHippo.SystemStatusMsg = GET_BUFFER_STRING(myHippo.Rx,100)
+				}
+			}
+			// Set Comms based on value
+			SWITCH(myHippo.SystemStatus){
+				CASE 'Run':
+				CASE 'limited':{
+					IF(TIMELINE_ACTIVE(TLID_COMMS)){ TIMELINE_KILL(TLID_COMMS) }
+					TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
+				}
 			}
 		}
 	}
+	// Clean out the buffer
+	myHippo.Rx = ''
 }
 
 

@@ -3,6 +3,7 @@ MODULE_NAME='mSamsungExLink'(DEV vdvControl, DEV dvExLink)
 	Samsung Residential ExLink Control
 ******************************************************************************/
 INCLUDE 'CustomFunctions'
+INCLUDE 'Debug'
 /******************************************************************************
 	Module Components
 ******************************************************************************/
@@ -16,16 +17,24 @@ DEFINE_TYPE STRUCTURE uExLink{
 	INTEGER POWER
 	INTEGER VOL
 	INTEGER MUTE
-	
+
 	INTEGER	VOL_PEND
 	INTEGER	LAST_VOL
+	
+	uDebug  DEBUG
 }
 
 DEFINE_VARIABLE
 uExLink myExLink
-LONG TLT_COMMS[] = { 30000 }
+LONG TLT_COMMS[] = { 45000 }
 LONG TLT_POLL[]  = { 15000 }
-LONG TLT_VOL[]			= {  150}
+LONG TLT_VOL[]	  = {   150 }
+/******************************************************************************
+	Configuration
+******************************************************************************/
+DEFINE_START{
+	myExLink.DEBUG.UID = 'ExLink'
+}
 /******************************************************************************
 	Polling
 ******************************************************************************/
@@ -54,6 +63,7 @@ DEFINE_FUNCTION fnSendCommand(CHAR CMD[3],INTEGER VAL){
 	toSend = "toSend,CHK"
 	myExLink.LAST_SENT = CMD
 	SEND_STRING dvExLink,toSend
+	fnDebug(myExLink.DEBUG,DEBUG_STD,"'-->ExLink: ',fnBytesToString(toSend)")
 	fnInitPoll()
 }
 DEFINE_EVENT DATA_EVENT[dvExLink]{
@@ -64,6 +74,7 @@ DEFINE_EVENT DATA_EVENT[dvExLink]{
 		fnPoll()
 	}
 	STRING:{
+		fnDebug(myExLink.DEBUG,DEBUG_STD,"'ExLink-->: ',fnBytesToString(DATA.TEXT)")
 		IF(TIMELINE_ACTIVE(TLID_COMMS)){TIMELINE_KILL(TLID_COMMS)}
 		TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 	}
@@ -86,6 +97,16 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 	}
 	COMMAND:{
 		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
+			CASE 'PROPERTY':{
+				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
+					CASE 'DEBUG':{
+						SWITCH(DATA.TEXT){
+							CASE 'TRUE': myExLink.DEBUG.LOG_LEVEL = DEBUG_STD
+							DEFAULT:     myExLink.DEBUG.LOG_LEVEL = DEBUG_ERR
+						}
+					}
+				}
+			}
 			CASE 'POWER':{
 				// Set value
 				SWITCH(DATA.TEXT){
