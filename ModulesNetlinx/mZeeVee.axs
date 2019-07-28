@@ -248,6 +248,7 @@ DEFINE_EVENT DATA_EVENT[dvIP]{
 		WHILE(FIND_STRING(myZeeVeeServer.Rx,"$0D,$0A",1)){
 			fnProcessFeedback(fnStripCharsRight(REMOVE_STRING(myZeeVeeServer.Rx,"$0D,$0A",1),2))
 		}
+
 		// Connection Established
 		IF(FIND_STRING(myZeeVeeServer.Rx,'Zyper$ ',1)){
 			REMOVE_STRING(myZeeVeeServer.Rx,'Zyper$ ',1)
