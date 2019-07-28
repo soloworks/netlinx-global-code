@@ -8,20 +8,20 @@ INCLUDE 'Debug'
 /******************************************************************************
 	Module Structures
 ******************************************************************************/
-DEFINE_TYPE STRUCTURE uPlayer{	
+DEFINE_TYPE STRUCTURE uPlayer{
 	// Comms
 	CHAR 		Rx[1000]						// Receieve Buffer
 	CHAR     Tx[1000]						// Transmix Buffer
 	INTEGER 	IP_PORT						//	IP Port (Default: 8102
 	CHAR		IP_HOST[255]				//	IP Address
 	INTEGER 	CONN_STATE					// Connection State
-	CHAR     LAST_SENT[20]				// Last sent	
+	CHAR     LAST_SENT[20]				// Last sent
 	uDebug 	DEBUG							// Debugging Mode
-	
+
 	// Meta Data
 	CHAR     MODEL[20]
 	CHAR     FIRMWARE[20]
-	
+
 	// State
 	INTEGER  POWER
 }
