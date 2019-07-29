@@ -524,6 +524,10 @@
 <FilePathName>ModulesNetlinx\mPinAuth.axs</FilePathName>
 <Comments></Comments>
 </File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mPioneerBluRay</Identifier>
+<FilePathName>ModulesNetlinx\mPioneerBluRay.axs</FilePathName>
+<Comments></Comments>
+</File>
 <File CompileType="Netlinx" Type="Module"><Identifier>mPJLink</Identifier>
 <FilePathName>ModulesNetlinx\mPJLink.axs</FilePathName>
 <Comments></Comments>
@@ -686,6 +690,10 @@
 </File>
 <File CompileType="Netlinx" Type="Module"><Identifier>mUtilDateTime</Identifier>
 <FilePathName>ModulesNetlinx\mUtilDateTime.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mUVSLucidity</Identifier>
+<FilePathName>ModulesNetlinx\mUVSLucidity.axs</FilePathName>
 <Comments></Comments>
 </File>
 <File CompileType="Netlinx" Type="Module"><Identifier>mVaddioCamera</Identifier>

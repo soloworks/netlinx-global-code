@@ -296,13 +296,15 @@ DEFINE_FUNCTION CHAR[255] fnGetHiQRef(CHAR pHiQ[], INTEGER pSV){
 }
 
 DEFINE_FUNCTION fnSendCommand(CHAR Body[]){
-	 STACK_VAR CHAR Msg[255]
-	 Msg = Body
-	 Msg = "Msg,fnGetChecksum(Msg)"
-	 Msg = fnEncode(Msg)
-	 fnHexDebug(Msg)
-	 fnDebug(DEBUG_STD,'->BSS:',"fnBytesToString("$02,Msg,$03")")
-	 SEND_STRING dvDevice,"$02,Msg,$03"
+	STACK_VAR CHAR Msg[255]
+	Msg = Body
+	Msg = "Msg,fnGetChecksum(Msg)"
+	Msg = fnEncode(Msg)
+	fnHexDebug(Msg)
+	IF(myBSS.COMMS.CONN_STATE == CONN_STATE_CONNECTED){
+		fnDebug(DEBUG_STD,'->BSS:',"fnBytesToString("$02,Msg,$03")")
+		SEND_STRING dvDevice,"$02,Msg,$03"
+	}
 }
 /******************************************************************************
 	Response Processing Helpers

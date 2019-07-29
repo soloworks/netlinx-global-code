@@ -5,7 +5,7 @@ MODULE_NAME='mViscaOverIP'(DEV vdvCamera[],DEV ipCAM[], DEV ipFB, DEV ipMC)
 
 	For Discovery & Assign:
 	PROPERTY-NETWORK,MAC,IP,SUBNET,GATEWAY
-	
+
 	For Static Set IP:
 	PROPERTY-IP,xxx
 	PROPERTY-MODE,STATIC
@@ -114,7 +114,7 @@ DEFINE_FUNCTION fnOpenClientConnection(INTEGER pCAM){
 		fnDebug(DEBUG_ERR,"'SONY CAM',FORMAT('%02d',pCAM),' ERROR'",'IP ADDRESS NOT CONFIGURED')
 		RETURN
 	}
-	
+
 	IF(myViscaIP.CAM[pCAM].MODE == MODE_AUTO){
 		IF(!LENGTH_ARRAY(myViscaIP.CAM[pCAM].MAC_ADD)){
 			fnDebug(DEBUG_ERR,"'SONY CAM',FORMAT('%02d',pCAM),' ERROR'",'MAC ADDRESS NOT CONFIGURED')
@@ -145,7 +145,7 @@ DEFINE_FUNCTION fnCloseConnection(INTEGER pCAM){
 
 DEFINE_FUNCTION fnAddToQueue(INTEGER pCAM,CHAR pData[],INTEGER isQuery){
 	STACK_VAR INTEGER x
-	
+
 	SWITCH(isQuery){
 		CASE TRUE:{
 			FOR(x = 1; x <= QUEUE_LENGTH; x++){
@@ -153,7 +153,7 @@ DEFINE_FUNCTION fnAddToQueue(INTEGER pCAM,CHAR pData[],INTEGER isQuery){
 					myViscaIP.CAM[pCAM].TxQry[x] = pDATA
 					BREAK
 				}
-				
+
 			}
 		}
 		CASE FALSE:{
@@ -371,7 +371,7 @@ DEFINE_FUNCTION fnProcessUnicast(INTEGER pCam,CHAR pDATA[]){
 				STACK_VAR INTEGER LEN
 				STACK_VAR INTEGER SEQ
 				STACK_VAR INTEGER ADD
-				
+
 				fnDebug(DEBUG_DEV,"'Visca Reply Data'",fnBytesToString(pDATA))
 				// Extract and calculate Length
 				LEN = GET_BUFFER_CHAR(pDATA)*GET_BUFFER_CHAR(pDATA)
@@ -382,13 +382,13 @@ DEFINE_FUNCTION fnProcessUnicast(INTEGER pCam,CHAR pDATA[]){
 				// Extract the Address
 				ADD = GET_BUFFER_CHAR(pDATA)
 				fnDebug(DEBUG_DEV,"'Visca Reply Add '",ITOA(ADD))
-				
+
 				// Remove Return Marker char (these are standard matched on command/query
 				GET_BUFFER_STRING(pDATA,1)
 				// Remove the end $FF
 				SET_LENGTH_ARRAY(pDATA,LENGTH_ARRAY(pDATA)-1)
-				
-				// Process Response based on last sent 
+
+				// Process Response based on last sent
 				SELECT{
 					ACTIVE("$09,$00,$02" == myViscaIP.CAM[pCAM].TxLast):{	// VersionInq
 						STACK_VAR CHAR VENDOR_ID[2]
@@ -506,9 +506,9 @@ DEFINE_EVENT DATA_EVENT[vdvCamera]{
 	COMMAND:{
 		STACK_VAR INTEGER pCAM
 		pCAM = GET_LAST(vdvCamera)
-		
+
 		fnDebug(DEBUG_STD,"'DATA_EVENT[vdvCamera[',ITOA(pCam),']]'",DATA.TEXT)
-		
+
 		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
 			CASE 'PROPERTY':{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
