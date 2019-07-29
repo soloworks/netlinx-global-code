@@ -1,14 +1,5 @@
 PROGRAM_NAME='CustomFunctions'
 /******************************************************************************
-	Debugging
-******************************************************************************/
-DEFINE_CONSTANT
-INTEGER DEBUG_ERR				= 0
-INTEGER DEBUG_STD				= 1
-INTEGER DEBUG_DEV				= 2
-INTEGER DEBUG_LOG				= 3
-INTEGER DEBUG_TIME			= 4
-/******************************************************************************
 Functions for Device Handling
 ******************************************************************************/
 DEFINE_FUNCTION CHAR[20] DEVTOA(DEV pDevice){
@@ -358,6 +349,7 @@ DEFINE_FUNCTION SLONG fnSecsToMins(SLONG pSeconds, INTEGER pRoundUp){
 	RETURN pMaths
 }
 
+DEFINE_FUNCTION CHAR[100] fnSecondsToDurationText(SLONG pDurationParam, INTEGER pHandleSeconds){
 /******************************************************************************
 
 	pHandleSeconds
@@ -365,11 +357,6 @@ DEFINE_FUNCTION SLONG fnSecsToMins(SLONG pSeconds, INTEGER pRoundUp){
 	2 = Round spare seconds UP
 
 ******************************************************************************/
-#IF_DEFINED _Debug_Time
-DEFINE_FUNCTION CHAR[100] fnSecondsToDurationText(SLONG pDurationParam, INTEGER pHandleSeconds, CHAR pWHEN[]){
-#ELSE
-DEFINE_FUNCTION CHAR[100] fnSecondsToDurationText(SLONG pDurationParam, INTEGER pHandleSeconds){
-#END_IF
 	STACK_VAR SLONG pDAYs
 	STACK_VAR SLONG pHOURs
 	STACK_VAR SLONG pMINs
@@ -382,34 +369,21 @@ DEFINE_FUNCTION CHAR[100] fnSecondsToDurationText(SLONG pDurationParam, INTEGER 
 
 	// Re-assign param
 	pDuration = pDurationParam
-#IF_DEFINED _Debug_Time
-	IF(FIND_STRING(LOWER_STRING(pWHEN),'remain',1)){
-		timeMINS = TIME_TO_MINUTE(TIME)
-		timeSECs = TIME_TO_SECOND(TIME)
-		fnDebug(DEBUG_TIME,'FUNCTION','fnSecondsToDurationText',"'(',pWHEN,', time(M,S) = ',ITOA(timeMINS),',',ITOA(timeSECs),' and pDuration = ',itoa(pDuration),')'")
-	}
-#END_IF
+
 	IF(pDuration){
 		// Get Seconds
 		pSecs = pDURATION % 60
-		// Round up Secs if requested
-		IF(pHandleSeconds == 3){
-			STACK_VAR SLONG pDIFF
-			IF(pSECs){
-				pDIFF = 60 - pSECs
-				pDuration = pDuration + pDIFF
-			}
-		}
-		ELSE{
-			// Remove Any Spare Seconds
-			pDURATION = pDURATION - pSECs
-		}
+
+		// Remove Any Spare Seconds
+		pDURATION = pDURATION - pSECs
 		// convert to Mins
 		pMINs = (pDURATION / 60) % 60
+
 		// Get Hours
 		pDURATION = pDURATION - (pMINs * 60)
 		pHOURs = (pDURATION / 3600) % 24
 		pDURATION = pDURATION - (pHOURs * 3600)
+
 		// Get Days
 		pHolder = 86400
 		pDAYs = pDURATION / pHolder
@@ -427,7 +401,7 @@ DEFINE_FUNCTION CHAR[100] fnSecondsToDurationText(SLONG pDurationParam, INTEGER 
 		ELSE IF(pHOURs > 1 || pDays){
 			pReturnString = "pReturnString,ITOA(pHOURs),'hrs '"
 		}
-		// Round up Mins if requested
+		// Round up Secs if requested
 		IF(pHandleSeconds == 2){
 			IF(pSECs){
 				pMINs = pMINs + 1
@@ -449,16 +423,6 @@ DEFINE_FUNCTION CHAR[100] fnSecondsToDurationText(SLONG pDurationParam, INTEGER 
 			}
 		}
 	}
-	ELSE{
-		pReturnString = "'0 Mins'"
-	}
-#IF_DEFINED _Debug_Time
-	IF(FIND_STRING(LOWER_STRING(pWHEN),'remain',1)){
-		timeMINS = TIME_TO_MINUTE(TIME)
-		timeSECs = TIME_TO_SECOND(TIME)
-		fnDebug(DEBUG_TIME,'FUNCTION','fnSecondsToDurationText',"'(',pWHEN,', time(M,S) = ',ITOA(timeMINS),',',ITOA(timeSECs),' and pReturnString = ',pReturnString,', pSECs = ',ITOA(pSECs),')'")
-	}
-#END_IF
 	RETURN pReturnString
 }
 DEFINE_FUNCTION CHAR[255] fnMonthString(SINTEGER pMonth){
