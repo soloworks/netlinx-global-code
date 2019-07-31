@@ -194,7 +194,7 @@ DEFINE_FUNCTION fnGetCleanBookingResponse(CHAR encode[10000],uRmsBookResp pResp)
 DEFINE_TYPE STRUCTURE uRoom{
 	CHAR           ROOM_NAME[50]           // Room Name as supplied from Config File
 	INTEGER 			LOC_ID						// RMS Supplied Location ID
-	CHAR   			LOC_NAME[50]				// RMS Supplied Location Name
+	WIDECHAR   		LOC_NAME[350]				// RMS Supplied Location Name
 
 	// Timers and Occupancy
 	LONG 				OCCUPANCY_TIMER					// Current occupied timer
@@ -292,14 +292,16 @@ DEFINE_FUNCTION fnDebug(INTEGER pDEBUG,DEV dvOrigin, CHAR pRef[],CHAR pData[]){
 DEFINE_FUNCTION fnDebugBooking(INTEGER pDebug,SLONG Index, SLONG Total, uRmsBookResp b){
 	// Check the requested debug against the current module setting
 	IF(myConnectRMS.DEBUG >= pDEBUG){
-		SEND_STRING 0:0:0, "'RmsBook  [index] ',FORMAT('%02d',Index),':',FORMAT('%02d',Total)"
-		SEND_STRING 0:0:0, "'RmsBook     [id] ',b.bookingId"
-		SEND_STRING 0:0:0, "'RmsBook  [Start] ',b.startDate,',',b.startTime"
-		SEND_STRING 0:0:0, "'RmsBook    [End] ',b.endDate,',',b.endTime"
-		SEND_STRING 0:0:0, "'RmsBook    [sub] ',WC_TO_CH(b.subject)"
-		SEND_STRING 0:0:0, "'RmsBook    [org] ',WC_TO_CH(b.organizer)"
-		SEND_STRING 0:0:0, "'RmsBook [AllDay] ',fnGetBooleanString(b.isAllDayEvent)"
-		SEND_STRING 0:0:0, "'RmsBook   [Priv] ',fnGetBooleanString(b.isPrivateEvent)"
+		SEND_STRING 0:0:0, "'RmsBook    [index] ',FORMAT('%02d',Index),':',FORMAT('%02d',Total)"
+		SEND_STRING 0:0:0, "'RmsBook       [id] ',b.bookingId"
+		SEND_STRING 0:0:0, "'RmsBook [location] ',ITOA(b.location)"
+		SEND_STRING 0:0:0, "'RmsBook    [Start] ',b.startDate,',',b.startTime"
+		SEND_STRING 0:0:0, "'RmsBook      [End] ',b.endDate,',',b.endTime"
+		SEND_STRING 0:0:0, "'RmsBook [duration] ',ITOA(b.remainingMinutes)"
+		SEND_STRING 0:0:0, "'RmsBook      [sub] ',WC_TO_CH(b.subject)"
+		SEND_STRING 0:0:0, "'RmsBook      [org] ',WC_TO_CH(b.organizer)"
+		SEND_STRING 0:0:0, "'RmsBook   [AllDay] ',fnGetBooleanString(b.isAllDayEvent)"
+		SEND_STRING 0:0:0, "'RmsBook     [Priv] ',fnGetBooleanString(b.isPrivateEvent)"
 	}
 }
 /********************************************************************************************************************************************************************************************************************************************************
@@ -536,7 +538,7 @@ DEFINE_EVENT DATA_EVENT[vdvRMSDuet]{
 
 								// Process Location ID
 								myConnectRMS.ROOM[r].LOC_ID   = ATOI(fnGetCSV(pDATA,1))
-								myConnectRMS.ROOM[r].LOC_NAME = fnGetCSV(pDATA,2)
+								myConnectRMS.ROOM[r].LOC_NAME = CH_TO_WC(fnGetCSV(pDATA,2))
 								SEND_COMMAND vdvRoom[r],"'PROPERTY-LOCATION,',ITOA(myConnectRMS.ROOM[r].LOC_ID),',',myConnectRMS.ROOM[r].LOC_NAME"
 
 								// Request all Bookings
@@ -847,8 +849,8 @@ DEFINE_FUNCTION fnResetRoom(INTEGER r){
 	// Clear Existing Bookings
 	fnClearBookings(r)
 	// Clear Location Details
-	myConnectRMS.ROOM[r].LOC_ID 	= 0			// Reset Location ID
-	myConnectRMS.ROOM[r].LOC_NAME 	= ''		// Clear location name
+	myConnectRMS.ROOM[r].LOC_ID 	= 0				// Reset Location ID
+	myConnectRMS.ROOM[r].LOC_NAME = CH_TO_WC('')	// Clear location name
 	// Request RMS Location to trigger new data
 	SEND_COMMAND vdvRMSDuet, "'?ASSET.LOCATION-',DEVTOA(vdvRoom[r])"
 	// Debug Out

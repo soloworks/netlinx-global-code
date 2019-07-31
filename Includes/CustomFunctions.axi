@@ -349,6 +349,7 @@ DEFINE_FUNCTION SLONG fnSecsToMins(SLONG pSeconds, INTEGER pRoundUp){
 	RETURN pMaths
 }
 
+DEFINE_FUNCTION CHAR[100] fnSecondsToDurationText(SLONG pDurationParam, INTEGER pHandleSeconds){
 /******************************************************************************
 
 	pHandleSeconds
@@ -356,66 +357,72 @@ DEFINE_FUNCTION SLONG fnSecsToMins(SLONG pSeconds, INTEGER pRoundUp){
 	2 = Round spare seconds UP
 
 ******************************************************************************/
-DEFINE_FUNCTION CHAR[100] fnSecondsToDurationText(SLONG pDurationParam, INTEGER pHandleSeconds){
 	STACK_VAR SLONG pDAYs
 	STACK_VAR SLONG pHOURs
 	STACK_VAR SLONG pMINs
 	STACK_VAR SLONG pSECs
-	STACK_VAR CHAR pReturnString[50]
+	STACK_VAR CHAR pReturnString[64]
 	STACK_VAR SLONG pDuration
 	STACK_VAR SLONG pHolder	// Used to bypass weird compiler type errors
+	STACK_VAR SLONG timeMINs
+	STACK_VAR SLONG timeSECs
 
 	// Re-assign param
 	pDuration = pDurationParam
 
-	// Get Seconds
-	pSecs = pDURATION % 60
-	pDURATION = pDURATION - pSECs
-	// Remove Any Spare Seconds and convert to Mins
-	pMINs = (pDURATION / 60) % 60
-	pDURATION = pDURATION - (pMINs * 60)
-	// Get Hours
-	pHOURs = (pDURATION / 3600) % 24
-	pDURATION = pDURATION - (pHOURs * 3600)
-	// Get Days
-	pHolder = 86400
-	pDAYs = pDURATION / pHolder
+	IF(pDuration){
+		// Get Seconds
+		pSecs = pDURATION % 60
 
-	IF(pDAYs == 1){
-		pReturnString = "pReturnString,ITOA(pDAYs),'day '"
-	}
-	ELSE IF(pDAYs > 1){
-		pReturnString = "pReturnString,ITOA(pDAYs),'days '"
-	}
+		// Remove Any Spare Seconds
+		pDURATION = pDURATION - pSECs
+		// convert to Mins
+		pMINs = (pDURATION / 60) % 60
 
-	IF(pHOURs == 1){
-		pReturnString = "pReturnString,ITOA(pHOURs),'hr '"
-	}
-	ELSE IF(pHOURs > 1 || pDays){
-		pReturnString = "pReturnString,ITOA(pHOURs),'hrs '"
-	}
-	// Round up Mins if requested
-	IF(pHandleSeconds == 2){
-		IF(pSECs){
-			pMINs = pMINs + 1
+		// Get Hours
+		pDURATION = pDURATION - (pMINs * 60)
+		pHOURs = (pDURATION / 3600) % 24
+		pDURATION = pDURATION - (pHOURs * 3600)
+
+		// Get Days
+		pHolder = 86400
+		pDAYs = pDURATION / pHolder
+
+		IF(pDAYs == 1){
+			pReturnString = "pReturnString,ITOA(pDAYs),'day '"
+		}
+		ELSE IF(pDAYs > 1){
+			pReturnString = "pReturnString,ITOA(pDAYs),'days '"
+		}
+
+		IF(pHOURs == 1){
+			pReturnString = "pReturnString,ITOA(pHOURs),'hr '"
+		}
+		ELSE IF(pHOURs > 1 || pDays){
+			pReturnString = "pReturnString,ITOA(pHOURs),'hrs '"
+		}
+		// Round up Secs if requested
+		IF(pHandleSeconds == 2){
+			IF(pSECs){
+				pMINs = pMINs + 1
+			}
+		}
+		IF(pMINs == 1){
+			pReturnString = "pReturnString,ITOA(pMINs),'min '"
+		}
+		ELSE IF(pMINs > 1 || pHOURs || pDAYs){
+			pReturnString = "pReturnString,ITOA(pMINs),'mins '"
+		}
+
+		IF(pHandleSeconds == 1){
+			IF(pSECS == 1){
+				pReturnString = "pReturnString,ITOA(pSECS),'sec '"
+			}
+			ELSE IF(pSECS > 1 || pMINs || pHOURs || pDAYs){
+				pReturnString = "pReturnString,ITOA(pSECS),'secs'"
+			}
 		}
 	}
-	IF(pMINs == 1){
-		pReturnString = "pReturnString,ITOA(pMINs),'min '"
-	}
-	ELSE IF(pMINs > 1 || pHOURs || pDAYs){
-		pReturnString = "pReturnString,ITOA(pMINs),'mins '"
-	}
-
-	IF(pHandleSeconds == 1){
-		IF(pSECS == 1){
-			pReturnString = "pReturnString,ITOA(pSECS),'sec '"
-		}
-		ELSE IF(pSECS > 1 || pMINs || pHOURs || pDAYs){
-			pReturnString = "pReturnString,ITOA(pSECS),'secs'"
-		}
-	}
-
 	RETURN pReturnString
 }
 DEFINE_FUNCTION CHAR[255] fnMonthString(SINTEGER pMonth){
