@@ -933,9 +933,12 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 									CASE 'Event':{
 										STACK_VAR CHAR pEVENT[100]
 										SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,':',1),1)){
-											CASE 'Pressed Signal':  pEVENT = 'INTERFACE_API-PRESS,'
-											CASE 'Clicked Signal':  pEVENT = 'INTERFACE_API-CLICK,'
-											CASE 'Released Signal': pEVENT = 'INTERFACE_API-RELEASE,'
+											CASE 'PageOpened PageId':  pEVENT = 'INTERFACE_API-PAGE_OPENED,'
+											CASE 'PageClosed PageId':  pEVENT = 'INTERFACE_API-PAGE_CLOSED,'
+											CASE 'Pressed Signal':     pEVENT = 'INTERFACE_API-PRESS,'
+											CASE 'Clicked Signal':     pEVENT = 'INTERFACE_API-CLICK,'
+											CASE 'Released Signal':    pEVENT = 'INTERFACE_API-RELEASE,'
+											CASE 'Changed Signal':     pEVENT = 'INTERFACE_API-CHANGED,'
 										}
 
 										pData = fnRemoveWhiteSpace(pData)
@@ -1861,13 +1864,31 @@ DEFINE_EVENT DATA_EVENT[vdvControl[1]]{
 					}
 				}
 				CASE 'INTERFACE_API':{
+					STACK_VAR CHAR pWIDGET[32]
+					STACK_VAR CHAR pVALUE[32]
+					STACK_VAR CHAR pTITLE[32]
+					STACK_VAR CHAR pBODY[255]
+					STACK_VAR CHAR pTIME[4]
 					SWITCH(fnGetCSV(DATA.TEXT,1)){
 						CASE 'SET':{
-							SWITCH(fnGetCSV(DATA.TEXT,3)){
+							pWIDGET = fnGetCSV(DATA.TEXT,2)
+							pVALUE  = fnGetCSV(DATA.TEXT,3)
+							fnDebug(DEBUG_DEVELOP,'Cisco Rx INTERFACE_API-',"'SET,',pWIDGET,',',pVALUE")
+							SWITCH(pVALUE){
 								CASE '':
-								CASE 'None':	fnQueueTx("'xCommand UserInterface Extensions Widget SetValue'","'Value: "',fnGetCSV(DATA.TEXT,3),'" WidgetId: "',fnGetCSV(DATA.TEXT,2),'"'")
-								DEFAULT:			fnQueueTx("'xCommand UserInterface Extensions Widget UnsetValue'","'WidgetId: "',fnGetCSV(DATA.TEXT,2),'"'")
+								CASE 'none':
+								CASE 'None':
+								CASE 'NONE': fnQueueTx("'xCommand UserInterface Extensions Widget UnsetValue'","'WidgetId: "',pWIDGET,'"'")
+								DEFAULT:	    fnQueueTx("'xCommand UserInterface Extensions Widget SetValue'","'Value: "',pVALUE,'" WidgetId: "',pWIDGET,'"'")
 							}
+						}
+						CASE 'MESSAGE':{
+							pTITLE  = fnGetCSV(DATA.TEXT,2)
+							pBODY   = fnGetCSV(DATA.TEXT,3)
+							pTIME   = fnGetCSV(DATA.TEXT,4)
+							fnDebug(DEBUG_DEVELOP,'Cisco Rx INTERFACE_API-',"'MESSAGE,',pTITLE,',',pBODY,',',pTIME")
+							fnQueueTx("'xCommand UserInterface Message Alert Display'",
+							"'Title: "',pTITLE,'" Text: "',pBODY,'" Duration: ',pTIME")
 						}
 						CASE 'EXTSOURCE':{
 							IF(fnGetCSV(DATA.TEXT,2) == 'HIDE'){

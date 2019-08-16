@@ -1079,7 +1079,7 @@ DEFINE_PROGRAM{
 			CASE OBJ_IO_VOIP:{
 				STACK_VAR INTEGER c
 				STACK_VAR INTEGER CALL_ACTIVE
-				
+
 				FOR(c = 1; c <= 6; c++){
 					CALL_ACTIVE = CALL_ACTIVE || (
 						myObjects[o].CALLSTATE[c] == 'VOIP_CALL_STATE_INVALID_NUMBER' ||
@@ -1095,7 +1095,7 @@ DEFINE_PROGRAM{
 						myObjects[o].CALLSTATE[c] == 'VOIP_CALL_STATE_CONF_HOLD'
 					)
 				}
-				
+
 				[vdvObjects[o],235] 	= 	( myObjects[o].VAL_STATE[02])
 				[vdvObjects[o],236]	= 	( myObjects[o].CALLSTATE[1] == 'VOIP_CALL_STATE_RINGING' )
 				[vdvObjects[o],238]	= 	CALL_ACTIVE
