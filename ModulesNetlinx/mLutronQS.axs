@@ -296,7 +296,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 							STACK_VAR INTEGER pCompNo
 							STACK_VAR INTEGER pActNo
 							pCompNo = ATOI(fnStripCharsRight(REMOVE_STRING(pDATA,',',1),1))
-							
+
 							IF(FIND_STRING(pDATA,',',1)){
 								pActNo = ATOI(fnStripCharsRight(REMOVE_STRING(pDATA,',',1),1))
 							}
@@ -307,6 +307,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 							SWITCH(pActNo){
 								CASE 3:{	// Push Event
 									myLutronQS.DEVICE[x].BTN[pCompNo] = TRUE
+									SEND_STRING vdvControl[x],"'BUTTON-PRESS,',ITOA(pCompNo)"
 								}
 								CASE 4:	// Release Event
 								CASE 6:{	// Multi-Tap

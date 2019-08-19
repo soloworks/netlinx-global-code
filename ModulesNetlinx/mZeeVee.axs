@@ -54,6 +54,7 @@ LONG TLID_COMMS 	   = 1
 LONG TLID_POLL_LONG	= 2
 LONG TLID_POLL_SHORT	= 3
 LONG TLID_RETRY	   = 4
+LONG TLID_TIMEOUT	   = 5
 
 // IP States
 INTEGER IP_STATE_OFFLINE		= 0
@@ -84,6 +85,7 @@ LONG TLT_COMMS[] 			= { 180000 }
 LONG TLT_POLL_LONG[] 	= {  75000 }
 LONG TLT_POLL_SHORT[] 	= {  2000, 2000, 15000, 15000 }
 LONG TLT_RETRY[]			= {   5000 }
+LONG TLT_TIMEOUT[]		= {  20000 }
 VOLATILE uZeeVee myZeeVeeServer
 VOLATILE uDevice myZeeVeeDevice[125]
 /******************************************************************************
@@ -190,6 +192,11 @@ DEFINE_EVENT DATA_EVENT[dvIP]{
 	}
 	OFFLINE:{
 		myZeeVeeServer.IP_STATE	= IP_STATE_OFFLINE
+		myZeeVeeServer.Rx = ''
+		myZeeVeeServer.TxCmd = ''
+		myZeeVeeServer.TxQry = ''
+		myZeeVeeServer.PENDING = FALSE
+		myZeeVeeServer.PROCESSING = FALSE
 		fnRetryConnection()
 	}
 	ONERROR:{
@@ -218,6 +225,10 @@ DEFINE_EVENT DATA_EVENT[dvIP]{
 	}
 	STRING:{
 		fnDebug(DEBUG_DEV,'ZV_RAW->',DATA.TEXT)
+
+		// Envoke a Time out to handle bad responses
+		IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){TIMELINE_KILL(TLID_TIMEOUT)}
+		TIMELINE_CREATE(TLID_TIMEOUT,TLT_TIMEOUT,LENGTH_ARRAY(TLT_TIMEOUT),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 
 		// Telnet Negotiation
 		WHILE(myZeeVeeServer.Rx[1] == $FF && LENGTH_ARRAY(myZeeVeeServer.Rx) >= 3){
@@ -256,6 +267,10 @@ DEFINE_EVENT DATA_EVENT[dvIP]{
 			fnSendFromQueue()
 		}
 	}
+}
+
+DEFINE_EVENT TIMELINE_EVENT[TLID_TIMEOUT]{
+	fnCloseTCPConnection()
 }
 /******************************************************************************
 	Feedback
@@ -324,6 +339,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[1000]){
 			fnSendFromQueue()
 			IF(TIMELINE_ACTIVE(TLID_COMMS)){ TIMELINE_KILL(TLID_COMMS) }
 			TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
+			IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){TIMELINE_KILL(TLID_TIMEOUT)}
 		}
 		ACTIVE(fnComparePrefix(pDATA,'Show')):{
 			fnDebug(DEBUG_STD,'Echo',pDATA)
@@ -336,6 +352,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[1000]){
 			myZeeVeeServer.PROCESSING = FALSE
 			myZeeVeeServer.PENDING = FALSE
 			fnSendFromQueue()
+			IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){TIMELINE_KILL(TLID_TIMEOUT)}
 		}
 		ACTIVE(fnComparePrefix(pDATA,'Warning')):{
 			fnDebug(DEBUG_STD,'Response Warning',pDATA)
@@ -345,6 +362,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[1000]){
 			myZeeVeeServer.PROCESSING = FALSE
 			myZeeVeeServer.PENDING = FALSE
 			fnSendFromQueue()
+			IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){TIMELINE_KILL(TLID_TIMEOUT)}
 		}
 		ACTIVE(fnComparePrefix(pDATA,'server(')):{
 			fnDebug(DEBUG_STD,'Response Started',pDATA)
