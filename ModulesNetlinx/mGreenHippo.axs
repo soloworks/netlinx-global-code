@@ -2,7 +2,7 @@ MODULE_NAME='mGreenHippo'(DEV vdvServer, DEV ipTCP)
 INCLUDE 'CustomFunctions'
 /******************************************************************************
 	Green Hippo Hippotizer Control Module
-	
+
 	Requires configuration on the Hippo side:
 	Configure SystemStatus pin for reading state
 	Control Triggers defined
@@ -18,7 +18,7 @@ DEFINE_TYPE STRUCTURE uHippo{
 	INTEGER 	IP_PORT						// Telnet Port 23
 	CHAR		IP_HOST[255]				//
 	INTEGER 	IP_STATE						//
-	CHAR     StatusPinTrigger[50]		// Name of 
+	CHAR     StatusPinTrigger[50]		// Name of
 	INTEGER	DEBUG
 	CHAR     SystemStatus[30]
 	CHAR     SystemStatusMsg[30]
