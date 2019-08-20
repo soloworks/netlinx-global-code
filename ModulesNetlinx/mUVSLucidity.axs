@@ -14,12 +14,14 @@ DEFINE_TYPE STRUCTURE uLucidity{
 	// Communications
 	CHAR 		Rx[2000]						// Receieve Buffer
 	CHAR     Tx[2000]						// Send Buffer
+	INTEGER  TxPEND
 	INTEGER 	IP_PORT						//
 	CHAR		IP_HOST[255]				//
 	INTEGER 	IP_STATE						//
 	INTEGER	DEBUG
 	CHAR     LAST_SENT[30]
 	CHAR     VERSION[30]
+	CHAR     SYSNAME[30]
 }
 /******************************************************************************
 	Constants
@@ -44,8 +46,8 @@ INTEGER DEBUG_DEV = 2
 	Variables
 ******************************************************************************/
 DEFINE_VARIABLE
-LONG TLT_COMMS[] 			= { 45000}
-LONG TLT_POLL[] 			= { 15000}
+LONG TLT_COMMS[] 			= { 90000}
+LONG TLT_POLL[] 			= { 45000}
 LONG TLT_TIMEOUT[] 		= {  5000}
 LONG TLT_RETRY[]			= { 10000}
 VOLATILE uLucidity myLucidity
@@ -77,13 +79,13 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_RETRY]{
 }
 DEFINE_FUNCTION fnAddToQueue(CHAR pFunc[],CHAR pArg1[],CHAR pArg2[],CHAR pArg3[]){
 	IF(myLucidity.IP_STATE == IP_STATE_CONNECTED){
-		
+
 		myLucidity.Tx = "myLucidity.Tx,pFunc,'('"
 		IF(pArg1 != ''){
 			myLucidity.Tx = "myLucidity.Tx,pArg1"
 			IF(pArg2 != ''){
 				myLucidity.Tx = "myLucidity.Tx,',',pArg2"
-				IF(pArg2 != ''){
+				IF(pArg3 != ''){
 					myLucidity.Tx = "myLucidity.Tx,',',pArg3"
 				}
 			}
@@ -96,12 +98,17 @@ DEFINE_FUNCTION fnAddToQueue(CHAR pFunc[],CHAR pArg1[],CHAR pArg2[],CHAR pArg3[]
 DEFINE_FUNCTION fnSendFromQueue(){
 	IF(myLucidity.IP_STATE == IP_STATE_CONNECTED && FIND_STRING(myLucidity.Tx,"$0D,$0A",1)){
 		STACK_VAR CHAR toSend[50]
-		IF(LENGTH_ARRAY(myLucidity.Tx)){
+		IF(FIND_STRING(myLucidity.Tx,"$0D,$0A",1) && !myLucidity.TxPEND){
 			toSend = REMOVE_STRING(myLucidity.Tx,"$0D,$0A",1)
-			fnDebug(DEBUG_STD,'->GH',"toSend")
-			SEND_STRING DATA.DEVICE,"toSend"
+			// Send the commands to the unit
+			SEND_STRING ipTCP,"toSend"
+			// Debug Out
+			SET_LENGTH_ARRAY(toSend,LENGTH_ARRAY(toSend)-2)
+			fnDebug(DEBUG_STD,'->UVC',"toSend")
+			// Store last sent
 			myLucidity.LAST_SENT = REMOVE_STRING(toSend,'(',1)
 			SET_LENGTH_ARRAY(myLucidity.LAST_SENT,LENGTH_ARRAY(myLucidity.LAST_SENT)-1)
+			// Start a timeout timeline
 			IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){TIMELINE_KILL(TLID_TIMEOUT)}
 			TIMELINE_CREATE(TLID_TIMEOUT,TLT_TIMEOUT,LENGTH_ARRAY(TLT_TIMEOUT),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 		}
@@ -143,8 +150,7 @@ DEFINE_START{
 ******************************************************************************/
 DEFINE_EVENT DATA_EVENT[ipTCP]{
 	ONLINE:{
-		myLucidity.IP_STATE = IP_STATE_CONNECTED
-		fnPoll()
+		// Online when welcome message has been processed
 	}
 	OFFLINE:{
 		myLucidity.IP_STATE	= IP_STATE_OFFLINE
@@ -176,6 +182,17 @@ DEFINE_EVENT DATA_EVENT[ipTCP]{
 	}
 	STRING:{
 		fnDebug(DEBUG_DEV,'UVC_RAW->',DATA.TEXT)
+		IF(FIND_STRING(myLucidity.Rx,'CONNECTED',1) && FIND_STRING(myLucidity.Rx,'> ',1)){
+			// Gather System Name
+			REMOVE_STRING(myLucidity.Rx,' ',1) // Removed CONNECTED
+			REMOVE_STRING(myLucidity.Rx,' ',1) // Removed TO
+			myLucidity.SYSNAME = REMOVE_STRING(myLucidity.Rx,'> ',1)	// Get System Name
+			SET_LENGTH_ARRAY(myLucidity.SYSNAME,LENGTH_ARRAY(myLucidity.SYSNAME)-2)
+			//
+			myLucidity.TxPend = FALSE
+			myLucidity.IP_STATE = IP_STATE_CONNECTED
+			fnSendFromQueue()
+		}
 		WHILE(FIND_STRING(myLucidity.Rx,"$0D,$0A",1)){
 			fnProcessFeedback(fnStripCharsRight(REMOVE_STRING(myLucidity.Rx,"$0D,$0A",1),1))
 		}
@@ -188,8 +205,16 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMEOUT]{
 	Feedback
 ******************************************************************************/
 DEFINE_FUNCTION fnProcessFeedback(CHAR pData[]){
-	fnDebug(DEBUG_STD,'UVC->',"'[',myLucidity.Rx,']'")
-
+	fnDebug(DEBUG_STD,'UVC->',pData)
+	SWITCH(myLucidity.LAST_SENT){
+		CASE 'version':{
+			myLucidity.VERSION = pData
+			REMOVE_STRING(myLucidity.VERSION,'API ',1)
+			IF(TIMELINE_ACTIVE(TLID_COMMS)){TIMELINE_KILL(TLID_COMMS)}
+			TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
+		}
+	}
+	IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){TIMELINE_KILL(TLID_TIMEOUT)}
 }
 
 
@@ -225,6 +250,12 @@ DEFINE_EVENT DATA_EVENT[vdvServer]{
 			}
 			CASE 'RAW':{
 				fnAddToQueue(fnGetCSV(DATA.TEXT,1),fnGetCSV(DATA.TEXT,2),fnGetCSV(DATA.TEXT,3),fnGetCSV(DATA.TEXT,4))
+			}
+			CASE 'CLEAN':{
+				SWITCH(DATA.TEXT){
+					CASE 'ALL':	fnAddToQueue('CleanAllWalls','','','')
+					DEFAULT:		fnAddToQueue('CleanWall',DATA.TEXT,'','')
+				}
 			}
 			CASE 'PRESET':{
 				fnAddToQueue('PlayPreset',fnGetCSV(DATA.TEXT,1),fnGetCSV(DATA.TEXT,2),'')
