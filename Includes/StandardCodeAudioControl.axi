@@ -114,7 +114,9 @@ DEFINE_FUNCTION fnSetGainNames(INTEGER pPanel, INTEGER pGain){
 		STACK_VAR INTEGER l
 		FOR(l = 1; l <= LENGTH_ARRAY(addGainName); l++){
 			IF(myAudioPanels[pPanel].GAIN_OBJECT_LINK[l] == pGain){
-				SEND_COMMAND tpMain[pPanel],"'^TXT-',ITOA(addGainName[l]),',0,',myGains[pGain].NAME"
+				IF(LENGTH_ARRAY(myGains[pGain].NAME)){
+					SEND_COMMAND tpMain[pPanel],"'^TXT-',ITOA(addGainName[l]),',0,',myGains[pGain].NAME"
+				}
 			}
 		}
 	}
