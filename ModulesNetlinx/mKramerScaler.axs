@@ -50,7 +50,7 @@ uKramerSwitcher myKramerSwitcher
 LONG TLT_SEND_TIMEOUT[] = {5000}
 LONG TLT_POLL[]  = {60000}
 LONG TLT_COMMS[] = {300000}
-LONG TLT_RETRY[] = {10000}		// 
+LONG TLT_RETRY[] = {10000}		//
 /******************************************************************************
 	Module Startup
 ******************************************************************************/
@@ -66,9 +66,9 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 	IF(!myKramerSwitcher.PORT){myKramerSwitcher.PORT = defPORT}
 	fnDebug(FALSE,'Connect->KRA',"myKramerSwitcher.IP,':',ITOA(myKramerSwitcher.PORT)")
 	myKramerSwitcher.TRYING = TRUE
-	ip_client_open(dvDevice.port, myKramerSwitcher.IP, myKramerSwitcher.PORT, IP_TCP) 
-} 
- 
+	ip_client_open(dvDevice.port, myKramerSwitcher.IP, myKramerSwitcher.PORT, IP_TCP)
+}
+
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(dvDevice.port)
 }
@@ -203,16 +203,16 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
 			CASE 'PROPERTY':{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
-					CASE 'IP': 	  { 
+					CASE 'IP': 	  {
 						myKramerSwitcher.IP = DATA.TEXT;
 						IF(myKramerSwitcher.CONNECTED){
 							fnCloseTCPConnection()
 						}
 						ELSE IF(!myKramerSwitcher.TRYING){
-							fnOpenTCPConnection(); 
+							fnOpenTCPConnection();
 						}
 					}
-					CASE 'DEBUG': myKramerSwitcher.DEBUG = (ATOI(DATA.TEXT) || DATA.TEXT == 'TRUE');	
+					CASE 'DEBUG': myKramerSwitcher.DEBUG = (ATOI(DATA.TEXT) || DATA.TEXT == 'TRUE');
 				}
 			}
 			CASE 'RAW':{
