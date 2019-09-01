@@ -511,10 +511,21 @@ DEFINE_EVENT DATA_EVENT[vdvServer]{
 			}
 			CASE 'JOIN':{
 				fnDebug(DEBUG_DEV,'Joining',"fnGetCSV(DATA.TEXT,1),' to ',fnGetCSV(DATA.TEXT,2)")
-				// fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,1),' ',fnGetCSV(DATA.TEXT,2),' fast-switched'",TRUE)
-				fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,1),' ',fnGetCSV(DATA.TEXT,2),' genlocked'",TRUE)
-				fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,1),' ',fnGetCSV(DATA.TEXT,2),' analog-audio'",TRUE)
-				fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,1),' ',fnGetCSV(DATA.TEXT,2),' hdmi-audio'",TRUE)
+				SWITCH(fnGetCSV(DATA.TEXT,1)){
+					CASE 'FAST':fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,2),' ',fnGetCSV(DATA.TEXT,3),' fast-switched'",TRUE)
+					CASE 'GEN': fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,2),' ',fnGetCSV(DATA.TEXT,3),' genlocked'",TRUE)
+					DEFAULT:		fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,1),' ',fnGetCSV(DATA.TEXT,2),' genlocked'",TRUE)
+				}
+				SWITCH(fnGetCSV(DATA.TEXT,1)){
+					CASE 'FAST':
+					CASE 'GEN': {
+						fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,2),' ',fnGetCSV(DATA.TEXT,3),' analog-audio'",TRUE)
+						fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,2),' ',fnGetCSV(DATA.TEXT,3),' hdmi-audio'",TRUE)
+					}
+					DEFAULT:{
+						fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,1),' ',fnGetCSV(DATA.TEXT,2),' genlocked'",TRUE)
+					}
+				}
 			}
 		}
 	}
