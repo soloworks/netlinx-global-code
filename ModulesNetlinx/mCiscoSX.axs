@@ -1732,10 +1732,10 @@ DEFINE_EVENT DATA_EVENT[vdvControl[1]]{
 				}
 				CASE 'CONTENT':{
 					SWITCH(DATA.TEXT){
-						CASE 'START': fnQueueTx('xCommand Presentation','start'); mySX.ContentTx = TRUE;
+						CASE 'START': fnQueueTx('xCommand Presentation','Start'); mySX.ContentTx = TRUE;
 						CASE 'STOP':
-						CASE '0':     fnQueueTx('xCommand Presentation','stop');  mySX.ContentTx = FALSE;
-						DEFAULT:		  fnQueueTx('xCommand Presentation',"'start PresentationSource:',DATA.TEXT");	  mySX.ContentTx = TRUE;
+						CASE '0':     fnQueueTx('xCommand Presentation','Stop');  mySX.ContentTx = FALSE;
+						DEFAULT:		  fnQueueTx('xCommand Presentation',"'Start PresentationSource: ',DATA.TEXT");	  mySX.ContentTx = TRUE;
 					}
 				}
 				CASE 'DIAL':{
