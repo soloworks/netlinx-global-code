@@ -188,9 +188,13 @@ DEFINE_EVENT DATA_EVENT[ipTCP]{
 			REMOVE_STRING(myLucidity.Rx,' ',1) // Removed TO
 			myLucidity.SYSNAME = REMOVE_STRING(myLucidity.Rx,'> ',1)	// Get System Name
 			SET_LENGTH_ARRAY(myLucidity.SYSNAME,LENGTH_ARRAY(myLucidity.SYSNAME)-2)
-			//
+			// Reset Comms Variables
 			myLucidity.TxPend = FALSE
 			myLucidity.IP_STATE = IP_STATE_CONNECTED
+			// Start Connection
+			IF(TIMELINE_ACTIVE(TLID_COMMS)){TIMELINE_KILL(TLID_COMMS)}
+			TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
+			// Send from Queue if present
 			fnSendFromQueue()
 		}
 		WHILE(FIND_STRING(myLucidity.Rx,"$0D,$0A",1)){
