@@ -79,6 +79,39 @@ bitbucket.org/solo_works/netlinxstudioconfigtool
 * ModulesDuetRms      - Standard AMX Supplied RMS Modules
 * ModulesNetlinxRms   - Standard and Custom RMS Modules
 
+### Sample Code
+
+Most modules will use a variation on the following code to run
+
+```
+DEFINE_DEVICE
+ipSol  = 0:03:0
+vdvSol = 33001:1:0
+
+DEFINE_MODULE 'mSolsticeAPI' mySolMod01(vdvSol,ipSol)
+
+DEFINE_START{
+	SEND_COMMAND vdvSol,'PROPERTY-IP,192.168.1.29'
+}
+
+DEFINE_EVENT DATA_EVENT[vdvSol]{
+	STRING:{
+		SWITCH(REMOVE_STRING(DATA.TEXT,'-',1)){
+			CASE 'PROPERTY-':{
+				SWITCH(REMOVE_STRING(DATA.TEXT,',',1)){
+					CASE 'META':{
+						SWITCH(REMOVE_STRING(DATA.TEXT,',',1)){
+							CASE 'SESSIONKEY':{
+								SEND_STRING 0, "'Session Key is [',DATA.TEXT,']'"
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+```
 
 ## Author
 
