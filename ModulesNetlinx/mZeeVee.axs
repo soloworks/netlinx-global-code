@@ -83,7 +83,7 @@ INTEGER PROCESSING_DATA_RELAYS   = 3
 DEFINE_VARIABLE
 LONG TLT_COMMS[] 			= { 180000 }
 LONG TLT_POLL_LONG[] 	= {  75000 }
-LONG TLT_POLL_SHORT[] 	= {  2000, 2000, 15000, 15000 }
+LONG TLT_POLL_SHORT[] 	= {  5000, 15000, 20000, 20000 }
 LONG TLT_RETRY[]			= {   5000 }
 LONG TLT_TIMEOUT[]		= {  20000 }
 VOLATILE uZeeVee myZeeVeeServer
@@ -259,7 +259,6 @@ DEFINE_EVENT DATA_EVENT[dvIP]{
 		WHILE(FIND_STRING(myZeeVeeServer.Rx,"$0D,$0A",1)){
 			fnProcessFeedback(fnStripCharsRight(REMOVE_STRING(myZeeVeeServer.Rx,"$0D,$0A",1),2))
 		}
-
 		// Connection Established
 		IF(FIND_STRING(myZeeVeeServer.Rx,'Zyper$ ',1)){
 			REMOVE_STRING(myZeeVeeServer.Rx,'Zyper$ ',1)
@@ -512,10 +511,21 @@ DEFINE_EVENT DATA_EVENT[vdvServer]{
 			}
 			CASE 'JOIN':{
 				fnDebug(DEBUG_DEV,'Joining',"fnGetCSV(DATA.TEXT,1),' to ',fnGetCSV(DATA.TEXT,2)")
-				// fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,1),' ',fnGetCSV(DATA.TEXT,2),' fast-switched'",TRUE)
-				fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,1),' ',fnGetCSV(DATA.TEXT,2),' genlocked'",TRUE)
-				fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,1),' ',fnGetCSV(DATA.TEXT,2),' analog-audio'",TRUE)
-				fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,1),' ',fnGetCSV(DATA.TEXT,2),' hdmi-audio'",TRUE)
+				SWITCH(fnGetCSV(DATA.TEXT,1)){
+					CASE 'FAST':fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,2),' ',fnGetCSV(DATA.TEXT,3),' fast-switched'",TRUE)
+					CASE 'GEN': fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,2),' ',fnGetCSV(DATA.TEXT,3),' genlocked'",TRUE)
+					DEFAULT:		fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,1),' ',fnGetCSV(DATA.TEXT,2),' genlocked'",TRUE)
+				}
+				SWITCH(fnGetCSV(DATA.TEXT,1)){
+					CASE 'FAST':
+					CASE 'GEN': {
+						fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,2),' ',fnGetCSV(DATA.TEXT,3),' analog-audio'",TRUE)
+						fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,2),' ',fnGetCSV(DATA.TEXT,3),' hdmi-audio'",TRUE)
+					}
+					DEFAULT:{
+						fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,1),' ',fnGetCSV(DATA.TEXT,2),' genlocked'",TRUE)
+					}
+				}
 			}
 		}
 	}

@@ -11,16 +11,17 @@ DEFINE_CONSTANT
 LONG TLID_COMMS = 1
 LONG TLID_POLL	 = 2
 LONG TLID_VOL	 = 3
+LONG TLID_INPUT = 4
 
 DEFINE_TYPE STRUCTURE uExLink{
 	CHAR    LAST_SENT[3]
 	INTEGER POWER
 	INTEGER VOL
 	INTEGER MUTE
+	CHAR    INPUT[10]
 
 	INTEGER	VOL_PEND
 	INTEGER	LAST_VOL
-	
 	uDebug  DEBUG
 }
 
@@ -29,6 +30,7 @@ uExLink myExLink
 LONG TLT_COMMS[] = { 45000 }
 LONG TLT_POLL[]  = { 15000 }
 LONG TLT_VOL[]	  = {   150 }
+LONG TLT_INPUT[] = { 2000,12000}
 /******************************************************************************
 	Configuration
 ******************************************************************************/
@@ -68,6 +70,7 @@ DEFINE_FUNCTION fnSendCommand(CHAR CMD[3],INTEGER VAL){
 }
 DEFINE_EVENT DATA_EVENT[dvExLink]{
 	ONLINE:{
+		SEND_STRING 0, "'(Module)Connected To'"
 		IF(dvExLink.NUMBER){
 			SEND_COMMAND dvExLink, "'SET BAUD 9600, N, 8, 1 485 Disable'"
 		}
@@ -107,6 +110,16 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 					}
 				}
 			}
+			CASE 'OSD':{
+				// TV Notifications Off
+				fnSendCommand("$0E,$01,$00",$00)
+			}
+			CASE 'ART':{
+				SWITCH(DATA.TEXT){
+					CASE 'ON':  fnSendCommand("$0B,$0B,$0E",$01)
+					CASE 'OFF': fnSendCommand("$0B,$0B,$0E",$00)
+				}
+			}
 			CASE 'POWER':{
 				// Set value
 				SWITCH(DATA.TEXT){
@@ -116,6 +129,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 				}
 				// Send Command
 				fnSendCommand("$00,$00,$00",myExLink.POWER+1)
+				IF(TIMELINE_ACTIVE(TLID_INPUT)){TIMELINE_KILL(TLID_INPUT)}
 			}
 			CASE 'BUTTON':{
 				SWITCH(DATA.TEXT){
@@ -130,11 +144,15 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 				}
 			}
 			CASE 'INPUT':{
-				SWITCH(DATA.TEXT){
-					CASE 'HDMI1':    fnSendCommand("$0A,$00,$05",$00)
-					CASE 'HDMI2':    fnSendCommand("$0A,$00,$05",$01)
-					CASE 'HDMI3':    fnSendCommand("$0A,$00,$05",$02)
-					CASE 'HDMI4':    fnSendCommand("$0A,$00,$05",$03)
+				myExLink.INPUT = DATA.TEXT
+				IF(!TIMELINE_ACTIVE(TLID_INPUT)){
+					SWITCH(myExLink.INPUT){
+						CASE 'HDMI1':    fnSendCommand("$0A,$00,$05",$00)
+						CASE 'HDMI2':    fnSendCommand("$0A,$00,$05",$01)
+						CASE 'HDMI3':    fnSendCommand("$0A,$00,$05",$02)
+						CASE 'HDMI4':    fnSendCommand("$0A,$00,$05",$03)
+					}
+					TIMELINE_CREATE(TLID_INPUT,TLT_INPUT,LENGTH_ARRAY(TLT_INPUT),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 				}
 			}
 			CASE 'VOLUME':{
@@ -153,6 +171,19 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 						}
 					}
 				}
+			}
+		}
+	}
+}
+DEFINE_EVENT TIMELINE_EVENT[TLID_INPUT]{
+	SWITCH(TIMELINE.SEQUENCE){
+		CASE 1:fnSendCommand("$00,$00,$00",$02)
+		CASE 2:{
+			SWITCH(myExLink.INPUT){
+				CASE 'HDMI1':    fnSendCommand("$0A,$00,$05",$00)
+				CASE 'HDMI2':    fnSendCommand("$0A,$00,$05",$01)
+				CASE 'HDMI3':    fnSendCommand("$0A,$00,$05",$02)
+				CASE 'HDMI4':    fnSendCommand("$0A,$00,$05",$03)
 			}
 		}
 	}

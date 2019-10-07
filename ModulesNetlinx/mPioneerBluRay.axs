@@ -90,7 +90,7 @@ DEFINE_FUNCTION fnPoll(){
 	fnAddToQueue('?Z')
 }
 DEFINE_FUNCTION fnAddToQueue(CHAR pMSG[]){
-	IF(myPlayer.CONN_STATE == CONN_STATE_CONNECTED && FIND_STRING(myPlayer.Tx,"$0D",1)){
+	IF(myPlayer.CONN_STATE == CONN_STATE_CONNECTED){
 		fnDebug(myPlayer.DEBUG,DEBUG_DEV,"'Queuing::',pMSG,$0D")
 		myPlayer.Tx = "myPlayer.Tx,pMSG,$0D"
 		fnSendFromQueue()
@@ -98,7 +98,7 @@ DEFINE_FUNCTION fnAddToQueue(CHAR pMSG[]){
 	}
 }
 DEFINE_FUNCTIOn fnSendFromQueue(){
-	IF(myPlayer.CONN_STATE == CONN_STATE_CONNECTED){
+	IF(myPlayer.CONN_STATE == CONN_STATE_CONNECTED && FIND_STRING(myPlayer.Tx,"$0D",1)){
 		IF(FIND_STRING(myPlayer.Tx,"$0D",1)){
 			myPlayer.LAST_SENT = REMOVE_STRING(myPlayer.Tx,"$0D",1)
 			fnDebug(myPlayer.DEBUG,DEBUG_DEV,"'->DVD',myPlayer.LAST_SENT")

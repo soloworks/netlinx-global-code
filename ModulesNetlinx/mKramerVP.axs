@@ -17,7 +17,7 @@ DEFINE_TYPE STRUCTURE uKramerVP{
 	INTEGER 	DEBUG
 	CHAR 		Tx[500]
 	CHAR 		Rx[500]
-	
+
 	INTEGER  MAIN_INPUT
 }
 DEFINE_CONSTANT
@@ -40,7 +40,7 @@ VOLATILE uKramerVP myKramerVP
 LONG TLT_SEND_TIMEOUT[] = {5000}
 LONG TLT_POLL[]  = { 15000 }
 LONG TLT_COMMS[] = { 90000 }
-LONG TLT_RETRY[] = { 10000 }		// 
+LONG TLT_RETRY[] = { 10000 }		//
 /******************************************************************************
 	Module Startup
 ******************************************************************************/
@@ -65,8 +65,8 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 			fnDebug(DEBUG_DEV,'fnOpenTCPConnection()','Already Connected')
 		}
 	}
-} 
- 
+}
+
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	fnDebug(DEBUG_DEV,'fnCloseTCPConnection()','Closing')
 	IP_CLIENT_CLOSE(dvDevice.port)
@@ -202,7 +202,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 		myKramerVP.Tx = ''
 		fnTryConnection()
 	}
-	ONERROR:{		
+	ONERROR:{
 		SWITCH(DATA.NUMBER){
 			CASE 2:{ fnDebug(DEBUG_STD,"'Kramer IP Error:[',myKramerVP.IP_HOST,']:'","'[',ITOA(DATA.NUMBER),']General Failure'")}					//General Failure - Out Of Memory
 			CASE 4:{ fnDebug(DEBUG_ERR, "'Kramer IP Error:[',myKramerVP.IP_HOST,']:'","'[',ITOA(DATA.NUMBER),']Unknown Host'")}						//Unknown Host
@@ -244,14 +244,14 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
 			CASE 'PROPERTY':{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
-					CASE 'IP': 	  { 
+					CASE 'IP': 	  {
 						IF(FIND_STRING(DATA.TEXT,':',1)){
 							myKramerVP.IP_HOST = fnStripCharsRight(REMOVE_STRING(DATA.TEXT,':',1),1)
 							myKramerVP.IP_PORT = ATOI(DATA.TEXT)
 						}
 						ELSE{
 							myKramerVP.IP_HOST = DATA.TEXT
-							myKramerVP.IP_PORT = 30000 
+							myKramerVP.IP_PORT = 30000
 						}
 						fnOpenTCPConnection()
 					}
