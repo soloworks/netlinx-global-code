@@ -16,7 +16,7 @@ DEFINE_TYPE STRUCTURE uSkyBox{
 	CHAR PROGNAME[255]	// Current Program Name
 	CHAR PROGDESC[255]	// Current Program Desc
 	CHAR STARTED[255]		// Program Start Time
-	INTEGER POWER			// 
+	INTEGER POWER			//
 	CHAR Rx[1500]			// Buffer from Device
 	INTEGER FailCount		// Safeguard against repeated garbage
 	INTEGER newData		// Is there new data to send up?
@@ -55,7 +55,7 @@ DEFINE_FUNCTION fnDebug(CHAR Msg[], CHAR MsgData[]){
 	User Interface Helper Functions
 ******************************************************************************/
 DEFINE_FUNCTION fnSendCommand(INTEGER pBOX, INTEGER pCMD){
-	STACK_VAR CHAR ToSend 
+	STACK_VAR CHAR ToSend
 	ToSend = $FF
 	SWITCH(pCMD){
 		CASE 1:	ToSend = $3E //Play		 		[1]
@@ -65,7 +65,7 @@ DEFINE_FUNCTION fnSendCommand(INTEGER pBOX, INTEGER pCMD){
 		CASE 5:	ToSend = $3D // Rewind			[5]
 		CASE 8:	ToSend = $40 // Record			[8]
 		CASE 9:	ToSend = $0C // Power			[9]
-			
+
 		CASE 10:	ToSend = $00 // Digit 0	[10]
 		CASE 11:	ToSend = $01 // Digit 1	[11]
 		CASE 12:	ToSend = $02 // Digit 2	[12]
@@ -76,11 +76,11 @@ DEFINE_FUNCTION fnSendCommand(INTEGER pBOX, INTEGER pCMD){
 		CASE 17:	ToSend = $07 // Digit 7	[17]
 		CASE 18:	ToSend = $08 // Digit 8	[18]
 		CASE 19:	ToSend = $09 // Digit 9	[19]
-			
+
 		CASE 49:	ToSend = $5C // Select	[49]
 		CASE 22:	ToSend = $20 // Chan Up	[22]
 		CASE 23:	ToSend = $21 // Chan Down [23]
-	  
+
 		CASE 45:	ToSend = $58 // Up			[45]
 		CASE 48:	ToSend = $5B // Right		[48]
 		CASE 46:	ToSend = $59 // Down		[46]
@@ -89,25 +89,25 @@ DEFINE_FUNCTION fnSendCommand(INTEGER pBOX, INTEGER pCMD){
 		CASE 101:ToSend = $CB // Info	[101]
 		CASE 105:ToSend = $CC // TV Guide [105]
 		CASE 113:ToSend = $81 // Help	[113]
-		
+
 		CASE 201:ToSend = $80 // SKY Button	[201]
 		CASE 202:ToSend = $6D // RED				[202]
 		CASE 203:ToSend = $6E // GREEN			[203]
 		CASE 204:ToSend = $6F // YELLOW			[204]
 		CASE 205:ToSend = $70 // BLUE			[205]
 		CASE 206:ToSend = $3C // TEXT			[206]
-		
+
 		CASE 210:ToSend = $84 // TV				[210]
 		CASE 211:ToSend = $7D // Box Office	[211]
 		CASE 212:ToSend = $7E // Services		[212]
 		CASE 213:ToSend = $F5 // Interactive	[213]
 	}
-	IF(ToSend <> $FF){ 
+	IF(ToSend <> $FF){
 		fnDebug("'->Dusky_',ITOA(pBOX)","$43,pBOX - 1,$0C,ToSend")
 		SEND_STRING dvDusky, "$43,pBOX - 1,$0C,ToSend"
 	}
 }
-DEFINE_FUNCTION fnSendChannel(INTEGER pBOX, INTEGER pCHAN, INTEGER pRADIO){	
+DEFINE_FUNCTION fnSendChannel(INTEGER pBOX, INTEGER pCHAN, INTEGER pRADIO){
 	STACK_VAR CHAR _CHAN[3]
 	_CHAN = fnPadLeadingChars( ITOA(pCHAN),'0',3)
 	IF(pRADIO){ SEND_STRING dvDusky, "$43,pBOX - 1,$0C,$00" }
@@ -193,7 +193,7 @@ DEFINE_EVENT DATA_EVENT[vdvSkyBox]{
 }
 DEFINE_EVENT CHANNEL_EVENT[vdvSkyBox,0]{
 	ON:{
-		STACK_VAR CHAR ToSend 
+		STACK_VAR CHAR ToSend
 		ToSend = $FF
 		SWITCH(CHANNEL.CHANNEL){
 			CASE 22:	ToSend = $20 // Chan Up	[22]
