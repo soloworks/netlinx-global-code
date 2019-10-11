@@ -412,6 +412,10 @@
 <FilePathName>ModulesNetlinx\mLGVideoWall.axs</FilePathName>
 <Comments></Comments>
 </File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mLightwareMatrix</Identifier>
+<FilePathName>ModulesNetlinx\mLightwareMatrix.axs</FilePathName>
+<Comments></Comments>
+</File>
 <File CompileType="Netlinx" Type="Module"><Identifier>mLindyPIP</Identifier>
 <FilePathName>ModulesNetlinx\mLindyPIP.axs</FilePathName>
 <Comments></Comments>

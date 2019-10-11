@@ -16,6 +16,7 @@ DEFINE_TYPE STRUCTURE uSwitch{
 	CHAR		IP_HOST[255]				//
 	INTEGER 	IP_STATE						//
 	INTEGER	isIP
+	CHAR     PASSWORD[20]
 
 	INTEGER DEBUG					// Debuging ON/OFF
 	INTEGER DISABLED				// Disable Module
@@ -309,6 +310,9 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 		IF(!mySwitch.DISABLED){
 			fnDebug(FALSE,'Extron->AMX', DATA.TEXT);
 			SELECT{
+				ACTIVE(DATA.TEXT == "$0D,$0A,'Password:'"):{
+					SEND_STRING dvDevice,"mySwitch.PASSWORD,$0D"
+				}
 				ACTIVE(mySwitch.LAST_SENT == 'N'):{
 					STACK_VAR CHAR PartNo[30]
 
@@ -587,6 +591,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 					SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
 						CASE 'DEBUG': 		mySwitch.DEBUG 	= (ATOI(DATA.TEXT) || DATA.TEXT == 'TRUE');
 						CASE 'POLL':		mySwitch.NOPOLL 	= (DATA.TEXT == 'FALSE')
+						CASE 'PASSWORD':  mySwitch.PASSWORD = DATA.TEXT
 						CASE 'IP':{
 							IF(FIND_STRING(DATA.TEXT,':',1)){
 								mySwitch.IP_HOST = fnStripCharsRight(REMOVE_STRING(DATA.TEXT,':',1),1)
