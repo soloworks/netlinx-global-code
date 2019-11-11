@@ -951,6 +951,20 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 										}
 										SEND_STRING vdvControl[1],pEVENT
 									}
+									CASE 'Panel':{
+										SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
+											CASE 'Clicked':{
+												SWITCH(REMOVE_STRING(pDATA,':',1)){
+													CASE 'PanelId:':{
+														STACK_VAR CHAR pEVENT[100]
+														pEVENT = 'INTERFACE_PANEL-CLICK,'
+														pEVENT = "pEvent,fnRemoveQuotes(fnRemoveWhiteSpace(pData))"
+														SEND_STRING vdvControl[1],pEVENT
+													}
+												}
+											}
+										}
+									}
 								}
 							}
 							CASE 'Presentation':{
