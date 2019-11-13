@@ -38,7 +38,7 @@ DEFINE_TYPE STRUCTURE uState{
 DEFINE_TYPE STRUCTURE uComms{
 	// Communications
 	INTEGER 	STATE						//	Current state of Comms
-	CHAR	   Tx[1024]					// Transmission Buffer
+	CHAR	   Tx[2048]					// Transmission Buffer
 	CHAR 		Rx[2048]					// Receieve Buffer
 	INTEGER 	IP_PORT					//	IP Port for device
 	CHAR		IP_HOST[255]			//	IP Host for device
@@ -79,6 +79,16 @@ INTEGER ConnStateOffline		= 0
 INTEGER ConnStateConnecting	= 1
 INTEGER ConnStateConnected		= 2
 
+// Part Numbers
+CHAR PN_MMX4x2HT200[]       = '91310035'
+CHAR PN_MMX6x2HT220[]       = '91310030'
+CHAR PN_MX28X8HDMI20AUDIO[] = '91310050'
+
+// Mode Families
+INTEGER MODEL_MMX = 0
+INTEGER MODEL_MX2 = 1
+
+
 DEFINE_VARIABLE
 LONG TLT_COMMS[] 	= { 30000 }
 LONG TLT_POLL[]  	= { 10000 }
@@ -86,6 +96,14 @@ LONG TLT_SEND[]	= {   100 }
 LONG TLT_GAIN[]	= {   150 }
 LONG TLT_RETRY[]	= {  5000 }
 VOLATILE uMatrix myMatrix
+
+DEFINE_FUNCTION INTEGER fnModel(){
+	SWITCH(myMatrix.MetaData.PartNumber){
+		CASE PN_MMX4x2HT200:
+		CASE PN_MMX6x2HT220:       RETURN MODEL_MMX
+		CASE PN_MX28X8HDMI20AUDIO: RETURN MODEL_MX2
+	}
+}
 /******************************************************************************
 	Module Startup
 ******************************************************************************/
@@ -117,17 +135,22 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_RETRY]{
 	fnOpenTCPConnection()
 }
 DEFINE_FUNCTION fnAddToQueue(CHAR pCMD[256], CHAR pData[256]){
-	myMatrix.Comms.Tx = "myMatrix.Comms.Tx,pCMD,' ',pData,$0D,$0A"
+	myMatrix.Comms.Tx = "myMatrix.Comms.Tx,pCMD"
+	IF(pData != ''){
+		myMatrix.Comms.Tx = "myMatrix.Comms.Tx,' ',pData"
+	}
+	myMatrix.Comms.Tx = "myMatrix.Comms.Tx,$0D,$0A"
 	fnSendFromQueue()
 }
 DEFINE_FUNCTION fnSendFromQueue(){
 	IF(!TIMELINE_ACTIVE(TLID_SEND) && LENGTH_ARRAY(myMatrix.Comms.Tx) && myMatrix.Comms.State == ConnStateConnected){
 		STACK_VAR CHAR toSend[256]
 		toSend = REMOVE_STRING(myMatrix.Comms.Tx,"$0D,$0A",1)
-		fnDebug(myMatrix.Debug,DEBUG_STD,"'AMX->Lightware', toSend");
+		fnDebug(myMatrix.Debug,DEBUG_STD,"'AMX->MTX::', toSend");
 		SEND_STRING dvDevice,toSend
 		TIMELINE_CREATE(TLID_SEND,TLT_SEND,LENGTH_ARRAY(TLT_SEND),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 	}
+	fnInitPoll()
 }
 DEFINE_EVENT TIMELINE_EVENT[TLID_SEND]{
 	fnSendFromQueue()
@@ -144,22 +167,9 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_POLL]{
 }
 
 DEFINE_FUNCTION fnPoll(){
-	//fnAddToQueue("GET", "/.*")
-}
-
-DEFINE_FUNCTION fnInit(){
-	// Get Meta Data
+	// Start Poll
 	fnAddToQueue('GET', '/.*')
-
-	// Get and Subscribe to System State Data
-	fnAddToQueue('GET', '/MANAGEMENT/STATUS.*')
-	fnAddToQueue('OPEN', '/MANAGEMENT/STATUS.*')
-
-	// Get and Subscribe to Video Routing Data
-	fnAddToQueue('GET', '/MEDIA/VIDEO/XP.*')
-	fnAddToQueue('OPEN', '/MEDIA/VIDEO/XP.*')
 }
-
 /******************************************************************************
 	Helper Functions
 ******************************************************************************/
@@ -169,7 +179,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pData[]){
 	STACK_VAR CHAR pFunc[256]
 	STACK_VAR CHAR pVal[256]
 	// Debug Out
-	fnDebug(myMatrix.Debug,DEBUG_STD,"'Lightware->AMX::', pData")
+	fnDebug(myMatrix.Debug,DEBUG_STD,"'MTX->AMX::', pData")
 	// Get Components
 	IF(FIND_STRING(pData,' ',1)){
 		REMOVE_STRING(pData,' ',1)	// Remove CMD Type
@@ -181,7 +191,27 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pData[]){
 	SELECT{
 		ACTIVE(pPath == '/'):{
 			SWITCH(pFunc){
-				CASE 'PartNumber':   myMatrix.MetaData.PartNumber = pVal
+				CASE 'PartNumber':{
+					IF(myMatrix.MetaData.PartNumber != pVal){
+						myMatrix.MetaData.PartNumber = pVal
+						SWITCH(fnModel()){
+							CASE MODEL_MMX:{
+								// Get and Subscribe to System State Data
+								fnAddToQueue('GET', '/MANAGEMENT/STATUS.*')
+								fnAddToQueue('OPEN', '/MANAGEMENT/STATUS.*')
+								// Get and Subscribe to Video Routing Data
+								fnAddToQueue('GET', '/MEDIA/VIDEO/XP.*')
+								fnAddToQueue('OPEN', '/MEDIA/VIDEO/XP.*')
+							}
+							CASE MODEL_MX2:{
+								// Get and Subscribe to Video Routing Data
+								fnAddToQueue('GET', '/MEDIA/XP/VIDEO.*')
+								fnAddToQueue('OPEN', '/MEDIA/XP/VIDEO')
+								fnAddToQueue('OPEN', '/MANAGEMENT/DATETIME')
+							}
+						}
+					}
+				}
 				CASE 'SerialNumber': myMatrix.MetaData.SerialNumber = pVal
 				CASE 'ProductName':  myMatrix.MetaData.ProductName = pVal
 			}
@@ -196,6 +226,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pData[]){
 				CASE 'OperationTime':   myMatrix.State.OperationTime = ATOI(pVal)
 			}
 		}
+		// MMX Devices
 		ACTIVE(pPath == '/MEDIA/VIDEO/XP'):{
 			SWITCH(pFunc){
 				CASE 'SourcePortStatus':{
@@ -205,6 +236,22 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pData[]){
 						pChunk = fnGetSplitStringValue(pData,';',i)
 						IF(pChunk != ''){
 							myMatrix.Input[i].Signal = MID_STRING(pChunk,5,1) == 'F'
+						}
+						ELSE{BREAK}
+					}
+				}
+			}
+		}
+		// MX2 Devices
+		ACTIVE(pPath == '/MEDIA/XP/VIDEO'):{
+			SWITCH(pFunc){
+				CASE 'SourcePortStatus':{
+					STACK_VAR INTEGER i
+					FOR(i = 1; i <= MAX_INPUTS; i++){
+						STACK_VAR CHAR pChunk[10]
+						pChunk = fnGetSplitStringValue(pData,';',i)
+						IF(pChunk != ''){
+							myMatrix.Input[i].Signal = MID_STRING(pChunk,3,1) == 'F'
 						}
 						ELSE{BREAK}
 					}
@@ -227,7 +274,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 		// Set state to connected (Both RS232 & IP is true)
 		myMatrix.Comms.State	= ConnStateConnected
 		// Init communications
-		fnInit()
+		fnPoll()
 	}
 	OFFLINE:{
 		IF(myMatrix.Comms.isIP){
@@ -264,7 +311,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 	STRING:{
 		IF(!myMatrix.Comms.Disabled){
 			// Debug Out
-			fnDebug(myMatrix.Debug,DEBUG_DEV,"'Lightware->AMX', DATA.TEXT")
+			fnDebug(myMatrix.Debug,DEBUG_STD,"'RAW->AMX::', DATA.TEXT")
 			// Loop whilst a line is present in the buffer
 			WHILE(FIND_STRING(myMatrix.Comms.Rx,"$0D,$0A",1)){
 				fnProcessFeedback(fnStripCharsRight(REMOVE_STRING(myMatrix.Comms.Rx,"$0D,$0A",1),2))
@@ -336,13 +383,24 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 						}
 					}
 				}
+				CASE 'RAW':fnAddToQueue(DATA.TEXT,'')
+				CASE 'POLL':fnPoll()
 				CASE 'AMATRIX': {}
 				CASE 'VMATRIX': {}
 				CASE 'MATRIX':{
-					fnAddToQueue('CALL',"'/MEDIA/VIDEO/XP:switch(I',fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'*',1),1),':O',DATA.TEXT,')'")
+					STACK_VAR CHAR pIN[3]
+					pIN = fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'*',1),1)
+					IF(pIN != '0'){pIN = "'I',pIN"}
+					SWITCH(fnModel()){
+						CASE MODEL_MMX:fnAddToQueue('CALL',"'/MEDIA/VIDEO/XP:switch(',pIN,':O',DATA.TEXT,')'")
+						CASE MODEL_MX2:fnAddToQueue('CALL',"'/MEDIA/XP/VIDEO:switch(',pIN,':O',DATA.TEXT,')'")
+					}
 				}
 				CASE 'INPUT':{
-					fnAddToQueue('CALL',"'/MEDIA/VIDEO/XP:switch(I',DATA.TEXT,':O',ITOA(i),')'")
+					SWITCH(fnModel()){
+						CASE MODEL_MMX:fnAddToQueue('CALL',"'/MEDIA/VIDEO/XP:switch(I',DATA.TEXT,':O',ITOA(i),')'")
+						CASE MODEL_MX2:fnAddToQueue('CALL',"'/MEDIA/XP/VIDEO:switch(I',DATA.TEXT,':O',ITOA(i),')'")
+					}
 				}
 				//CASE 'VOLUME':{
 //					IF(myMatrix.Config.HasAudio){
@@ -383,9 +441,6 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 //					}
 //					fnAddToQueue("ITOA(pOUTPUT),'*',ITOA(myMatrix.Output[pOutput].MUTE),'Z'")
 //				}
-				CASE 'RAW':{
-					//fnAddToQueue(DATA.TEXT)
-				}
 			}
 		}
 	}
