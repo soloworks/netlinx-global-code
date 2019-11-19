@@ -16,8 +16,7 @@ INCLUDE 'UnicodeLib'
 	Levels on Virtual Device
 	1 - Occupancy State Countdown
 ********************************************************************************************************************************************************************************************************************************************************/
-DEFINE_DEVICE
-debugger = 32999:1:0
+
 /********************************************************************************************************************************************************************************************************************************************************
 	Constants
 ********************************************************************************************************************************************************************************************************************************************************/
@@ -351,17 +350,15 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 						STACK_VAR CHAR ToSend[300]
 						STACK_VAR CHAR TimeStamp[8]
 						TimeStamp = TIME
-						send_string debugger,"'ACTION-CREATE:<','Actual time stamp: ',TimeStamp,'::Text Rx:<',DATA.TEXT,'>>'"
+						fnDebug(DEBUG_DEV,vdvRoom[pROOM],'ACTION-CREATE',"'Actual time stamp: ',TimeStamp,'::Text Rx:<',DATA.TEXT,'>>'")
 						// Build Message
 						ToSend = 'SCHEDULING.BOOKING.CREATE-'
 						// Add Start Date
 						ToSend = "ToSend,LDATE"
 						// Add Start Time
 						ToSend = "ToSend,',',fnGetCSV(DATA.TEXT,3)"
-						//ToSend = "ToSend,',',Time_Snapshot"
 						// Add Duration (in Mins)
 						ToSend = "ToSend,',',ITOA((fnTimeToSeconds(fnGetCSV(DATA.TEXT,4))-fnTimeToSeconds(fnGetCSV(DATA.TEXT,3)))/60)"
-						//ToSend = "ToSend,',',ITOA((fnTimeToSeconds(fnGetCSV(DATA.TEXT,4))-fnTimeToSeconds(Time_Snapshot))/60)"
 						// Add Subject
 						ToSend = "ToSend,',',fnGetCSV(DATA.TEXT,2)"
 						// Add Body
