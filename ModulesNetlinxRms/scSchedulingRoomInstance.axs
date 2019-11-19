@@ -32,7 +32,9 @@ INTEGER LANG_KOR = 4
 INTEGER LANG_CYR = 5
 
 // Constant to represent '00:00:00' at end of day (As it appears twice in 24hr clock)
-LONG		MIDNIGHT_SECS	= 86400 // 24*60*60 (note: Netlinx thinks 24*60*60 = 128. changed 20190411, gmm)
+LONG		MIDNIGHT_SECS	 = 86400 // 24 Hrs * 60 Mins * 60Secs (note: Netlinx thinks 24*60*60 = 128. changed 20190411, gmm)
+LONG		ONE_HOUR_SECS	 =  3600 // 60 Mins * 60 Secs
+LONG     ONE_MINUTE_SECS =    60 // 60 Secs
 
 // Virtual Device Channels
 INTEGER chn_vdv_SensorOnline	    = 1	// External Trigger indicating Sensor is connected
@@ -329,9 +331,7 @@ CHAR keyboard[][] = {
 DEFINE_VARIABLE
 VOLATILE uRoom 	myRoom				// RMS Room Booking data for this room
 VOLATILE uPanel 	myRMSPanel[5]		// Allowance for multiple touch panels on one room
-VOLATILE uSlot    debugDetails1     // For debugging
-VOLATILE uSlot    debugDetails2     // For debugging
-VOLATILE uSlot    debugDetails3     // For debugging
+VOLATILE uSlot    debugDetails[3]   // For debugging
 
 LONG TLT_OLAY_TIMEOUT[]  = {  45000 }	// Timeout for any overlay on the GUI
 LONG TLT_ONE_MIN[]		 = {  60000 }	// One Min time array for Countdown Timelines
@@ -681,18 +681,18 @@ DEFINE_FUNCTION fnFeedbackTimeCheck(){
 			STACK_VAR CHAR END_TIME[2][8]
 			END_TIME[1] = fnSecondsToDurationTextLocal(myRoom.SLOTS[myRoom.SLOT_CURRENT].END_REF,0,'END_TIME')
 			END_TIME[2] = myRoom.SLOTS[myRoom.SLOT_CURRENT].END_TIME
-			myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_SECS = myRoom.SLOTS[myRoom.SLOT_CURRENT].END_REF - fnTimeToSecondsLocal("timeHH_MM,':00'")
+			myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_SECS = (myRoom.SLOTS[myRoom.SLOT_CURRENT].END_REF - fnTimeToSecondsLocal("timeHH_MM,':00'")) + ONE_MINUTE_SECS
 			myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_MINS = fnSecsToMins(myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_SECS,FALSE)
 			myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_TEXT = fnSecondsToDurationTextLocal(myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_SECS,0,'Remain Text')
 
 			// Debugging
 			myRoom.CURRENT_SLOT         = myRoom.SLOTS[myRoom.SLOT_CURRENT]
-			debugDetails3.START_REF     = myRoom.SLOTS[myRoom.SLOT_CURRENT].START_REF
-			debugDetails3.END_REF       = myRoom.SLOTS[myRoom.SLOT_CURRENT].END_REF
-			debugDetails3.REMAIN_SECS   = myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_SECS
-			debugDetails3.REMAIN_MINS   = myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_MINS
-			debugDetails3.DURATION_TEXT = myRoom.SLOTS[myRoom.SLOT_CURRENT].DURATION_TEXT
-			debugDetails3.REMAIN_TEXT   = myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_TEXT
+			debugDetails[3].START_REF     = myRoom.SLOTS[myRoom.SLOT_CURRENT].START_REF
+			debugDetails[3].END_REF       = myRoom.SLOTS[myRoom.SLOT_CURRENT].END_REF
+			debugDetails[3].REMAIN_SECS   = myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_SECS
+			debugDetails[3].REMAIN_MINS   = myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_MINS
+			debugDetails[3].DURATION_TEXT = myRoom.SLOTS[myRoom.SLOT_CURRENT].DURATION_TEXT
+			debugDetails[3].REMAIN_TEXT   = myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_TEXT
 
 			fnDebug(DEBUG_TIME,'FUNCTION','fnFeedbackTimeCheck',"'.END_REF = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].END_REF)")
 			fnDebug(DEBUG_TIME,'FUNCTION','fnFeedbackTimeCheck',"'fnTimeToSeconds(TIME) = ',ITOA(fnTimeToSeconds(TIME))")
@@ -1054,7 +1054,7 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 
 					// Store Slot
 					s = fnAddSlot(thisSlot)
-					debugDetails1 = thisSlot
+					debugDetails[1] = thisSlot
 				}
 				// If this is the last slot to be sent
 				IF(b == T){
@@ -1078,7 +1078,7 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 					myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_TEXT   = fnSecondsToDurationTextLocal(myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_SECS,0,'Booking Remain')
 					// Debugging
 					send_command tp, "'ABEEP'"
-					debugDetails2 = myRoom.SLOTS[myRoom.SLOT_CURRENT]
+					debugDetails[2] = myRoom.SLOTS[myRoom.SLOT_CURRENT]
 					fnDebug(DEBUG_TIME,'DATA_EVENT [COMMAND]','vdvRoom',"'.START_REF = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].START_REF)")
 					fnDebug(DEBUG_TIME,'DATA_EVENT [COMMAND]','vdvRoom',"'.END_REF = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].END_REF)")
 					fnDebug(DEBUG_TIME,'DATA_EVENT [COMMAND]','vdvRoom',"'.DURATION_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].DURATION_SECS)")
