@@ -1,5 +1,4 @@
 ﻿MODULE_NAME='scSchedulingRoomInstance'(DEV vdvConn, DEV vdvRoom, DEV tp[])
-#DEFINE _Debug_Time
 INCLUDE 'CustomFunctions'
 INCLUDE 'UnicodeLib'
 /********************************************************************************************************************************************************************************************************************************************************
@@ -78,7 +77,6 @@ INTEGER DEBUG_ERR				= 0
 INTEGER DEBUG_STD				= 1
 INTEGER DEBUG_DEV				= 2
 INTEGER DEBUG_LOG				= 3
-INTEGER DEBUG_TIME			= 4
 
 // Page Details
 INTEGER DETAILS_ON			= 0
@@ -364,17 +362,13 @@ DEFINE_FUNCTION fnInitateLogFile(){
 
 DEFINE_FUNCTION fnDebug(INTEGER pDEBUG,CHAR pOrigin[], CHAR pRef[],CHAR pData[]){
 	// Check the requested debug against the current module setting
-#IF_DEFINED _Debug_Time
-	IF(myRoom.DEBUG == pDEBUG){
-#ELSE
 	IF(myRoom.DEBUG >= pDEBUG){
-#END_IF
 		STACK_VAR CHAR dbgMsg[255]
 		dbgMsg = "ITOA(vdvRoom.Number),'|',pOrigin,'|',pRef,'| ',pData"
 		// Send to diagnostics screen
 		SEND_STRING 0:0:0, dbgMsg
 		// Log to file if required
-		IF(myRoom.DEBUG == DEBUG_LOG OR DEBUG_TIME){
+		IF(myRoom.DEBUG == DEBUG_LOG){
 			STACK_VAR CHAR pTIMESTAMP[50]
 			STACK_VAR SLONG HFile
 			pTIMESTAMP = "pTIMESTAMP,FORMAT('%02d',TIME_TO_HOUR(TIME)),':'"
@@ -423,7 +417,7 @@ DEFINE_FUNCTION CHAR[100] fnSecondsToDurationTextLocal(SLONG pDurationParam, INT
 
 	timeMINS = TIME_TO_MINUTE(TIME)
 	timeSECs = TIME_TO_SECOND(TIME)
-	fnDebug(DEBUG_TIME,'FUNCTION','fnSecondsToDurationTextLocal',"'(',pWHEN,', time(M,S) = ',ITOA(timeMINS),',',ITOA(timeSECs),' and pDuration = ',itoa(pDurationParam),')'")
+	fnDebug(DEBUG_LOG,'FUNCTION','fnSecondsToDurationTextLocal',"'(',pWHEN,', time(M,S) = ',ITOA(timeMINS),',',ITOA(timeSECs),' and pDuration = ',itoa(pDurationParam),')'")
 	pReturnString = fnSecondsToDurationText(pDurationParam, pHandleSeconds)
 	/*
 	STACK_VAR SLONG pDAYs
@@ -442,7 +436,7 @@ DEFINE_FUNCTION CHAR[100] fnSecondsToDurationTextLocal(SLONG pDurationParam, INT
 	IF(FIND_STRING(LOWER_STRING(pWHEN),'remain',1)){
 		timeMINS = TIME_TO_MINUTE(TIME)
 		timeSECs = TIME_TO_SECOND(TIME)
-		fnDebug(DEBUG_TIME,'FUNCTION','fnSecondsToDurationTextLocal',"'(',pWHEN,', time(M,S) = ',ITOA(timeMINS),',',ITOA(timeSECs),' and pDuration = ',itoa(pDuration),')'")
+		fnDebug(DEBUG_LOG,'FUNCTION','fnSecondsToDurationTextLocal',"'(',pWHEN,', time(M,S) = ',ITOA(timeMINS),',',ITOA(timeSECs),' and pDuration = ',itoa(pDuration),')'")
 	}
 	IF(pDuration){
 		// Get Seconds
@@ -510,12 +504,12 @@ DEFINE_FUNCTION CHAR[100] fnSecondsToDurationTextLocal(SLONG pDurationParam, INT
 	IF(FIND_STRING(LOWER_STRING(pWHEN),'remain',1)){
 		timeMINS = TIME_TO_MINUTE(TIME)
 		timeSECs = TIME_TO_SECOND(TIME)
-		fnDebug(DEBUG_TIME,'FUNCTION','fnSecondsToDurationTextLocal',"'(',pWHEN,', time(M,S) = ',ITOA(timeMINS),',',ITOA(timeSECs),' and pReturnString = ',pReturnString,', pSECs = ',ITOA(pSECs),')'")
+		fnDebug(DEBUG_LOG,'FUNCTION','fnSecondsToDurationTextLocal',"'(',pWHEN,', time(M,S) = ',ITOA(timeMINS),',',ITOA(timeSECs),' and pReturnString = ',pReturnString,', pSECs = ',ITOA(pSECs),')'")
 	}
 */
 	timeMINS = TIME_TO_MINUTE(TIME)
 	timeSECs = TIME_TO_SECOND(TIME)
-	fnDebug(DEBUG_TIME,'FUNCTION','fnSecondsToDurationTextLocal',"'(',pWHEN,', time(M,S) = ',ITOA(timeMINS),',',ITOA(timeSECs),' and pReturnString = ',pReturnString,')'")
+	fnDebug(DEBUG_LOG,'FUNCTION','fnSecondsToDurationTextLocal',"'(',pWHEN,', time(M,S) = ',ITOA(timeMINS),',',ITOA(timeSECs),' and pReturnString = ',pReturnString,')'")
 	RETURN pReturnString
 }
 
@@ -660,7 +654,7 @@ DEFINE_FUNCTION fnFeedbackTimeCheck(){
 	// Log for Debugging
 	fnDebug(DEBUG_DEV,'FUNCTION','fnFeedbackTimeCheck','<-- Called')
 	//Check to make sure timeline is in sync with local time
-	fnDebug(DEBUG_TIME,'FUNCTION','fnFeedbackTimeCheck',"'Time = ',TIME")
+	fnDebug(DEBUG_LOG,'FUNCTION','fnFeedbackTimeCheck',"'Time = ',TIME")
 	// Check if a new Min is in progress
 	//IF(myRoom.LAST_TRIGGERED_MINUTE != timeMM){
 	IF(1){
@@ -696,15 +690,15 @@ DEFINE_FUNCTION fnFeedbackTimeCheck(){
 			debugDetails[3].DURATION_TEXT = myRoom.SLOTS[myRoom.SLOT_CURRENT].DURATION_TEXT
 			debugDetails[3].REMAIN_TEXT   = myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_TEXT
 
-			fnDebug(DEBUG_TIME,'FUNCTION','fnFeedbackTimeCheck',"'.END_REF = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].END_REF)")
-			fnDebug(DEBUG_TIME,'FUNCTION','fnFeedbackTimeCheck',"'fnTimeToSeconds(TIME) = ',ITOA(fnTimeToSeconds(TIME))")
-			fnDebug(DEBUG_TIME,'FUNCTION','fnFeedbackTimeCheck',"'.REMAIN_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_SECS)")
-			fnDebug(DEBUG_TIME,'FUNCTION','fnFeedbackTimeCheck',"'.REMAIN_TEXT = ',(myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_TEXT)")
+			fnDebug(DEBUG_LOG,'FUNCTION','fnFeedbackTimeCheck',"'.END_REF = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].END_REF)")
+			fnDebug(DEBUG_LOG,'FUNCTION','fnFeedbackTimeCheck',"'fnTimeToSeconds(TIME) = ',ITOA(fnTimeToSeconds(TIME))")
+			fnDebug(DEBUG_LOG,'FUNCTION','fnFeedbackTimeCheck',"'.REMAIN_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_SECS)")
+			fnDebug(DEBUG_LOG,'FUNCTION','fnFeedbackTimeCheck',"'.REMAIN_TEXT = ',(myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_TEXT)")
 		}
 	}
 	fnUpdatePanel(0)
 	//fnSetupOverlay(0)
-	fnDebug(DEBUG_TIME,'FUNCTION','fnFeedbackTimeCheck','--> Done')
+	fnDebug(DEBUG_LOG,'FUNCTION','fnFeedbackTimeCheck','--> Done')
 }
 DEFINE_START{
 	TIME_DEBUGGING[1] = "'START TIME = ',TIME"
@@ -743,7 +737,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_FB_TIME_SET]{
 			SEND_COMMAND tp,"'^ABEEP'" // For G4 Panels
 			SEND_COMMAND tp,"'^ABP'"   // For G5 Panels
 			fnDebug(DEBUG_DEV, 'dbg_DEV > TIMELINE_EVENT','TLID_FB_TIME_SET',"'time stamp set at ',FUZZYTIME.HHMMSS,' (',TIME,')'")
-			fnDebug(DEBUG_TIME,'dbg_TIME> TIMELINE_EVENT','TLID_FB_TIME_SET',"'time stamp set at ',FUZZYTIME.HHMMSS,' (',TIME,')'")
+			fnDebug(DEBUG_LOG,'dbg_TIME> TIMELINE_EVENT','TLID_FB_TIME_SET',"'time stamp set at ',FUZZYTIME.HHMMSS,' (',TIME,')'")
 			TIME_DEBUGGING[4] = "'FUZZYTIME.HHMMSS = ',FUZZYTIME.HHMMSS"
 			TIME_DEBUGGING[6] = "'FUZZYTIME.LESS1M = ',FUZZYTIME.LESS1M"
 		}
@@ -771,7 +765,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_FB_TIME_SET]{
 			SEND_COMMAND tp,"'^ADBEEP'" // For G4 Panels
 			SEND_COMMAND tp,"'^ADB'"    // For G5 Panels
 			fnDebug(DEBUG_DEV, 'dbg_DEV > TIMELINE_EVENT','TLID_FB_TIME_SET',"'time stamp rounded to ',FUZZYTIME.HHMMSS,' (',TIME,')'")
-			fnDebug(DEBUG_TIME,'dbg_TIME> TIMELINE_EVENT','TLID_FB_TIME_SET',"'time stamp rounded to ',FUZZYTIME.HHMMSS,' (',TIME,')'")
+			fnDebug(DEBUG_LOG,'dbg_TIME> TIMELINE_EVENT','TLID_FB_TIME_SET',"'time stamp rounded to ',FUZZYTIME.HHMMSS,' (',TIME,')'")
 			TIME_DEBUGGING[5] = "'FUZZYTIME.PLUS1M = ',FUZZYTIME.PLUS1M"
 		}
 	}
@@ -783,7 +777,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_FB_TIME_CHECK]{
 	//Check to make sure timeline is in sync with local time
 	fnFeedbackTimeCheck()
 	fnDebug(DEBUG_DEV, 'dbg_DEV > TIMELINE_EVENT','TLID_FB_TIME_CHECK',"'Call time check at ',FUZZYTIME.HHMMSS,' (',TIME,')'")
-	fnDebug(DEBUG_TIME,'dbg_TIME> TIMELINE_EVENT','TLID_FB_TIME_CHECK',"'Call time check at ',FUZZYTIME.HHMMSS,' (',TIME,')'")
+	fnDebug(DEBUG_LOG,'dbg_TIME> TIMELINE_EVENT','TLID_FB_TIME_CHECK',"'Call time check at ',FUZZYTIME.HHMMSS,' (',TIME,')'")
 }
 */
 DEFINE_EVENT TIMELINE_EVENT[TLID_FB_TIME_CHECK]{
@@ -797,7 +791,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_FB_TIME_CHECK]{
 			SEND_COMMAND tp,"'^ADBEEP'" // For G4 Panels
 			SEND_COMMAND tp,"'^ADB'"    // For G5 Panels
 			fnDebug(DEBUG_DEV, 'dbg_DEV > TIMELINE_EVENT','TLID_FB_TIME_CHECK',"'time stamp ',TIME")
-			fnDebug(DEBUG_TIME,'dbg_TIME> TIMELINE_EVENT','TLID_FB_TIME_CHECK',"'time stamp ',TIME")
+			fnDebug(DEBUG_LOG,'dbg_TIME> TIMELINE_EVENT','TLID_FB_TIME_CHECK',"'time stamp ',TIME")
 			TIME_DEBUGGING[3] = "'TIME = ',TIME"
 			fnFeedbackTimeCheck()
 		}
@@ -827,9 +821,8 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 							CASE 'TRUE':	myRoom.DEBUG = DEBUG_STD
 							CASE 'DEV':		myRoom.DEBUG = DEBUG_DEV
 							CASE 'LOG':		myRoom.DEBUG = DEBUG_LOG
-							CASE 'TIME':	myRoom.DEBUG = DEBUG_TIME
 						}
-						IF(myRoom.DEBUG == DEBUG_LOG OR DEBUG_TIME){
+						IF(myRoom.DEBUG == DEBUG_LOG){
 							fnInitateLogFile()
 						}
 					}
@@ -1081,13 +1074,13 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 					// Debugging
 					send_command tp, "'ABEEP'"
 					debugDetails[2] = myRoom.SLOTS[myRoom.SLOT_CURRENT]
-					fnDebug(DEBUG_TIME,'DATA_EVENT [COMMAND]','vdvRoom',"'.START_REF = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].START_REF)")
-					fnDebug(DEBUG_TIME,'DATA_EVENT [COMMAND]','vdvRoom',"'.END_REF = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].END_REF)")
-					fnDebug(DEBUG_TIME,'DATA_EVENT [COMMAND]','vdvRoom',"'.DURATION_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].DURATION_SECS)")
-					fnDebug(DEBUG_TIME,'DATA_EVENT [COMMAND]','vdvRoom',"'.DURATION_TEXT = ',(myRoom.SLOTS[myRoom.SLOT_CURRENT].DURATION_TEXT)")
-					fnDebug(DEBUG_TIME,'DATA_EVENT [COMMAND]','vdvRoom',"'fnTimeToSeconds(TIME) = ',ITOA(fnTimeToSeconds(TIME))")
-					fnDebug(DEBUG_TIME,'DATA_EVENT [COMMAND]','vdvRoom',"'.REMAIN_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_SECS)")
-					fnDebug(DEBUG_TIME,'DATA_EVENT [COMMAND]','vdvRoom',"'.REMAIN_TEXT = ',(myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_TEXT)")
+					fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'.START_REF = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].START_REF)")
+					fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'.END_REF = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].END_REF)")
+					fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'.DURATION_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].DURATION_SECS)")
+					fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'.DURATION_TEXT = ',(myRoom.SLOTS[myRoom.SLOT_CURRENT].DURATION_TEXT)")
+					fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'fnTimeToSeconds(TIME) = ',ITOA(fnTimeToSeconds(TIME))")
+					fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'.REMAIN_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_SECS)")
+					fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'.REMAIN_TEXT = ',(myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_TEXT)")
 					// This is the last slot, so we are now loaded
 					myRoom.SLOTS_LOADING = FALSE
 					// Re-load panels
@@ -2037,10 +2030,10 @@ DEFINE_FUNCTION fnUpdatePanel(INTEGER pPanel){
 	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNowEnd),  ',0,',pEndTime"
 	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNowDuration),  ',0,',myRoom.SLOTS[myRoom.SLOT_CURRENT].DURATION_TEXT"
 	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNowRemaining), ',0,',myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_TEXT"
-	fnDebug(DEBUG_TIME,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'now pStartTime = ',    pStartTime")
-	fnDebug(DEBUG_TIME,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'now pEndTime = ',      pEndTime")
-	fnDebug(DEBUG_TIME,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'now .DURATION_TEXT = ', myRoom.SLOTS[myRoom.SLOT_CURRENT].DURATION_TEXT")
-	fnDebug(DEBUG_TIME,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'now .REMAINING_TEXT = ',myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_TEXT")
+	fnDebug(DEBUG_LOG,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'now pStartTime = ',    pStartTime")
+	fnDebug(DEBUG_LOG,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'now pEndTime = ',      pEndTime")
+	fnDebug(DEBUG_LOG,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'now .DURATION_TEXT = ', myRoom.SLOTS[myRoom.SLOT_CURRENT].DURATION_TEXT")
+	fnDebug(DEBUG_LOG,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'now .REMAINING_TEXT = ',myRoom.SLOTS[myRoom.SLOT_CURRENT].REMAIN_TEXT")
 
 	// Populate Now Organiser
 	SWITCH(myRoom.NOW_PANE_MODE){
@@ -2091,9 +2084,9 @@ DEFINE_FUNCTION fnUpdatePanel(INTEGER pPanel){
 		SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNextEnd),  ',0,',pEndTime"
 		myRoom.SLOTS[myRoom.SLOT_CURRENT+1].DURATION_TEXT = fnSecondsToDurationTextLocal(myRoom.SLOTS[myRoom.SLOT_CURRENT+1].DURATION_SECS,0,'Next Duration Secs')
 		SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNextDuration), ',0,',myRoom.SLOTS[myRoom.SLOT_CURRENT+1].DURATION_TEXT"
-		fnDebug(DEBUG_TIME,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'next pStartTime = ',   pStartTime")
-		fnDebug(DEBUG_TIME,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'next pEndTime = ',     pEndTime")
-		fnDebug(DEBUG_TIME,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'next .DURATIN_TEXT = ',myRoom.SLOTS[myRoom.SLOT_CURRENT+1].DURATION_TEXT")
+		fnDebug(DEBUG_LOG,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'next pStartTime = ',   pStartTime")
+		fnDebug(DEBUG_LOG,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'next pEndTime = ',     pEndTime")
+		fnDebug(DEBUG_LOG,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'next .DURATIN_TEXT = ',myRoom.SLOTS[myRoom.SLOT_CURRENT+1].DURATION_TEXT")
 	}
 	ELSE{
 		SEND_COMMAND tp[pPanel],"'^SHO-61.66,0'"
