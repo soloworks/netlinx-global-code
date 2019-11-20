@@ -7,11 +7,6 @@ INCLUDE 'CustomFunctions'
 /******************************************************************************
 	Module Structures
 ******************************************************************************/
-DEFINE_CONSTANT
-// IP States
-INTEGER CONN_STATE_OFFLINE		= 0
-INTEGER CONN_STATE_CONNECTING	= 1
-INTEGER CONN_STATE_CONNECTED	= 2
 DEFINE_TYPE STRUCTURE uShure{
 	// Comms
 	INTEGER 	DEBUG							// Debugging Mode
@@ -30,14 +25,28 @@ DEFINE_TYPE STRUCTURE uShure{
 	INTEGER	CUR_PRESET
 	INTEGER	DES_PRESET
 	INTEGER	MUTE_STATE
+	INTEGER  LED_STATE_MUTED
+	INTEGER  LED_STATE_UNMUTED
 }
 /******************************************************************************
 	Module Constants
 ******************************************************************************/
 DEFINE_CONSTANT
+// Timeline IDs
 LONG TLID_POLL		= 1
 LONG TLID_RETRY	= 2
 LONG TLID_COMMS	= 3
+
+DEFINE_CONSTANT
+// IP States
+INTEGER CONN_STATE_OFFLINE		= 0
+INTEGER CONN_STATE_CONNECTING	= 1
+INTEGER CONN_STATE_CONNECTED	= 2
+
+DEFINE_CONSTANT
+// MIC LED States
+INTEGER FLASHING  = 3
+
 /******************************************************************************
 	Module Variables
 ******************************************************************************/
@@ -134,6 +143,20 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 					SWITCH(pDATA){
 						CASE 'ON':	myShure.MUTE_STATE = TRUE
 						CASE 'OFF':	myShure.MUTE_STATE = FALSE
+					}
+				}
+				CASE 'LED_STATE_MUTED':{
+					SWITCH(pDATA){
+						CASE 'ON':			myShure.LED_STATE_MUTED = TRUE
+						CASE 'OFF':			myShure.LED_STATE_MUTED = FALSE
+						CASE 'FLASHING':	myShure.LED_STATE_MUTED = FLASHING
+					}
+				}
+				CASE 'LED_STATE_UNMUTED':{
+					SWITCH(pDATA){
+						CASE 'ON':			myShure.LED_STATE_MUTED = TRUE
+						CASE 'OFF':			myShure.LED_STATE_MUTED = FALSE
+						CASE 'FLASHING':	myShure.LED_STATE_MUTED = FLASHING
 					}
 				}
 				CASE 'PRESET':{
@@ -251,10 +274,20 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 					CASE 'OFF':	fnSendCommand('SET DEVICE_AUDIO_MUTE OFF')
 				}
 			}
+			CASE 'LEDS_STATE':
+			CASE 'LED_STATE':
+			CASE 'LEDSTATE':{
+				STACK_VAR CHAR pSTATE[7]
+				pSTATE = fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)
+				SWITCH(DATA.TEXT){
+					CASE 'ON':		fnSendCommand("'SET LED_STATE_',pSTATE,' ON'")
+					CASE 'OFF':		fnSendCommand("'SET LED_STATE_',pSTATE,' OFF'")
+					CASE 'FLASH':	fnSendCommand("'SET LED_STATE_',pSTATE,' FLASHING'")
+				}
+			}
 		}
 	}
 }
-
 /******************************************************************************
 	Device Feedback
 ******************************************************************************/
