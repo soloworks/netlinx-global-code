@@ -2,7 +2,7 @@ MODULE_NAME='mAnthemAVR'(DEV vdvZone[], DEV dvDevice)
 INCLUDE 'CustomFunctions'
 /******************************************************************************
 	By Solo Works (www.soloworks.co.uk)
-	
+
 	AVR IP or RS232 control
 	Multi Zone Control
 ******************************************************************************/
@@ -33,10 +33,10 @@ DEFINE_TYPE STRUCTURE uAVR{
 	CHAR 	  	Rx[1000]
 	INTEGER 	DEBUG
 	INTEGER 	CONN_STATE
-	
-	// MetaData 
+
+	// MetaData
 	CHAR 	  	MODEL[20]
-	
+
 	uZone    ZONE[2]
 }
 
@@ -94,7 +94,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 			fnSendFromQueue()
 		}
 		ELSE{
-			SEND_COMMAND dvDevice, 'SET MODE DATA' 
+			SEND_COMMAND dvDevice, 'SET MODE DATA'
 			SEND_COMMAND dvDevice, 'SET BAUD 115200 N 8 1 485 DISABLE'
 			fnPoll()
 			fnInitPoll()
@@ -111,7 +111,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 		IF(myAVR.isIP){
 			STACK_VAR CHAR _MSG[255]
 			myAVR.CONN_STATE 	= CONN_STATE_OFFLINE
-			myAVR.Tx 				= ''	
+			myAVR.Tx 				= ''
 			SWITCH(DATA.NUMBER){
 				CASE 14:{_MSG = 'Local Port Already Used'}		// Local Port Already Used
 				DEFAULT:{
@@ -148,10 +148,10 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 	ELSE{
 		fnDebug(DEBUG_STD,'Connecting to AVR on ',"myAVR.IP_HOST,':',ITOA(myAVR.IP_PORT)")
 		myAVR.CONN_STATE = CONN_STATE_CONNECTING
-		ip_client_open(dvDevice.port, myAVR.IP_HOST, myAVR.IP_PORT, IP_TCP) 
+		ip_client_open(dvDevice.port, myAVR.IP_HOST, myAVR.IP_PORT, IP_TCP)
 	}
-} 
- 
+}
+
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(dvDevice.port)
 }
@@ -175,11 +175,11 @@ DEFINE_FUNCTION fnPoll(){
 	Data Queue and Sending
 ******************************************************************************/
 DEFINE_FUNCTION fnAddToQueue(CHAR pCMD[], INTEGER isPoll){
-	
+
 	myAVR.Tx = "myAVR.Tx,pCMD,';'"
-	
+
 	fnSendFromQueue()
-	
+
 	IF(!isPoll){
 		fnInitPoll()
 	}
@@ -214,7 +214,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMEOUT]{
 	myAVR.Tx = ''
 }
 /******************************************************************************
-	Debug 
+	Debug
 ******************************************************************************/
 DEFINE_FUNCTION fnDebug(INTEGER pLEVEL, CHAR Msg[], CHAR MsgData[]){
 	IF(myAVR.DEBUG >= pLEVEL)	{
@@ -222,11 +222,11 @@ DEFINE_FUNCTION fnDebug(INTEGER pLEVEL, CHAR Msg[], CHAR MsgData[]){
 	}
 }
 /******************************************************************************
-	Process Feedback 
+	Process Feedback
 ******************************************************************************/
 DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 	fnDebug(DEBUG_DEV,'fnProcessFeedback()',"'pDATA=',pDATA")
-	
+
 	SWITCH(pDATA[1]){
 		CASE 'Z':{
 			STACK_VAR INTEGER z
@@ -262,11 +262,11 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 			}
 		}
 	}
-	
+
 	fnSendFromQueue()
-	
+
 	fnInitTimeout(FALSE)
-	
+
 	IF(TIMELINE_ACTIVE(TLID_COMMS)){ TIMELINE_KILL(TLID_COMMS) }
 	TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 }
@@ -314,7 +314,7 @@ DEFINE_EVENT DATA_EVENT[vdvZone]{
 					}
 				}
 			}
-			CASE 'INPUT':{				
+			CASE 'INPUT':{
 				IF(myAVR.ZONE[z].POWER){
 					fnAddToQueue("'Z',ITOA(z),'INP',DATA.TEXT",FALSE)
 				}
@@ -400,7 +400,7 @@ DEFINE_PROGRAM{
 		[vdvZone[z], 199] = (myAVR.ZONE[z].MUTE)
 		[vdvZone[z], 255] = (myAVR.ZONE[z].POWER)
 	}
-	
+
 	[vdvZone, 251] = (TIMELINE_ACTIVE(TLID_COMMS))
 	[vdvZone, 252] = (TIMELINE_ACTIVE(TLID_COMMS))
 }

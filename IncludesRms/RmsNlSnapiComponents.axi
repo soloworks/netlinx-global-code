@@ -812,25 +812,25 @@ DEFINE_FUNCTION RegisterAssetControlMethodsSnapiComponents(CHAR assetClientKey[]
       CASE 'CONTROL_METHODS' :
       {
         RmsAssetControlMethodEnqueue(assetClientKey, 'dialer.hook', 'Set Off Hook', 'Set the on/off state of the dialer');
-        RmsAssetControlMethodArgumentBoolean(assetClientKey,'dialer.hook', 0, 
-        													'Set Off Hook', 'Set the on/off state of the dialer', 
+        RmsAssetControlMethodArgumentBoolean(assetClientKey,'dialer.hook', 0,
+        													'Set Off Hook', 'Set the on/off state of the dialer',
         													0);
 
         RmsAssetControlMethodEnqueue(assetClientKey, 'dialer.auto.answer', 'Set Auto Answer', 'Set the auto answer feature state of the dialer');
-        RmsAssetControlMethodArgumentBoolean(assetClientKey, 'dialer.auto.answer', 0, 
-        													'Auto Answer On/Off', 'Select the auto answer state to apply', 
+        RmsAssetControlMethodArgumentBoolean(assetClientKey, 'dialer.auto.answer', 0,
+        													'Auto Answer On/Off', 'Select the auto answer state to apply',
         													0);
 
         RmsAssetControlMethodEnqueue(assetClientKey, 'dialer.dial.number', 'Dial Telephone Number', 'Dial a phone number');
-        RmsAssetControlMethodArgumentString(assetClientKey, 'dialer.dial.number', 0, 
-        													'Phone Number', 'Enter the phone number', 
+        RmsAssetControlMethodArgumentString(assetClientKey, 'dialer.dial.number', 0,
+        													'Phone Number', 'Enter the phone number',
         													'');
 
         RmsAssetControlMethodEnqueue(assetClientKey, 'dialer.redial', 'Redial', 'Redial the last number dialed');
 
         RmsAssetControlMethodEnqueue(assetClientKey, 'dialer.ring.audible', 'Set Audible Ring', 'Set the audible ring feature state');
-        RmsAssetControlMethodArgumentBoolean(assetClientKey, 'dialer.ring.audible', 0, 
-        													'Audible Ring On/Off', 'Select the audible ring state to apply', 
+        RmsAssetControlMethodArgumentBoolean(assetClientKey, 'dialer.ring.audible', 0,
+        													'Audible Ring On/Off', 'Select the audible ring state to apply',
         													0);
       }
     }

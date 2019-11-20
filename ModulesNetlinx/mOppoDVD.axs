@@ -13,7 +13,7 @@ DEFINE_TYPE STRUCTURE uPlayer{
 	CHAR CHAPTER[3]
 	CHAR UTC_TYPE[1]
 	CHAR UTC_TIME[8]
-}	
+}
 DEFINE_TYPE STRUCTURE uCOMMS{
 	CHAR RX[500]
 	INTEGER DEBUG
@@ -76,7 +76,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 	fnDebug('OPPO->',pDATA)
 	IF(GET_BUFFER_CHAR(pDATA) != '@'){RETURN}
 	SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
-		CASE 'QPW':{ 
+		CASE 'QPW':{
 			myOppoPlayer.POWER = (pDATA == 'OK ON')
 		}
 		CASE 'PON':{ myOppoPlayer.POWER = TRUE }

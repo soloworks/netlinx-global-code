@@ -5,7 +5,7 @@ MODULE_NAME='mCiscoISDNLink'(DEV vdvControl,DEV dvRS232)
 INCLUDE 'CustomFunctions'
 /******************************************************************************
 	Solo Control module for Cisco ISDN Link Box
-	
+
 	Basic control developed for Cabinet Office Switching of lines
 ******************************************************************************/
 

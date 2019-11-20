@@ -31,7 +31,7 @@ DEFINE_TYPE STRUCTURE uEyeVis{
 	INTEGER 	DEBUG
 	CHAR 		RX[1000]
 	CHAR		TX[1000]
-	// 
+	//
 	CHAR		WALL_NAME[20]
 	CHAR		ACTIVE_PRESET[20]
 	// STATE
@@ -59,10 +59,10 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 	IF(myEyeVis.IP_STATE == COMMS_STATE_OFFLINE){
 		fnDebug(FALSE,"'Connecting on ',myEyeVis.IP_ADDRESS,':'",ITOA(myEyeVis.IP_PORT))
 		myEyeVis.IP_STATE = COMMS_STATE_TRYING
-		ip_client_open(dvDevice.port, myEyeVis.IP_ADDRESS, myEyeVis.IP_PORT, IP_TCP) 
+		ip_client_open(dvDevice.port, myEyeVis.IP_ADDRESS, myEyeVis.IP_PORT, IP_TCP)
 	}
-} 
- 
+}
+
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(dvDevice.port)
 }
@@ -194,7 +194,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 			CASE 'PROPERTY':{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
 					CASE 'NAME':myEyeVis.WALL_NAME = DATA.TEXT
-					CASE 'IP': 	  { 
+					CASE 'IP': 	  {
 						myEyeVis.IP_ADDRESS = fnStripCharsRight(REMOVE_STRING(DATA.TEXT,':',1),1)
 						myEyeVis.IP_PORT = ATOI(DATA.TEXT)
 						fnInit()
@@ -217,7 +217,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 				fnQueueCommand(DATA.TEXT,'')
 			}
 			CASE 'SOURCE':{
-				
+
 			}
 		}
 	}

@@ -1,7 +1,7 @@
 MODULE_NAME='mRevolabsElite'(DEV vdvControl,DEV vdvMics[],DEV dvDevice)
 INCLUDE 'CustomFunctions'
 /******************************************************************************
-	
+
 	Revolabs control module.
 	RS232 or IP
 	For IP, the Revolabs is required to be pointed to the AMX IP address and use
@@ -22,7 +22,7 @@ DEFINE_TYPE STRUCTURE uExecElite{
 	CHAR 		TX[1000]
 	INTEGER	IP_PORT
 	CHAR		IP_HOST[255]
-	INTEGER	IP_STATE 
+	INTEGER	IP_STATE
 	CHAR		IP_USERNAME[20]
 	CHAR		IP_PASSWORD[20]
 	INTEGER	isIP
@@ -48,7 +48,7 @@ LONG TLID_TIMEOUT		= 4
 DEFINE_VARIABLE
 VOLATILE uExecElite myExecElite
 VOLATILE uMicrophone myMic[8]
-	
+
 LONG TLT_COMMS[] 		= {90000}
 LONG TLT_POLL[] 		= {30000}
 LONG TLT_RETRY[] 		= {5000}
@@ -62,7 +62,7 @@ DEFINE_FUNCTION fnDebug(INTEGER pFORCE,CHAR Msg[], CHAR MsgData[]){
 		SEND_STRING 0:0:0, "ITOA(vdvControl.Number),':',Msg,'[',ITOA(LENGTH_ARRAY(MsgData)),'][', MsgData,']'"
 	}
 }
-DEFINE_FUNCTION fnInitPoll(){	
+DEFINE_FUNCTION fnInitPoll(){
 	IF(TIMELINE_ACTIVE(TLID_POLL)){TIMELINE_KILL(TLID_POLL)}
 	TIMELINE_CREATE(TLID_POLL,TLT_POLL,LENGTH_ARRAY(TLT_POLL),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
 }
@@ -115,15 +115,15 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMEOUT]{
 	fnCloseTCPConnection()
 }
 DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
-	
+
 	STACK_VAR INTEGER pCHAN
-	
+
 	IF(RIGHT_STRING(pDATA,1) == "$0A"){
 		pDATA = fnStripCharsRight(pDATA,1)
 	}
-	
+
 	fnDebug(FALSE,'REVO->',"pData")
-	
+
 	SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
 		CASE 'val':{
 			SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
@@ -177,7 +177,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 			}
 		}
 	}
-	
+
 	IF(TIMELINE_ACTIVE(TLID_COMM)){TIMELINE_KILL(TLID_COMM)}
 	TIMELINE_CREATE(TLID_COMM,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 }
@@ -190,9 +190,9 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 	ELSE{
 		fnDebug(FALSE,'Connecting to RevoLabs on ',"myExecElite.IP_HOST,':',ITOA(myExecElite.IP_PORT)")
 		myExecElite.IP_STATE = IP_STATE_CONNECTING
-		ip_client_open(dvDevice.port, myExecElite.IP_HOST, myExecElite.IP_PORT, IP_TCP) 
+		ip_client_open(dvDevice.port, myExecElite.IP_HOST, myExecElite.IP_PORT, IP_TCP)
 	}
-} 
+}
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(dvDevice.port)
 }
@@ -269,7 +269,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 			fnDebug(FALSE,'->REVO.Telnet',NEG_PACKET)
 			SEND_STRING DATA.DEVICE,NEG_PACKET
 		}
-		// 
+		//
 		IF(FIND_STRING(LOWER_STRING(myExecElite.Rx),'login',1)){
 			fnDebug(FALSE,'REVO.Login->',myExecElite.RX)
 			fnDebug(FALSE,'->REVO.Login',"myExecElite.IP_USERNAME,$0A")
@@ -314,7 +314,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 						}
 						ELSE{
 							myExecElite.IP_HOST = DATA.TEXT
-							myExecElite.IP_PORT = 23 
+							myExecElite.IP_PORT = 23
 						}
 						fnRetryConnection()
 					}

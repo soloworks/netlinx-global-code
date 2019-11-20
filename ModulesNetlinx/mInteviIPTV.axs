@@ -245,7 +245,7 @@ DEFINE_FUNCTION fnChangeChannel(INTEGER EP, INTEGER CH){
 DEFINE_FUNCTION eventHTTPResponse(uHTTPResponse r){
 	STACK_VAR CHAR TEMP[10000]
 	STACK_VAR INTEGER CH
-	
+
 	// Eat up to Group Detail
 	REMOVE_STRING(r.body,'"groups"',1)
 	myIPTV.NAME = fnGetNextValueByKey('name',r.body)

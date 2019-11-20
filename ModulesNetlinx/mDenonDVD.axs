@@ -11,7 +11,7 @@ DEFINE_TYPE STRUCTURE uDenonDVD{
 	CHAR		IP_HOST[255]				//	IP Port
 	INTEGER 	IP_STATE						// Connection State
 	INTEGER	isIP							// Device is IP driven
-	INTEGER 	DEBUG							// Debugging	
+	INTEGER 	DEBUG							// Debugging
 	// State
 	INTEGER POWER
 }
@@ -27,7 +27,7 @@ INTEGER IP_STATE_CONNECTING	= 1
 INTEGER IP_STATE_CONNECTED		= 2
 
 DEFINE_VARIABLE
-LONG TLT_COMMS[] 		= { 120000 } 
+LONG TLT_COMMS[] 		= { 120000 }
 LONG TLT_POLL[]  		= {  25000 }
 LONG TLT_RETRY[]		= {   5000 }
 
@@ -63,9 +63,9 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 	ELSE{
 		fnDebug(FALSE,'Connecting to DVD on ',"myDenonDVD.IP_HOST,':',ITOA(myDenonDVD.IP_PORT)")
 		myDenonDVD.IP_STATE = IP_STATE_CONNECTING
-		ip_client_open(dvDevice.port, myDenonDVD.IP_HOST, myDenonDVD.IP_PORT, IP_TCP) 
+		ip_client_open(dvDevice.port, myDenonDVD.IP_HOST, myDenonDVD.IP_PORT, IP_TCP)
 	}
-} 
+}
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(dvDevice.port)
 }
@@ -159,7 +159,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 					CASE 'DEBUG': myDenonDVD.DEBUG = (ATOI(DATA.TEXT) || DATA.TEXT == 'TRUE');
 					CASE 'IP':{
 						myDenonDVD.IP_HOST = DATA.TEXT
-						myDenonDVD.IP_PORT = 9030 
+						myDenonDVD.IP_PORT = 9030
 						fnRetryConnection()
 					}
 				}
@@ -210,7 +210,7 @@ DEFINE_EVENT BUTTON_EVENT[tp,0]{
 			CASE 73:fnSendCommand('DVOP')		// Option Menu
 			CASE 74:fnSendCommand('DVPU')		// Popup Menu
 			CASE 75:fnSendCommand('PCRTN')		// Return
-			
+
 		}
 	}
 }

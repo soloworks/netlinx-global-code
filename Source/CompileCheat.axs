@@ -5,7 +5,7 @@ PROGRAM_NAME='CompileCheat'
 	Set your default module and include folders manually to include the subfolders
 	of this project in order to compile properly:
 	Settings->Preferences->Netlinx Compiler->Directories
-	
+
 	Or use the configuration tool at:
 	bitbucket.org/solo_works/netlinxstudioconfigtool
 

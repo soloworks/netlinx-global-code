@@ -26,7 +26,7 @@ INTEGER btnZoom[] = {
 INTEGER btnPresets[]={200,201,202,203,204,205,206,207,208,209,210}
 
 DEFINE_VARIABLE
-LONG TLT_COMMS[] = {60000} 
+LONG TLT_COMMS[] = {60000}
 LONG TLT_POLL[]  = {15000}
 (***********************************************************)
 (*              DATA TYPE DEFINITIONS GO BELOW             *)
@@ -34,7 +34,7 @@ LONG TLT_POLL[]  = {15000}
 DEFINE_TYPE STRUCTURE uCamera{
 	INTEGER 	CAMERA_ID
 	INTEGER	DEBUG
-	LONG		BAUD	
+	LONG		BAUD
 }
 
 (***********************************************************)
@@ -65,7 +65,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 		IF(!myCamera.BAUD){
 			myCamera.BAUD = 9600
 		}
-		SEND_COMMAND dvDevice, 'SET MODE DATA' 
+		SEND_COMMAND dvDevice, 'SET MODE DATA'
 		SEND_COMMAND dvDevice, "'SET BAUD ',ITOA(myCamera.BAUD),' N 8 1 485 DISABLE'"
 		fnInitPoll()
 	}
@@ -77,7 +77,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 (***********************************************************)
 (*                THE EVENTS GO BELOW                      *)
 (***********************************************************)
-//char 5 is pan speed, char 6 is tilt speed 
+//char 5 is pan speed, char 6 is tilt speed
 DEFINE_EVENT BUTTON_EVENT[tpMain,btnDPad]{
 	PUSH:{
 		SWITCH(GET_LAST(btnDPad)){
@@ -99,7 +99,7 @@ DEFINE_EVENT BUTTON_EVENT[tpMain,btnDPad]{
 DEFINE_EVENT BUTTON_EVENT[tpMain,btnZoom]{
 	PUSH:{
 		SWITCH(GET_LAST(btnZoom)){
-			CASE 1: 	fnSendCommand("$88,$01,$04,$07,$02,$FF")	// Zoom In 
+			CASE 1: 	fnSendCommand("$88,$01,$04,$07,$02,$FF")	// Zoom In
 			CASE 2:	fnSendCommand("$88,$01,$04,$07,$03,$FF")	// Zoom Out
 		}
 	}
@@ -123,7 +123,7 @@ COMMAND:{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
 					CASE 'BAUD':{
 						myCamera.BAUD 	= ATOI(DATA.TEXT)
-						SEND_COMMAND dvDevice, 'SET MODE DATA' 
+						SEND_COMMAND dvDevice, 'SET MODE DATA'
 						SEND_COMMAND dvDevice, "'SET BAUD ',ITOA(myCamera.BAUD),' N 8 1 485 DISABLE'"
 						fnInitPoll()
 					}

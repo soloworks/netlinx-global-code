@@ -164,7 +164,7 @@ DEFINE_FUNCTION CHAR[32] fnEncryptToMD5 (CHAR pcStringToEncrypt[])
 STACK_VAR
   INTEGER ii
   md5_state_t state
-  CHAR digest[16]    
+  CHAR digest[16]
   CHAR strOutput[32]
 {
 // clear buffer
@@ -206,7 +206,7 @@ STACK_VAR
   parms.count[1] = 0
   parms.count[2] = 0
 
-// Load magic inititialization constants.  
+// Load magic inititialization constants.
   parms.abcd[1] = $67452301
   parms.abcd[2] = $efcdab89
   parms.abcd[3] = $98badcfe
@@ -276,12 +276,12 @@ STACK_VAR
       return;
 
     p_idx = p_idx + copy
-     
+
     left = left - copy
 
     md5_process(parms, parms.buf);
   }
-  
+
 //    /* Process full blocks. */
   for (ii = 1; left >= 64; left = left - 64, ii++)
   {
@@ -325,7 +325,7 @@ STACK_VAR
 
 // Save the length before padding.
   SET_LENGTH_STRING(DATA,8)
-  
+
   for (N = 1,i = 0; i <  8; i++,N++)
     data[N] = TYPE_CAST(  (parms.count[(i >> 2) + 1] >> ((i & 3) << 3))  )
 
@@ -399,7 +399,7 @@ STACK_VAR
     FF(d, a, b, c, 13, 12, T14, X, t);
     FF(c, d, a, b, 14, 17, T15, X, t);
     FF(b, c, d, a, 15, 22, T16, X, t);
-    
+
 // Round 2.
     GG(a, b, c, d,  1,  5, T17, X, t);
     GG(d, a, b, c,  6,  9, T18, X, t);
@@ -417,7 +417,7 @@ STACK_VAR
     GG(d, a, b, c,  2,  9, T30, X, t);
     GG(c, d, a, b,  7, 14, T31, X, t);
     GG(b, c, d, a, 12, 20, T32, X, t);
-    
+
 // Round 3.
     HH(a, b, c, d,  5,  4, T33, X, t);
     HH(d, a, b, c,  8, 11, T34, X, t);
@@ -435,7 +435,7 @@ STACK_VAR
     HH(d, a, b, c, 12, 11, T46, X, t);
     HH(c, d, a, b, 15, 16, T47, X, t);
     HH(b, c, d, a,  2, 23, T48, X, t);
-    
+
 // Round 4.
     II(a, b, c, d,  0,  6, T49, X, t);
     II(d, a, b, c,  7, 10, T50, X, t);

@@ -30,20 +30,20 @@ DEFINE_START{
 }
 DEFINE_EVENT DATA_EVENT[dvRS232]{
 	ONLINE:{
-		SEND_COMMAND dvRS232, 'SET MODE DATA' 
+		SEND_COMMAND dvRS232, 'SET MODE DATA'
 		SEND_COMMAND dvRS232, 'SET BAUD 9600 N 8 1 485 DISABLE'
 		fnPoll()
 		fnInitPoll()
 	}
 	STRING:{
-		
+
 	}
 }
 DEFINE_EVENT DATA_EVENT[vdvControl]{
 	COMMAND:{
 		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
 			CASE 'POWER':{
-				
+
 			}
 		}
 	}
@@ -96,17 +96,17 @@ DEFINE_EVENT BUTTON_EVENT[tp,0]{
 			CASE 105: fnSendCommand('SKP','c','P')		// Skip-
 			CASE 106: fnSendCommand('PLY','c','FFW')	// Scan+
 			CASE 107: fnSendCommand('PLY','c','FBW')	// Scan-
-			     
+
 			CASE 108: fnSendCommand('MNU','c','T')		// Menu Title
 			CASE 109: fnSendCommand('MNU','c','R')		// Menu Root
-			     
+
 			CASE 110: fnSendCommand('NAV','c','UP')	// Menu UP
 			CASE 111: fnSendCommand('NAV','c','DWN')	// Menu DN
 			CASE 112: fnSendCommand('NAV','c','LFT')	// Menu LT
 			CASE 113: fnSendCommand('NAV','c','RIT')	// Menu RT
 			CASE 114: fnSendCommand('NAV','c','ENT')	// Menu SEL
 			CASE 115: fnSendCommand('NAV','c','RTN')	// Menu Return
-			     
+
 		}
 	}
 }

@@ -123,7 +123,7 @@ DEFINE_FUNCTION RegisterAssetParameters()
 	STACK_VAR INTEGER x
    //Register all snapi HAS_xyz components
    RegisterAssetParametersSnapiComponents(assetClientKey);
-	
+
 	// Mic State
 	RmsAssetParameterEnqueueEnumeration(
 		assetClientKey,
@@ -246,7 +246,7 @@ DEFINE_FUNCTION RegisterAssetParameters()
 		TRUE
 	)
 
-  RmsAssetParameterThresholdEnqueue(	
+  RmsAssetParameterThresholdEnqueue(
 	assetClientKey,
 	'asset.network.ip',
 	'IP Error',
@@ -254,7 +254,7 @@ DEFINE_FUNCTION RegisterAssetParameters()
 	RMS_ASSET_PARAM_THRESHOLD_COMPARISON_EQUAL,
 	'0.0.0.0'
   )
-  
+
 	// Uptime
 	RmsAssetParameterEnqueueString(
 		assetClientKey,
@@ -284,8 +284,8 @@ DEFINE_FUNCTION RegisterAssetParameters()
 		FALSE,
 		RMS_ASSET_PARAM_BARGRAPH_TEMPERATURE
 	)
-	
-  
+
+
   // submit all parameter registrations
   RmsAssetParameterSubmit(assetClientKey);
 }
@@ -384,7 +384,7 @@ DEFINE_FUNCTION ResetAssetParameterValue(CHAR parameterKey[],CHAR parameterValue
 (***********************************************************)
 DEFINE_FUNCTION RegisterAssetMetadata()
 {
-		  
+
   //Register all snapi HAS_xyz components
   RegisterAssetMetadataSnapiComponents(assetClientKey);
 

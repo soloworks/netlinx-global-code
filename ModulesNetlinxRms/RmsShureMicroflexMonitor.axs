@@ -118,7 +118,7 @@ DEFINE_FUNCTION RegisterAssetParameters()
 {
   //Register all snapi HAS_xyz components
   RegisterAssetParametersSnapiComponents(assetClientKey);
-  
+
 	// Standby State
 	RmsAssetParameterEnqueueBoolean(
 		assetClientKey,
@@ -223,7 +223,7 @@ DEFINE_FUNCTION RegisterAssetMetadata()
 	RmsAssetMetadataEnqueueString(assetClientKey,'meta.deviceid','Device ID',MONITOR_ASSET_DEVICE_ID)
 	RmsAssetMetadataEnqueueString(assetClientKey,'meta.serialno','Serial Number',MONITOR_ASSET_SERIALNUMBER)
 	RmsAssetMetadataEnqueueString(assetClientKey,'meta.network.mac','MAC Address',MONITOR_ASSET_MAC_ADDRESS)
-		  
+
   //Register all snapi HAS_xyz components
   RegisterAssetMetadataSnapiComponents(assetClientKey);
 
@@ -350,7 +350,7 @@ DATA_EVENT[vdvDevice]{
     SEND_COMMAND vdvDevice, "'PROPERTY-RMS-Type,Asset'"
   }
   COMMAND:{
-		
+
   }
   STRING:{
 		SWITCH(REMOVE_STRING(DATA.TEXT,'-',1)){
@@ -363,13 +363,13 @@ DATA_EVENT[vdvDevice]{
 							CASE 'MAKE,': { 	 MONITOR_ASSET_MANUFACTURERNAME 	= DATA.TEXT }
 							CASE 'MODEL,':{ 	 MONITOR_ASSET_MODELNAME 			= DATA.TEXT }
 							CASE 'NET_MAC,':{
-								MONITOR_ASSET_MAC_ADDRESS = DATA.TEXT 
+								MONITOR_ASSET_MAC_ADDRESS = DATA.TEXT
 								IF(IsRmsReady()){
 									RmsAssetMetadataUpdateString( assetClientKey, 'meta.network.mac', MONITOR_ASSET_MAC_ADDRESS)
 								}
 							}
 							CASE 'DEV_ID,':{
-								MONITOR_ASSET_DEVICE_ID = DATA.TEXT 
+								MONITOR_ASSET_DEVICE_ID = DATA.TEXT
 								IF(IsRmsReady()){
 									RmsAssetMetadataUpdateString( assetClientKey, 'meta.deviceid', MONITOR_ASSET_DEVICE_ID)
 								}

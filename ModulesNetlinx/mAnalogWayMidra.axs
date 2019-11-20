@@ -10,9 +10,9 @@ DEFINE_TYPE STRUCTURE uMidra{
 	// Communications
 	CHAR 		RX[2000]						// Receieve Buffer
 	INTEGER 	IP_PORT						// Telnet Port 23
-	CHAR		IP_HOST[255]				//	
-	INTEGER 	IP_STATE						// 
-	INTEGER	DEBUG	
+	CHAR		IP_HOST[255]				//
+	INTEGER 	IP_STATE						//
+	INTEGER	DEBUG
 	CHAR 		USERNAME[20]
 	CHAR 		PASSWORD[20]
 	INTEGER  MODEL_ID
@@ -56,9 +56,9 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 	ELSE{
 		fnDebug(DEBUG_STD,'Connecting to Midra on ',"myMidra.IP_HOST,':',ITOA(myMidra.IP_PORT)")
 		myMidra.IP_STATE = IP_STATE_CONNECTING
-		ip_client_open(dvIP.port, myMidra.IP_HOST, myMidra.IP_PORT, IP_TCP) 
+		ip_client_open(dvIP.port, myMidra.IP_HOST, myMidra.IP_PORT, IP_TCP)
 	}
-} 
+}
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(dvIP.port)
 }
@@ -154,7 +154,7 @@ DEFINE_EVENT DATA_EVENT[dvIP]{
 ******************************************************************************/
 DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 	fnDebug(DEBUG_STD,'MIDRA->',pDATA)
-	
+
 	IF(pDATA == '*1'){
 		fnSendCommand('?')	// Send Device Check
 	}
@@ -182,7 +182,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 		fnPoll()
 	}
 	ELSE{
-	
+
 		IF(TIMELINE_ACTIVE(TLID_COMMS)){ TIMELINE_KILL(TLID_COMMS) }
 		TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 	}

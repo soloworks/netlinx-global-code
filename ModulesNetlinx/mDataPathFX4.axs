@@ -17,10 +17,10 @@ DEFINE_TYPE STRUCTURE uHTTP{
 }
 DEFINE_TYPE STRUCTURE uSystem{
 
-	CHAR		SERIAL_NUMBER[50]		
+	CHAR		SERIAL_NUMBER[50]
 	CHAR 		FIRMWARE_VER[50]
 	CHAR		NAME[50]
-	
+
 	INTEGER	CONN_STATE
 	CHAR 		IP_HOST[255]
 	INTEGER	IP_PORT
@@ -28,7 +28,7 @@ DEFINE_TYPE STRUCTURE uSystem{
 	uHTTP		Tx[10]
 	CHAR		Rx[5000]
 	uHTTP		LastHTTP
-	
+
 	INTEGER  INPUT_ACTIVE
 	INTEGER  INPUT_PREFERED
 }
@@ -106,10 +106,10 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 	fnDebug(DEBUG_DEV,"'fnOpenTCPConnection','Called'")
 	fnDebug(DEBUG_STD,"'Connecting to ',myDataPath.IP_HOST,':',ITOA(myDataPath.IP_PORT)")
 	myDataPath.CONN_STATE = CONN_STATE_CONNECTING
-	ip_client_open(ipDataPath.port, "myDataPath.IP_HOST", myDataPath.IP_PORT, IP_TCP) 
+	ip_client_open(ipDataPath.port, "myDataPath.IP_HOST", myDataPath.IP_PORT, IP_TCP)
 	fnTimeoutConnection(TRUE)
 	fnDebug(DEBUG_DEV,"'fnOpenTCPConnection','Ended'")
-} 
+}
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	fnDebug(DEBUG_DEV,"'fnCloseTCPConnection','Called'")
 	IP_CLIENT_CLOSE(ipDataPath.port)
@@ -146,12 +146,12 @@ DEFINE_FUNCTION fnSendRequest(INTEGER pTYPE, CHAR pURL[100],CHAR pArgs[500]){
 	fnDebug(DEBUG_DEV,"'fnSendRequest','Called'")
 	pHTTP.URL = pURL
 	pHTTP.DATA = pARGS
-	
+
 	SWITCH(pTYPE){
 		CASE HTTP_TYPE_GET: pHTTP.REQUEST = fnBuildGETRequest(pURL,pARgs)
 		CASE HTTP_TYPE_POST:pHTTP.REQUEST = fnBuildPOSTRequest(pURL,pARgs)
 	}
-	
+
 	fnAddToQueue(pHTTP)
 	fnDebug(DEBUG_DEV,"'fnSendRequest','Called'")
 }
@@ -192,7 +192,7 @@ DEFINE_FUNCTION CHAR[10000] fnBuildPOSTRequest(CHAR pURL[100],CHAR pBody[1000]){
 	(** Combine **)
 	fnDebug(DEBUG_DEV,"'fnWrapPOSTRequest','Returning'")
 	RETURN( "cToReturn, pBody" )
-	
+
 }
 
 DEFINE_FUNCTION CHAR[10000] fnBuildGETRequest(CHAR pURL[100],CHAR pArgs[500]){
@@ -209,7 +209,7 @@ DEFINE_FUNCTION CHAR[10000] fnBuildGETRequest(CHAR pURL[100],CHAR pArgs[500]){
 	(** Combine **)
 	fnDebug(DEBUG_DEV,"'fnWrapGETRequest','Returning'")
 	RETURN( cToReturn )
-	
+
 }
 /******************************************************************************
 	Feedback Processing
@@ -217,7 +217,7 @@ DEFINE_FUNCTION CHAR[10000] fnBuildGETRequest(CHAR pURL[100],CHAR pArgs[500]){
 DEFINE_FUNCTION INTEGER fnProcessFeedback(){
 	STACK_VAR INTEGER RESPONSE_CODE
 	STACK_VAR pValue[100]
-	
+
 	// Process Headers
 	fnDebug(DEBUG_DEV,"'fnProcessFeedback() Head STX-----------------------------'")
 	// Headers
@@ -240,7 +240,7 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(){
 		}
 		fnDebug(DEBUG_DEV,"'fnProcessFeedback() HeaderLoop End'")
 	}
-	
+
 	fnDebug(DEBUG_DEV,"'fnProcessFeedback() Body STX-----------------------------'")
 	fnDebug(DEBUG_DEV,"'fnProcessFeedback() myDataPath.Rx:'")
 	fnDebug(DEBUG_DEV,"myDataPath.Rx")
@@ -299,9 +299,9 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(){
 			}
 		}
 	}
-	
+
 	fnDebug(DEBUG_STD,"'fnProcessFeedback() HTTP ETX-----------------------------'")
-	
+
 	IF(RESPONSE_CODE == 200){
 		fnTimeoutConnection(FALSE)
 		IF(TIMELINE_ACTIVE(TLID_COMMS)){TIMELINE_KILL(TLID_COMMS)}
@@ -341,7 +341,7 @@ DEFINE_FUNCTION fnPoll(){
 	fnSendRequest(HTTP_TYPE_GET,'/PreferredInput.cgx','')
 	fnSendRequest(HTTP_TYPE_GET,'/ActiveInput.cgx','')
 	fnDebug(DEBUG_DEV,"'fnPoll()','Ended'")
-	
+
 }
 /******************************************************************************
 	Control Device Processing
@@ -363,7 +363,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 						}
 						ELSE{
 							myDataPath.IP_HOST = DATA.TEXT
-							myDataPath.IP_PORT = 80 
+							myDataPath.IP_PORT = 80
 						}
 						fnPoll()
 						fnInitPoll()
@@ -378,7 +378,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 				}
 			}
 			CASE 'INPUT':{
-				
+
 				fnSendRequest(HTTP_TYPE_POST,'/PreferredInput.cgx',"'{"Input": ',ITOA(fnInputToInteger(DATA.TEXT)),'}'")
 			}
 		}

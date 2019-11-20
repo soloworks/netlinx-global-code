@@ -47,7 +47,7 @@ LONG TLT_POLL[]	= { 45000 }
 LONG TLT_COMMS[]	= { 180000 }
 /******************************************************************************
 	Utlity Functions
-******************************************************************************/ 
+******************************************************************************/
 DEFINE_FUNCTION fnOpenTCPConnection(){
 	IF(!LENGTH_ARRAY(myCamera.IP_ADD)){
 		fnDebug(TRUE,'Camera IP Address Not Set','')
@@ -55,9 +55,9 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 	ELSE{
 		fnDebug(FALSE,'Connecting to Camera',"myCamera.IP_ADD,':',ITOA(myCamera.IP_PORT)")
 		myCamera.TRYING = TRUE
-		ip_client_open(dvCamera.port, myCamera.IP_ADD, myCamera.IP_PORT, IP_TCP) 
+		ip_client_open(dvCamera.port, myCamera.IP_ADD, myCamera.IP_PORT, IP_TCP)
 	}
-} 
+}
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(dvCamera.port)
 }
@@ -133,9 +133,9 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 			}
 			CASE 'ACTION':{
 				SWITCH(DATA.TEXT){
-					CASE 'INIT':{ 		
+					CASE 'INIT':{
 						fnInitPoll()
-					}	
+					}
 				}
 			}
 			CASE 'GOTO':{
@@ -154,7 +154,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 		}
 	}
 }
-DEFINE_CONSTANT 
+DEFINE_CONSTANT
 INTEGER chnPanTilt[] = {
 	132,	// Tilt Up
 	133,	// Tilt Down
@@ -282,14 +282,14 @@ DEFINE_EVENT DATA_EVENT[dvCamera]{
 			fnDoSend()
 		}
 	}
-	ONLINE:{    
+	ONLINE:{
 		STACK_VAR CHAR toSend[1000]
 		myCamera.CONNECTED = TRUE
 		myCamera.TRYING = FALSE
 		toSend = REMOVE_STRING(myCamera.Tx,"$0D,$0A,$0D,$0A",1)
 		SEND_STRING dvCamera,toSend
 		fnDebugHTTP('->CAM',toSend)
-	}    
+	}
 	ONERROR:{
 		myCamera.CONNECTED = FALSE
 		myCamera.TRYING = FALSE
@@ -387,14 +387,14 @@ DEFINE_FUNCTION fnProcessPollResponse(CHAR pDATA[5000]){
 			}
 		}
 		CASE POLL_PanTilt:{
-			
+
 			myCamera.LAST_POLL = 0
 			IF(!(FIND_STRING(myCamera.Tx,"$0D,$0A,$0D,$0A",1))){
 				fnSendPoll(POLL_Zoom)
 			}
 		}
 		CASE POLL_Zoom:{
-			
+
 			myCamera.LAST_POLL = 0
 		}
 	}

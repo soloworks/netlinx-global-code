@@ -59,10 +59,10 @@ DEFINE_START{
 	Utility Functions
 ******************************************************************************/
 	(** Open a Network Connection **)
-DEFINE_FUNCTION fnOpenConnection(){     
+DEFINE_FUNCTION fnOpenConnection(){
 	fnDebug('Connecting to JVC on',"myJVCProj.IP_HOST,':',ITOA(myJVCProj.IP_PORT)")
 	myJVCProj.IP_STATE = IP_STATE_CONNECTING
-	ip_client_open(dvDevice.port, myJVCProj.IP_HOST, myJVCProj.IP_PORT, IP_TCP) 
+	ip_client_open(dvDevice.port, myJVCProj.IP_HOST, myJVCProj.IP_PORT, IP_TCP)
 }
 
 DEFINE_FUNCTION fnCloseConnection(){
@@ -122,7 +122,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 	pUnitID 			= GET_BUFFER_STRING(pDATA,2)
 	pCMD1				= GET_BUFFER_CHAR(pDATA)
 	pCMD2				= GET_BUFFER_CHAR(pDATA)
-	
+
 	SWITCH(pResponseType){
 		CASE $06:{	// Ack Response
 			fnDebug('JVC->','ACK')
@@ -172,23 +172,23 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 	Physical Device Events
 ******************************************************************************/
 DEFINE_EVENT DATA_EVENT[dvDevice]{
-	OFFLINE:{    
+	OFFLINE:{
 		myJVCProj.IP_STATE = IP_STATE_OFFLINE
 		myJVCProj.Tx = ''
 		myJVCProj.Rx = ''
 		IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){ TIMELINE_KILL(TLID_TIMEOUT) }
-	}    
-	ONLINE:{ 
+	}
+	ONLINE:{
 		IF(myJVCProj.isIP){
 			myJVCProj.IP_STATE = IP_STATE_ESTABLISHED
 		}
 		ELSE{
 			myJVCProj.IP_STATE = IP_STATE_CONNECTED
-			SEND_COMMAND dvDevice, 'SET MODE DATA' 
+			SEND_COMMAND dvDevice, 'SET MODE DATA'
 			SEND_COMMAND dvDevice, 'SET BAUD 19200 N 8 1 485 DISABLE'
 			fnInitPoll()
 		}
-	}    
+	}
 	ONERROR:{
 		STACK_VAR CHAR _MSG[255]
 		IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){
@@ -229,7 +229,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 				fnProcessFeedback(fnStripCharsRight(REMOVE_STRING(myJVCProj.Rx,"$0A",1),1))
 			}
 		}
-		
+
 		IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){ TIMELINE_KILL(TLID_TIMEOUT) }
 		TIMELINE_CREATE(TLID_TIMEOUT,TLT_TIMEOUT,LENGTH_ARRAY(TLT_TIMEOUT),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 	}
@@ -242,16 +242,16 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
 			CASE 'PROPERTY':{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
-					CASE 'IP':{ 	
+					CASE 'IP':{
 						myJVCProj.IP_HOST = DATA.TEXT;
 						myJVCProj.IP_PORT	= 20554
 						fnPoll()
 					}
 					CASE 'DEBUG':{
-						myJVCProj.DEBUG = (DATA.TEXT == 'TRUE') 
+						myJVCProj.DEBUG = (DATA.TEXT == 'TRUE')
 					}
 				}
-			}			
+			}
 			CASE 'POWER':{
 				SWITCH(DATA.TEXT){
 					CASE 'ON':	fnAddToQueue($21,$50,$57,$31)

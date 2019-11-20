@@ -12,7 +12,7 @@ DEFINE_CONSTANT
 LONG TLID_COMMS = 1
 LONG TLID_POLL	 = 2
 DEFINE_VARIABLE
-LONG TLT_COMMS[] = {60000} 
+LONG TLT_COMMS[] = {60000}
 LONG TLT_POLL[]  = {15000}
 
 uCORIO myCORIO
@@ -67,7 +67,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 		fnSendCommand('login(user4,user4pw)')
 	}
 	ELSE IF(LEFT_STRING(pDATA,5) == '!Info'){
-	
+
 	}
 	ELSE{
 		SWITCH(REMOVE_STRING(pDATA,'=',1)){

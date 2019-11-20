@@ -43,7 +43,7 @@ DEFINE_START{
 ******************************************************************************/
 DEFINE_FUNCTION eventHTTPResponse(uHTTPResponse r){
 	STACK_VAR CHAR uOutput[8]
-	
+
 	// Check for a title that shows this is a brightsign
 	IF(FIND_STRING(r.body,'BrightSign',1)){
 		// Reset Communication Timeout
@@ -53,24 +53,24 @@ DEFINE_FUNCTION eventHTTPResponse(uHTTPResponse r){
 	ELSE{
 		RETURN
 	}
-	
+
 	// Whilst closing tags for tables exist
 	WHILE(FIND_STRING(r.Body,'<td>',1)){
 		STACK_VAR CHAR pKEY[200]
 		STACK_VAR CHAR pVAL[200]
-		
+
 		// Get Possible Key
 		REMOVE_STRING(r.Body,'<td>',1)
 		pKey = REMOVE_STRING(r.Body,'</td>',1)
 		SET_LENGTH_ARRAY(pKey,LENGTH_ARRAY(pKey)-5)
 		pKey = fnRemoveWhiteSpace(pKey)
-		
+
 		// Get Probable Value
 		REMOVE_STRING(r.Body,'<td>',1)
 		pVAL = REMOVE_STRING(r.Body,'</td>',1)
 		SET_LENGTH_ARRAY(pVAL,LENGTH_ARRAY(pVAL)-5)
 		pVal = fnRemoveWhiteSpace(pVal)
-		
+
 		SWITCH(pKey){
 			CASE 'Name:':{
 				IF(myBrightsign.NAME != pVAL){
@@ -92,7 +92,7 @@ DEFINE_FUNCTION eventHTTPResponse(uHTTPResponse r){
 			CASE 'Uptime:':	        myBrightsign.Uptime  = pVAL
 		}
 	}
-	
+
 }
 /******************************************************************************
 	Polling

@@ -3098,7 +3098,7 @@ DEFINE_FUNCTION CHAR RmsAssetControlMethodArgumentEnqueue(CHAR assetClientKey[],
     } else {
 	rmsCommand = "rmsCommand,'|',argument.enumerationValues[index]";
     }
-    
+
   }
 
   SEND_COMMAND vdvRMS, rmsCommand;
@@ -4483,7 +4483,7 @@ DEFINE_FUNCTION CHAR RmsGetClientLocationAssociated(LONG locationId)
 DEFINE_FUNCTION CHAR RmsGetClientLocationsAssociated()
 {
   STACK_VAR CHAR rmsCommand[RMS_MAX_CMD_LEN];
-  
+
   // create send command
   rmsCommand = RmsPackCmdHeader(RMS_COMMAND_LOCATIONS_ASSOCIATED);
 
@@ -4505,11 +4505,11 @@ DEFINE_FUNCTION CHAR RmsGetClientLocationsAssociated()
 DEFINE_FUNCTION CHAR RmsGetDeviceAutoRegister()
 {
     STACK_VAR CHAR rmsCommand[RMS_MAX_CMD_LEN];
-    
+
     // create send command
     rmsCommand = RmsPackCmdHeader(RMS_EVENT_DEVICE_AUTO_REGISTER_REQUEST);
     SEND_COMMAND vdvRMS, rmsCommand;
-    
+
     RETURN TRUE;
 }
 
@@ -4525,18 +4525,18 @@ DEFINE_FUNCTION CHAR RmsGetDeviceAutoRegister()
 
 DEFINE_FUNCTION CHAR RmsSetDeviceAutoRegister(CHAR value){
     STACK_VAR CHAR rmsCommand[RMS_MAX_CMD_LEN];
-    
+
     // create send command
     rmsCommand = RmsPackCmdHeader(RMS_EVENT_DEVICE_AUTO_REGISTER);
-    
+
     if(value){
 	rmsCommand = RmsPackCmdParam(rmsCommand, 'true');
-	
+
     } else {
-	rmsCommand = RmsPackCmdParam(rmsCommand, 'false');	
+	rmsCommand = RmsPackCmdParam(rmsCommand, 'false');
     }
     SEND_COMMAND vdvRMS,rmsCommand;
-    
+
     RETURN TRUE;
 }
 
@@ -4552,11 +4552,11 @@ DEFINE_FUNCTION CHAR RmsSetDeviceAutoRegister(CHAR value){
 DEFINE_FUNCTION CHAR RmsGetDeviceAutoRegisterFilter()
 {
     STACK_VAR CHAR rmsCommand[RMS_MAX_CMD_LEN];
-    
+
     // create send command
     rmsCommand = RmsPackCmdHeader(RMS_EVENT_DEVICE_AUTO_REGISTER_FILTER_REQUEST);
     SEND_COMMAND vdvRMS, rmsCommand;
-    
+
     RETURN TRUE;
 }
 
@@ -4575,7 +4575,7 @@ DEFINE_FUNCTION CHAR RmsSetDeviceAutoRegisterFilter(DEV devices[]){
     STACK_VAR CHAR rmsCommand[RMS_MAX_CMD_LEN];
     STACK_VAR INTEGER index;
     STACK_VAR CHAR inputString[1000];
-    
+
     // create send command
     rmsCommand = RmsPackCmdHeader(RMS_EVENT_DEVICE_AUTO_REGISTER_FILTER);
     IF(1 == LENGTH_ARRAY(devices)){
@@ -4583,16 +4583,16 @@ DEFINE_FUNCTION CHAR RmsSetDeviceAutoRegisterFilter(DEV devices[]){
     } ELSE IF(1 < LENGTH_ARRAY(devices)){
 	inputString = ITOA(devices[1].number);
 	FOR(index = 2; index <= LENGTH_ARRAY(devices); index ++){
-	    inputString = "inputString,',',ITOA(devices[index].number)"; 
+	    inputString = "inputString,',',ITOA(devices[index].number)";
 	}
     } ELSE {
 	inputString = '';
-    }    
-    
+    }
+
     rmsCommand = RmsPackCmdParam(rmsCommand, inputString);
-    
+
     SEND_COMMAND vdvRMS,rmsCommand;
-    
+
     RETURN TRUE;
 }
 

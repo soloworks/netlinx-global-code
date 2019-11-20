@@ -56,7 +56,7 @@ DEFINE_FUNCTION DOUBLE fnIEEE754ToFloat(CHAR pDATA[4]){
 	}
 	pFraction = pFraction * pSign
 	//SEND_STRING 0, "'fnGetFloatFromIEEE754::Result::',FTOA(pFraction)"
-	
+
 	RETURN pFraction
 }
 DEFINE_FUNCTION CHAR[4] fnFloatToIEEE754(FLOAT pVal){

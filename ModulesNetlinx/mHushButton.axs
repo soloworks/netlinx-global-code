@@ -9,9 +9,9 @@ INCLUDE 'CustomFunctions'
 DEFINE_TYPE STRUCTURE uHush{
 	// Communications
 	CHAR 		RX[2000]						// Receieve Buffer
-	INTEGER 	IP_PORT						// 
-	CHAR		IP_HOST[255]				//	
-	INTEGER 	IP_STATE						// 
+	INTEGER 	IP_PORT						//
+	CHAR		IP_HOST[255]				//
+	INTEGER 	IP_STATE						//
 	INTEGER	isIP
 	INTEGER	DEBUG
 	INTEGER	PRESSED[8]
@@ -52,9 +52,9 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 	ELSE{
 		fnDebug(FALSE,'Connecting to Hush on ',"myHush.IP_HOST,':',ITOA(myHush.IP_PORT)")
 		myHush.IP_STATE = IP_STATE_CONNECTING
-		ip_client_open(dvIP.port, myHush.IP_HOST, myHush.IP_PORT, IP_TCP) 
+		ip_client_open(dvIP.port, myHush.IP_HOST, myHush.IP_PORT, IP_TCP)
 	}
-} 
+}
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(dvIP.port)
 }
@@ -162,7 +162,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 						}
 						ELSE{
 							myHush.IP_HOST = DATA.TEXT
-							myHush.IP_PORT = 23 
+							myHush.IP_PORT = 23
 						}
 						fnRetryConnection()
 					}

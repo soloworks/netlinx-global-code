@@ -41,20 +41,20 @@ DEFINE_FUNCTION fnSendCommand(CHAR pBytes[], INTEGER pResetPoll){
 	STACK_VAR INTEGER nHigh
 	STACK_VAR INTEGER nLow
 	STACK_VAR INTEGER x
-	
+
 	//Work out the stupid checksum
 	FOR(x =1; x <= LENGTH_ARRAY(pBytes); x++){
 		nCKS = nCKS + pBytes[x]
 	}
 	nCKS= nCKS + $03
-	
+
 	nHigh = (nCKS & $F0)/16
 	nLow = nCKS & $0F
-	
+
 	IF(nHigh>$09){ nHigh=nHigh+55} ELSE { nHigh=nHigh+48 }
-	
+
 	IF(nLow>$09){ nLow=nLow+55 } ELSE { nLow=nLow+48}
-	
+
 	fnDebug('->DVD',"$02,pBytes,$03,nHigh,nLow")
    SEND_STRING dvRS232, "$02,pBytes,$03,nHigh,nLow"
 	IF(pResetPoll){
@@ -65,7 +65,7 @@ DEFINE_FUNCTION fnSendCommand(CHAR pBytes[], INTEGER pResetPoll){
 DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 	SWITCH(GET_BUFFER_CHAR(pDATA)){
 		CASE $30:{	// Status Response
-			
+
 		}
 	}
 }
@@ -109,7 +109,7 @@ DEFINE_EVENT BUTTON_EVENT[tp,0]{
 			CASE 73:fnSendCommand("$47,$00,$00,$00,$00,$00",TRUE)	// Menu
 			CASE 75:fnSendCommand("$48,$00,$00,$00,$00,$00",TRUE)	// Return
 			CASE 76:fnSendCommand("$69,$00,$00,$00,$00,$00",TRUE)	// Repeat
-			
+
 		}
 	}
 }

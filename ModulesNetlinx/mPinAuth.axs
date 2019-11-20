@@ -6,7 +6,7 @@ MODULE_NAME='mPinAuth'(DEV vdvControl,DEV TP[])
 	Pin Code Control module for touch panel lockout
 	Provides custom interface and better feedback than AMX based
 	password control
-	
+
 	vdvControl Commands (Control)
 	PROPERTY-USER1,YYYY		- Changes PIN to YYYY for panel X
 	PROPERTY-USER2,YYYY		- Changes PIN to YYYY for panel X
@@ -15,11 +15,11 @@ MODULE_NAME='mPinAuth'(DEV vdvControl,DEV TP[])
 	PROPERTY-ADMIN,YYYYYY	- Changes ADMIN PIN to YYYY for panel X
 	PROPERTY-POPUP,XYZXYZ	- Changes Popup name to XYZXYZ for panel X, Blank for No COntrol
 	PROPERTY-PAGE,XYZXYZ	   - Changes Page name to XYZXYZ for panel X, Blank for No COntrol
-	
+
 	vdvControl Strings  (Feedback)
 	PINOK-P,X		P = Panel,X = Pin OK
 	PINOK-P,0		P = Panel,X = Pin Not Matched
-	
+
 	Address Numbers:
 	50 - Entry Field
 	51 - Admin Pin
@@ -27,13 +27,13 @@ MODULE_NAME='mPinAuth'(DEV vdvControl,DEV TP[])
 	53 - User Pin 2
 	54 - User Pin 3
 	55 - User Pin 4
-	
+
 	Button Numbers
 	100..109 - Digits
 	110 		- Delete
 	121		- Start Pin Process
 	131..134 - Change respective Pin
-	
+
 ******************************************************************************/
 INCLUDE 'CustomFunctions'
 /******************************************************************************
@@ -134,7 +134,7 @@ DEFINE_EVENT DATA_EVENT[tp]{
 
 DEFINE_EVENT BUTTON_EVENT[tp,btnKeyPad]{
 	PUSH:{
-		STACK_VAR INTEGER p 
+		STACK_VAR INTEGER p
 		p = GET_LAST(tp)
 		SWITCH(GET_LAST(btnKeyPad)-1){
 			CASE 0:  myPinPanel[p].CUR_ENTRY = "myPinPanel[p].CUR_ENTRY,'0'"
@@ -232,7 +232,7 @@ DEFINE_EVENT BUTTON_EVENT[tp,btnKeyPad]{
 							}
 						}
 						SEND_COMMAND BUTTON.INPUT.DEVICE, "'^TXT-50,0,SAVED'"
-						
+
 						fnCloseKeypad(p)
 					}
 					ELSE{

@@ -30,10 +30,10 @@ LONG TLID_FADE		= 3
 ******************************************************************************/
 DEFINE_VARIABLE
 (** Network / Comms **)
-LONG TLT_RETRY[]				= {10000}	
-LONG TLT_POLL[]				= {10000}	
+LONG TLT_RETRY[]				= {10000}
+LONG TLT_POLL[]				= {10000}
 LONG TLT_FADE[]				= {100}
-INTEGER 	iIP_TCP_PORT 		= 51325					// TCP Port 
+INTEGER 	iIP_TCP_PORT 		= 51325					// TCP Port
 CHAR 		cIP_TCP_ADD[15] 	= '000.000.000.000'	// Target IP Address
 CHAR 		cINCBuffer[3000]
 INTEGER 	bConnected;
@@ -59,9 +59,9 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 	ELSE{
 		fnDebug(FALSE,"'Connecting to IDR on Port ',ITOA(iIP_TCP_PORT),' on '",cIP_TCP_ADD)
 		bTryingTCP = TRUE
-		ip_client_open(ipDevice.port, cIP_TCP_ADD, iIP_TCP_PORT, IP_TCP) 
+		ip_client_open(ipDevice.port, cIP_TCP_ADD, iIP_TCP_PORT, IP_TCP)
 	}
-} 
+}
 (** Force connection Closed **)
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(ipDevice.port)
@@ -137,18 +137,18 @@ DEFINE_EVENT DATA_EVENT[ipDevice]{
 	}
 	STRING:{
 		fnDebug(FALSE,'IDR->AMX',"DATA.TEXT")
-		
+
 	}
 }
 DEFINE_EVENT DATA_EVENT[vdvControl]{
 	ONLINE:{
-		
+
 	}
 	COMMAND:{
 		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
 			CASE 'PROPERTY':{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
-					CASE 'IP':{ 
+					CASE 'IP':{
 						cIP_TCP_ADD	= DATA.TEXT;
 						IF(bConnected){
 							fnCloseTCPConnection();
@@ -244,7 +244,7 @@ DEFINE_EVENT DATA_EVENT[vdvFaders]{
 				IF(myFaders[f].iLEVEL < myFaders[f].MIN){
 					myFaders[f].iLEVEL = myFaders[f].MIN
 				}
-				
+
 				IF(myFaders[f].iLEVEL > myFaders[f].MAX){
 					myFaders[f].iLEVEL = myFaders[f].MAX
 				}

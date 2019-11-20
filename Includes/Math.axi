@@ -26,7 +26,7 @@ PROGRAM_NAME='Math'
 
     Revision 1.1  2003/03/05 14:38:31  peter
     Newly Prepeared - Functions from Darren and added fn_ScaleRange()
-    
+
 *)
 ////////////////////////////////////////////////////////////
 
@@ -40,7 +40,7 @@ PROGRAM_NAME='Math'
 #IF_DEFINED __NETLINX__
 
 DEFINE_CONSTANT
-    
+
 INTEGER D2R_NUMBERS[13] = {1,4,5,9,10,40,50,90,100,400,500,900,1000}
 CHAR D2R_ROMANS[13][2]  = {'I','IV','V','IX','X','XL','L','XC','C','CD','D','CM','M'}
 
@@ -48,7 +48,7 @@ CHAR D2R_ROMANS[13][2]  = {'I','IV','V','IX','X','XL','L','XC','C','CD','D','CM'
 (* FUNCTION:     DEC2ROMAN                                 *)
 (* RETURN:       STRING OF ROMAN CHARACTERS                *)
 (* PARAMETERS:   lDECIMAL - DECIMAL INPUT                  *)
-(***********************************************************)    
+(***********************************************************)
 DEFINE_FUNCTION CHAR[100] DEC2ROMAN(LONG lDECIMAL)
 STACK_VAR
     INTEGER nI
@@ -68,7 +68,7 @@ STACK_VAR
 (* RETURN:       DOUBLE                                    *)
 (* PARAMETERS:   dVALUE - DOUBLE INPUT VALUE               *)
 (*               nDECIMALS - INTEGER AMOUNT OF DIGITS 0.X  *)
-(***********************************************************)   
+(***********************************************************)
 DEFINE_FUNCTION DOUBLE ROUNDER(DOUBLE dVALUE, INTEGER nDECIMALS)
 STACK_VAR
     INTEGER nJ
@@ -93,7 +93,7 @@ STACK_VAR
 (* FUNCTION:     BIN2INT                                   *)
 (* RETURN:       LONG                                      *)
 (* PARAMETERS:   strVALUE - STRING OF BIN CHARS            *)
-(***********************************************************)   
+(***********************************************************)
 DEFINE_FUNCTION LONG BIN2INT(CHAR strVALUE[])
 STACK_VAR
     INTEGER nI, nVALUESIZE
@@ -111,7 +111,7 @@ STACK_VAR
 (* RETURN:       STRING                                    *)
 (* PARAMETERS:   lVALUE - LONG VALUE                       *)
 (*               nDIGITS - INTEGER AMOUNT OF DIGITS        *)
-(***********************************************************)   
+(***********************************************************)
 DEFINE_FUNCTION CHAR[1000] INT2BIN(LONG lVALUE, SINTEGER nDIGITS)
 STACK_VAR
     SINTEGER snI
@@ -134,7 +134,7 @@ STACK_VAR
 (* RETURN:       STRING                                    *)
 (* PARAMETERS:   lVALUE - LONG VALUE                       *)
 (*               nDIGITS - INTEGER AMOUNT OF DIGITS        *)
-(***********************************************************)   
+(***********************************************************)
 DEFINE_FUNCTION CHAR[1000] INT2OCT(LONG lVALUE, INTEGER nDIGITS)
 STACK_VAR
     INTEGER nI
@@ -156,7 +156,7 @@ STACK_VAR
 (* FUNCTION:     OCT2INT                                   *)
 (* RETURN:       LONG                                      *)
 (* PARAMETERS:   strVALUE - STRING OF OCT CHARS            *)
-(***********************************************************)   
+(***********************************************************)
 DEFINE_FUNCTION LONG OCT2INT(CHAR strVALUE[])
 STACK_VAR
     INTEGER nI
@@ -177,15 +177,15 @@ STACK_VAR
 (*           :   slMax_In - current range maximum value    *)
 (*           :   slMin_Out - desired range minimum value   *)
 (*           :   slMax_Out - desired range maximum value   *)
-(***********************************************************) 
+(***********************************************************)
 DEFINE_FUNCTION SLONG fn_ScaleRange(SLONG slNum_In, SLONG slMin_In, SLONG slMax_In, SLONG slMin_Out, SLONG slMax_Out)
 {
     SLONG slRange_In
     SLONG slRange_Out
     SLONG slNum_Out
     slong slPassByReferenceBug
-        
-    //this function used to change the value of parameter 1: slNum_In.  added slPassByReferenceBug to 
+
+    //this function used to change the value of parameter 1: slNum_In.  added slPassByReferenceBug to
     //get over this
     slPassByReferenceBug = slNum_In
 
@@ -210,7 +210,7 @@ DEFINE_FUNCTION SLONG fn_ScaleRange(SLONG slNum_In, SLONG slMin_In, SLONG slMax_
 (* FUNCTION:     fnPrintHex()                              *)
 (* RETURN:       N/A				                               *)
 (* PARAMETERS:   s[]: string of hex chars coming in        *)
-(***********************************************************) 
+(***********************************************************)
 define_function fnPrintHex(char s[])
 {
 	integer nLoop;

@@ -72,10 +72,10 @@ DEFINE_START{
 	Utility Functions
 ******************************************************************************/
 	(** Open a Network Connection **)
-DEFINE_FUNCTION fnOpenConnection(){     
+DEFINE_FUNCTION fnOpenConnection(){
 	fnDebug('Connecting to Epson',"myEpsonProj.IP_HOST,':',ITOA(myEpsonProj.IP_PORT)")
 	myEpsonProj.CONN_STATE = CONN_STATE_CONNECTING
-	ip_client_open(dvDevice.port, myEpsonProj.IP_HOST, myEpsonProj.IP_PORT, IP_TCP) 
+	ip_client_open(dvDevice.port, myEpsonProj.IP_HOST, myEpsonProj.IP_PORT, IP_TCP)
 }
 
 DEFINE_FUNCTION fnCloseConnection(){
@@ -198,8 +198,8 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 /******************************************************************************
 	Physical Device Events
 ******************************************************************************/
-DEFINE_EVENT DATA_EVENT[dvDevice]{   
-	ONLINE:{ 
+DEFINE_EVENT DATA_EVENT[dvDevice]{
+	ONLINE:{
 		IF(!myEpsonProj.DISABLED){
 			IF(myEpsonProj.isIP){
 				fnDebug('Connected to Epson on ',"myEpsonProj.IP_HOST,':',ITOA(myEpsonProj.IP_PORT)")
@@ -210,7 +210,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 				TIMELINE_CREATE(TLID_BOOT,TLT_BOOT,LENGTH_ARRAY(TLT_BOOT),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 			}
 		}
-	}    
+	}
 	OFFLINE:{
 		IF(myEpsonProj.isIP && !myEpsonProj.DISABLED){
 			myEpsonProj.CONN_STATE = CONN_STATE_OFFLINE
@@ -221,7 +221,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 				TIMELINE_KILL(TLID_TIMEOUT)
 			}
 		}
-	} 
+	}
 	ONERROR:{
 		IF(myEpsonProj.isIP && !myEpsonProj.DISABLED){
 			STACK_VAR CHAR _MSG[255]
@@ -289,13 +289,13 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 			SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
 				CASE 'PROPERTY':{
 					SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
-						CASE 'IP':{ 	
+						CASE 'IP':{
 							myEpsonProj.IP_HOST 	= DATA.TEXT
 							myEpsonProj.IP_PORT	= 3629
 							TIMELINE_CREATE(TLID_BOOT,TLT_BOOT,LENGTH_ARRAY(TLT_BOOT),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 						}
 						CASE 'DEBUG':{
-							myEpsonProj.DEBUG = (DATA.TEXT == 'TRUE') 
+							myEpsonProj.DEBUG = (DATA.TEXT == 'TRUE')
 						}
 					}
 				}
@@ -322,7 +322,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 						fnAddToQueue('PWR ON');
 					}
 				}
-				
+
 				CASE 'POWER':{
 					SWITCH(DATA.TEXT){
 						CASE 'ON':{
@@ -366,7 +366,7 @@ DEFINE_FUNCTION fnResetModule(){
 	myEpsonProj.PEND = FALSE
 }
 	(** Boot Finished **)
-DEFINE_EVENT 
+DEFINE_EVENT
 TIMELINE_EVENT[TLID_SHORTPOLL]{
 	IF(!myEpsonProj.DISABLED){
 		fnPoll();

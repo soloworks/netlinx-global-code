@@ -48,14 +48,14 @@ DEFINE_EVENT DATA_EVENT[vdvDevice]{
 			}
 			CASE 'PROPERTY':{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
-					CASE 'IP':{	
+					CASE 'IP':{
 						IF(FIND_STRING(DATA.TEXT,':',1)){
 							myMartin.IP_HOST = fnStripCharsRight(REMOVE_STRING(DATA.TEXT,':',1),1)
 							myMartin.IP_PORT = ATOI(DATA.TEXT)
 						}
 						ELSE{
 							myMartin.IP_HOST = DATA.TEXT
-							myMartin.IP_PORT = 80 
+							myMartin.IP_PORT = 80
 						}
 					}
 					CASE 'HTML':	myMartin.WebPanelName = DATA.TEXT
@@ -78,8 +78,8 @@ DEFINE_START{
 DEFINE_FUNCTION fnOpenTCPConnection(){
 	fnDebug(FALSE,"'Trying '","myMartin.IP_HOST,':',ITOA(myMartin.IP_PORT)")
 	myMartin.CONN_STATE = CONN_TRYING
-	ip_client_open(ipDevice.port, "myMartin.IP_HOST", myMartin.IP_PORT, IP_TCP) 
-} 
+	ip_client_open(ipDevice.port, "myMartin.IP_HOST", myMartin.IP_PORT, IP_TCP)
+}
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(ipDevice.port)
 }
@@ -134,7 +134,7 @@ DEFINE_FUNCTION fnGET(pDATA[]){
 	}
 	fnInitPoll()
 }
-	
+
 DEFINE_EVENT DATA_EVENT[ipDevice]{
 	STRING:{
 		IF(!myMartin.DISABLED){
@@ -177,14 +177,14 @@ DEFINE_EVENT DATA_EVENT[ipDevice]{
 			fnOpenTCPConnection()
 		}
 	}
-	ONLINE:{    
+	ONLINE:{
 		STACK_VAR CHAR toSend[1000]
 		toSend = REMOVE_STRING(myMartin.Tx,"$0D,$0A,$0D,$0A",1)
 		myMartin.CONN_STATE = CONN_ONLINE
 		fnDebug(FALSE,'->MAR',toSend)
 		myMartin.HEADER_DONE = FALSE
 		SEND_STRING ipDevice,toSend
-	}    
+	}
 	ONERROR:{
 		fnDebug(TRUE,'Martin Error',ITOA(DATA.NUMBER))
 		SWITCH(DATA.NUMBER){

@@ -240,7 +240,7 @@ DEFINE_FUNCTION CHAR[10] fnInputToText(CHAR pInput[3]){
 		ACTIVE(pInput ==  "$03,$05,$01"):	RETURN 'PC'
 	}
 }
- 
+
 (** Feedback Helper **)
 DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 	fnDebug(DEBUG_STD,'SONY->',fnBytesToString(pDATA))
@@ -319,13 +319,13 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 					}
 				}
 				CASE 'POWER':{
-					
+
 					SWITCH(DATA.TEXT){
 						CASE 'ON':     mySonyDisplay.POWER = TRUE
 						CASE 'OFF':    mySonyDisplay.POWER = FALSE
 						CASE 'TOGGLE': mySonyDisplay.POWER = !mySonyDisplay.POWER
 					}
-					
+
 					SWITCH(mySonyDisplay.POWER){
 						CASE TRUE:{ fnAddToQueue($8C,$00,$00,"$02,$01") }
 						CASE FALSE:{fnAddToQueue($8C,$00,$00,"$02,$00") }

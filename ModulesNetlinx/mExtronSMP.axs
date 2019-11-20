@@ -8,11 +8,11 @@ INCLUDE 'CustomFunctions'
 ******************************************************************************/
 DEFINE_TYPE STRUCTURE uSMP{
 	// Communications
-	INTEGER 	IP_PORT						// 
-	CHAR		IP_HOST[255]				//	
-	INTEGER 	IP_STATE						// 
-	INTEGER	isIP					
-	
+	INTEGER 	IP_PORT						//
+	CHAR		IP_HOST[255]				//
+	INTEGER 	IP_STATE						//
+	INTEGER	isIP
+
 	INTEGER	DEBUG					// Debuging ON/OFF
 	CHAR		Rx[2000]						// Receieve Buffer
 	CHAR		Tx[1000]				// Transmission Buffer
@@ -27,7 +27,7 @@ DEFINE_TYPE STRUCTURE uSMP{
 	CHAR		META_IP[20]				// IP Address (If Applicable)
 	// State
 	INTEGER	RECORD_STATUS		// Internal Temperature
-	
+
 }
 /******************************************************************************
 	Constants
@@ -79,9 +79,9 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 	ELSE{
 		fnDebug(FALSE,'Connecting to Extron on ',"mySMP.IP_HOST,':',ITOA(mySMP.IP_PORT)")
 		mySMP.IP_STATE = IP_STATE_CONNECTING
-		ip_client_open(dvDevice.port, mySMP.IP_HOST, mySMP.IP_PORT, IP_TCP) 
+		ip_client_open(dvDevice.port, mySMP.IP_HOST, mySMP.IP_PORT, IP_TCP)
 	}
-} 
+}
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(dvDevice.port)
 }
@@ -283,7 +283,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 						}
 						ELSE{
 							mySMP.IP_HOST = DATA.TEXT
-							mySMP.IP_PORT = 23 
+							mySMP.IP_PORT = 23
 						}
 						IF(mySMP.isIP){
 							fnRetryConnection()

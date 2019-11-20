@@ -36,18 +36,18 @@ DEFINE_FUNCTION fnSendCommand(INTEGER pCommandID,INTEGER pBridgeID,INTEGER pChan
 	STACK_VAR CHAR pToSend[10]
 	STACK_VAR INTEGER pChkSum
 	STACK_VAR INTEGER x
-	
+
 	pToSend = "$00,pCommandID,pBridgeID,pChanID,pButtonCode,$00"
 	pToSend = "LENGTH_ARRAY(pToSend)+1,pToSend"
-	
+
 	pChkSum = $FF
 	FOR(x = 1; x <= LENGTH_ARRAY(pToSend); x++){
 		pChkSum = pChkSum BXOR pToSend[x]
 	}
-	
+
 	myInterface.Tx = "$01,pToSend,pChkSum,':::'"
 	fnSendFromQueue()
-	
+
 }
 
 DEFINE_FUNCTION fnSendFromQueue(){

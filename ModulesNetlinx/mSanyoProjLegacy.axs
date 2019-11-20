@@ -2,20 +2,20 @@ MODULE_NAME='mSanyoProjLegacy'(DEV vdvControl, DEV dvRS232)
 /******************************************************************************
 	Basic control of Sanyo Generic Projector
 	Verify model against functions
-	
+
 	vdvControl Commands
 	DEBUG-X 				= Debugging Off (Default)
 	INPUT-XXX 			= Go to Input, power on if required
 		[PC1|PC2|VID]
-	POWER-ON|OFF 		= Send input X to ouput Y 
+	POWER-ON|OFF 		= Send input X to ouput Y
 	FREEZE-ON|OFF		= Picture Freeze
 	BLANK-ON|OFF		= Video Mute
-	
+
 	Feedback Channels:
-	
+
 	211 = Picture Freeze
 	214 = Video Mute
-	
+
 	251 = Communicating
 	252 = Busy
 	253 = Warming
@@ -83,7 +83,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR _PACKET[]){
 		IF(TIMELINE_ACTIVE(TLID_COMMS)){TIMELINE_KILL(TLID_COMMS)}
 		TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 	}
-	
+
 }
 DEFINE_FUNCTION fnSendCommand(CHAR cmd[255]){
 	fnDebug('AMX->Sanyo Proj',"cmd,$0D")
@@ -121,7 +121,7 @@ DEFINE_FUNCTION fnSendInputCommand(){
 		CASE 'PC2':			fnSendCommand("'C25'")
 		CASE 'VID':			fnSendCommand("'C33'")
 	}
-	
+
 	SWITCH(_INPUT){
 		CASE '1':
 		CASE '2':{
@@ -129,7 +129,7 @@ DEFINE_FUNCTION fnSendInputCommand(){
 			TIMELINE_CREATE(TLID_ADJ,TLT_ADJ,LENGTH_ARRAY(TLT_ADJ),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 		}
 	}
-	
+
 	_INPUT = ''
 }
 /******************************************************************************
@@ -195,14 +195,14 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{	// Control Events
 					}
 				}
 			}
-			
+
 			CASE 'BLANK':{
 				IF([vdvControl,chnPOWER]){
 					SWITCH(DATA.TEXT){
 						CASE 'ON':{
 							fnSendCommand('C0D')
 							ON[vdvControl,chnBLANK]
-							
+
 						}
 						CASE 'OFF':{
 							fnSendCommand('C0E')
@@ -301,10 +301,10 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_BUSY]{
 
 		ElapsedSecs = TIMELINE.REPETITION;
 		RemainSecs = _TotalSecs - ElapsedSecs;
-		  
+
 		TextSecs = ITOA(RemainSecs % 60)
 		IF(LENGTH_ARRAY(TextSecs) = 1) TextSecs = "'0',Textsecs"
-		
+
 		SEND_STRING vdvControl, "'TIME_RAW-',ITOA(RemainSecs),':',ITOA(_TotalSecs)"
 		SEND_STRING vdvControl, "'TIME-',ITOA(RemainSecs / 60),':',TextSecs"
 	}

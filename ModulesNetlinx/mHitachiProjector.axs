@@ -16,7 +16,7 @@ DEFINE_TYPE STRUCTURE uComms{
 	INTEGER  DEBUG
 	INTEGER	isIP
 	INTEGER 	CONN_STATE
-	INTEGER 	IP_PORT 
+	INTEGER 	IP_PORT
 	CHAR 		IP_HOST[255]
 }
 DEFINE_TYPE STRUCTURE uProj{
@@ -71,16 +71,16 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 	ELSE{
 		fnDebug(DEBUG_STD,'Attemping Connect',"'Hitachi ',myHitachiProj.COMMS.IP_HOST,':',ITOA(myHitachiProj.COMMS.IP_PORT)")
 		myHitachiProj.COMMS.CONN_STATE = CONN_STATE_TRYING
-		ip_client_open(dvDevice.port, myHitachiProj.COMMS.IP_HOST, myHitachiProj.COMMS.IP_PORT, IP_TCP) 
+		ip_client_open(dvDevice.port, myHitachiProj.COMMS.IP_HOST, myHitachiProj.COMMS.IP_PORT, IP_TCP)
 	}
-} 
- 
+}
+
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(dvDevice.port)
 }
 
 DEFINE_FUNCTION fnAddToQueue(CHAR pCMD[]){
-	
+
 	myHitachiProj.COMMS.Tx = "myHitachiProj.COMMS.Tx, $BE,$EF,$03,$06,$00,pCMD,$AA,$BB,$CC,$DD"
 	fnSendFromQueue()
 }
@@ -251,7 +251,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 				}
 			}
 		}
-	} 
+	}
 }
 DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[255]){
 	fnDebugHex(DEBUG_DEV,'HIT->', pDATA)

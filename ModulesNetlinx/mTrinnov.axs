@@ -20,7 +20,7 @@ DEFINE_TYPE STRUCTURE uTrinnov{
 	INTEGER IP_PORT
 	CHAR	  IP_HOST[255]
 	uDebug  DEBUG
-	
+
 	CHAR    Version[10]
 	INTEGER ModelID
 	INTEGER SerialNo
@@ -42,7 +42,7 @@ INTEGER ConnState_CONNECTED		= 2
 	Module Variables
 ******************************************************************************/
 DEFINE_VARIABLE
-VOLATILE uTrinnov	myTrinnov	
+VOLATILE uTrinnov	myTrinnov
 
 LONG 		TLT_COMMS[] = { 120000 }
 LONG 		TLT_POLL[]  = {  45000 }
@@ -165,7 +165,7 @@ DEFINE_EVENT DATA_EVENT[dvDEVICE]{
 				CASE 17:{_MSG = 'Local port not Open'}				// Local Port Not Open
 			}
 			fnDebug(myTrinnov.DEBUG,DEBUG_ERR,"'Onkyo Error:[',myTrinnov.IP_HOST,'][',ITOA(DATA.NUMBER),'][',_MSG,']'")
-			
+
 			SWITCH(DATA.NUMBER){
 				CASE 14:{}
 				DEFAULT:{
@@ -192,7 +192,7 @@ DEFINE_EVENT DATA_EVENT[vdvPreAmp]{
 	COMMAND:{
 		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
 			CASE 'PROPERTY':{
-				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){	
+				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
 					CASE 'DEBUG':{
 						SWITCH(DATA.TEXT){
 							CASE 'TRUE': myTrinnov.DEBUG.LOG_LEVEL = DEBUG_STD

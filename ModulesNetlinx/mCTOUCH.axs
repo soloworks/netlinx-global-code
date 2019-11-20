@@ -12,7 +12,7 @@ DEFINE_VARIABLE
 INTEGER DEBUG = 0
 INTEGER POWER
 INTEGER doPOLL = FALSE
-LONG TLT_COMMS[] 		= {120000} 
+LONG TLT_COMMS[] 		= {120000}
 LONG TLT_POLL[]  		= { 45000}
 LONG TLT_LOCKOUT[]  	= { 10000}
 /******************************************************************************

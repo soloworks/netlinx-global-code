@@ -126,7 +126,7 @@ DEFINE_FUNCTION fnSendCommand(INTEGER pQUERY, CHAR pITEM[2], CHAR pDATA[2]){
 		CHK = CHK BOR toSend[x]
 		//SEND_STRING 0, "ITOA(x),' - ',ITOHEX(CHK)"
     }
-    
+
     SEND_STRING dvRS232,"$A9,toSend,CHK,$9A"
 }
 

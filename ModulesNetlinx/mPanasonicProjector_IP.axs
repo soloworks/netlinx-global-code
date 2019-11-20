@@ -4,15 +4,15 @@ INCLUDE 'md5'
 /******************************************************************************
 	Basic control of Panasonic Projector
 	Verify model against functions
-	
+
 	vdvControl Commands
 	DEBUG-X 				= Debugging Off (Default)
 	INPUT-XXX 			= Go to Input, power on if required
 		[VIDEO|SVIDEO|RGB1|RGB2|AUX|DVI]
-	POWER-ON|OFF 		= Send input X to ouput Y 
+	POWER-ON|OFF 		= Send input X to ouput Y
 	FREEZE-ON|OFF		= Picture Freeze
 	BLANK-ON|OFF		= Video Mute
-	
+
 ******************************************************************************/
 /******************************************************************************
 	Module Constants
@@ -97,10 +97,10 @@ DEFINE_START{
 	Utility Functions
 ******************************************************************************/
 	(** Open a Network Connection **)
-DEFINE_FUNCTION fnOpenConnection(){     
+DEFINE_FUNCTION fnOpenConnection(){
 	fnDebug(FALSE,"'Opening TCP to Pana Proj Port ',ITOA(_PORT),' on'",_IP)
 	bTryingConn = TRUE;
-	ip_client_open(ipDevice.port, _IP, _PORT, IP_TCP) 
+	ip_client_open(ipDevice.port, _IP, _PORT, IP_TCP)
 }
 
 DEFINE_FUNCTION fnCloseConnection(){
@@ -190,7 +190,7 @@ DEFINE_FUNCTION fnSendCommand(CHAR ThisCommand[], CHAR Param[]){
 		fnOpenConnection()
 	}
 }
-DEFINE_FUNCTION fnSendCommand_INT(){	
+DEFINE_FUNCTION fnSendCommand_INT(){
 	STACK_VAR CHAR _ToSend[255]
 	_ToSend = "cHASH,REMOVE_STRING(cTxBuffer,"$0D",1)"
 	fnDebug(FALSE,'AMX->Pana Proj',"_ToSend")
@@ -203,7 +203,7 @@ DEFINE_FUNCTION fnSendCommand_INT(){
 	Events
 ******************************************************************************/
 DEFINE_EVENT DATA_EVENT[ipDevice]{
-	OFFLINE:{    
+	OFFLINE:{
 		bConnOpen = FALSE;
 		bResponsePending = FALSE;
 		bTryingConn = FALSE;
@@ -211,8 +211,8 @@ DEFINE_EVENT DATA_EVENT[ipDevice]{
 		IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){
 			TIMELINE_KILL(TLID_TIMEOUT)
 		}
-	}    
-	ONLINE:{ 
+	}
+	ONLINE:{
 		bTryingConn = FALSE;
 		fnDebug(FALSE,"'Connected to Pana Proj Port ',ITOA(_PORT),' on '",_IP)
 	}
@@ -380,10 +380,10 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_BUSY]{
 
 		ElapsedSecs = TIMELINE.REPETITION;
 		RemainSecs = _TotalSecs - ElapsedSecs;
-		  
+
 		TextSecs = ITOA(RemainSecs % 60)
 		IF(LENGTH_ARRAY(TextSecs) = 1) TextSecs = "'0',Textsecs"
-		
+
 		SEND_STRING vdvControl, "'TIME_RAW-',ITOA(RemainSecs),':',ITOA(_TotalSecs)"
 		SEND_STRING vdvControl, "'TIME-',ITOA(RemainSecs / 60),':',TextSecs"
 	}

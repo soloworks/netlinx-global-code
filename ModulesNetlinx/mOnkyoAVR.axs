@@ -60,7 +60,7 @@ INTEGER IP_STATE_CONNECTED		= 2
 ******************************************************************************/
 DEFINE_VARIABLE
 VOLATILE uAVRZone myAVRZones[4]	// Zone Data
-VOLATILE uAVRUnit	myAVRUnit	
+VOLATILE uAVRUnit	myAVRUnit
 
 LONG 		TLT_COMMS[] = { 120000 }
 LONG 		TLT_POLL[]  = {  45000 }
@@ -192,7 +192,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 					}
 				}
 			}
-		}	
+		}
 		CASE 'MVL':{
 			myAVRZones[1].VOL = HEXTOI(pParam)
 			SEND_LEVEL vdvZone[1], 1, myAVRZones[1].VOL
@@ -326,7 +326,7 @@ DEFINE_EVENT DATA_EVENT[dvDEVICE]{
 				CASE 17:{_MSG = 'Local port not Open'}				// Local Port Not Open
 			}
 			fnDebug(TRUE,"'Onkyo Error:[',myAVRUnit.IP_HOST,']'","'[',ITOA(DATA.NUMBER),'][',_MSG,']'")
-			
+
 			SWITCH(DATA.NUMBER){
 				CASE 14:{}
 				DEFAULT:{
@@ -364,12 +364,12 @@ DEFINE_EVENT DATA_EVENT[vdvZone]{
 		z = GET_LAST(vdvZone)
 		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
 			CASE 'PROPERTY':{
-				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){	
+				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
 					CASE 'DEBUG':myAVRUnit.DEBUG 	 	= (ATOI(DATA.TEXT) || DATA.TEXT == 'TRUE')
 					CASE 'IP':{
 						IF(FIND_STRING(DATA.TEXT,':',1)){
 							myAVRUnit.IP_HOST = fnStripCharsRight(REMOVE_STRING(DATA.TEXT,':',1),1)
-							
+
 						}
 						ELSE{
 							myAVRUnit.IP_HOST = DATA.TEXT
@@ -380,7 +380,7 @@ DEFINE_EVENT DATA_EVENT[vdvZone]{
 				}
 			}
 			CASE 'RAW':{
-				
+
 			}
 			CASE 'LEDS':{
 				SWITCH(DATA.TEXT){

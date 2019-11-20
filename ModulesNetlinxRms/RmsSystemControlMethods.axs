@@ -294,7 +294,7 @@ DEFINE_FUNCTION RegisterAssetControlMethods()
 	}
 	// Hangup Control
   RmsAssetControlMethodEnqueue        (assetClientKey,  'control.system', 'Select Activity', 'General System Actions');
-  
+
   RmsAssetControlMethodArgumentEnum   (assetClientKey,  'control.system', 0,
 																		 'Activity', 'Choose Activity',
 																		 '',

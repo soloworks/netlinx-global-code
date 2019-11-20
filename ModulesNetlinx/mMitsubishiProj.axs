@@ -6,7 +6,7 @@ INCLUDE 'CustomFunctions'
 INCLUDE 'md5'
 /******************************************************************************
 	Basic module tested on the Mitsubishi 330
-	
+
 ******************************************************************************/
 /******************************************************************************
 	Module Constants & Variables
@@ -70,14 +70,14 @@ DEFINE_START{
 DEFINE_FUNCTION fnOpenTCPConnection(){
 	fnDebug(FALSE,'TRY->Mitsu',"myMitsuProj.IP_HOST,':',ITOA(myMitsuProj.IP_PORT),'[',ITOA(dvDevice.PORT),']'")
 	myMitsuProj.CONN_STATE = CONN_STATE_CONNECTING
-	ip_client_open(dvDevice.port, myMitsuProj.IP_HOST, myMitsuProj.IP_PORT, IP_TCP) 
-} 
- 
+	ip_client_open(dvDevice.port, myMitsuProj.IP_HOST, myMitsuProj.IP_PORT, IP_TCP)
+}
+
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(dvDevice.port)
 }
 
-DEFINE_FUNCTION fnInitTimeout(){	
+DEFINE_FUNCTION fnInitTimeout(){
 	IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){TIMELINE_KILL(TLID_TIMEOUT)}
 	TIMELINE_CREATE(TLID_TIMEOUT,TLT_TIMEOUT,LENGTH_ARRAY(TLT_TIMEOUT),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 }
@@ -244,7 +244,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
 			CASE 'PROPERTY':{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
-					CASE 'IP':{		
+					CASE 'IP':{
 						IF(FIND_STRING(DATA.TEXT,':',1)){
 							myMitsuProj.IP_HOST = fnStripCharsRight(REMOVE_STRING(DATA.TEXT,':',1),1)
 							myMitsuProj.IP_PORT = ATOI(DATA.TEXT)
@@ -256,7 +256,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 						fnPoll()
 						fnInitPoll()
 					}
-					CASE 'DEBUG': 	myMitsuProj.DEBUG = (ATOI(DATA.TEXT) || DATA.TEXT == 'TRUE');	
+					CASE 'DEBUG': 	myMitsuProj.DEBUG = (ATOI(DATA.TEXT) || DATA.TEXT == 'TRUE');
 				}
 			}
 			CASE 'ADJUST':{
@@ -268,7 +268,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 				SWITCH(DATA.TEXT){
 					CASE 'HDMI1':myMitsuProj.desINPUT = '_r1'
 				}
-				
+
 				SWITCH(myMitsuProj.POWER){
 					CASE TRUE:	fnAddCommandToQueue("myMitsuProj.desINPUT")
 					CASE FALSE:	fnAddCommandToQueue("$21")
@@ -277,7 +277,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 			CASE 'RAW':{
 				fnAddCommandToQueue(DATA.TEXT)
 			}
-			CASE 'MUTE':{	
+			CASE 'MUTE':{
 				SWITCH(DATA.TEXT){
 					CASE 'ON':	myMitsuProj.desMUTE = desTRUE
 					CASE 'OFF':	myMitsuProj.desMUTE = desFALSE

@@ -2,7 +2,7 @@ MODULE_NAME='mShureMicroflex'(DEV vdvControl, DEV dvDevice)
 INCLUDE 'CustomFunctions'
 /******************************************************************************
 	Shure Microflex Module
-	By Solo Control Ltd (www.solocontrol.co.uk)	
+	By Solo Control Ltd (www.solocontrol.co.uk)
 ******************************************************************************/
 /******************************************************************************
 	Module Structures
@@ -17,10 +17,10 @@ DEFINE_TYPE STRUCTURE uShure{
 	INTEGER 	DEBUG							// Debugging Mode
 	CHAR 		Rx[2000]						// Receieve Buffer
 	CHAR 		Tx[2000]						// Transmit Buffer
-	INTEGER 	IP_PORT						// 
-	CHAR		IP_HOST[255]				//	
-	INTEGER 	PEND							//	
-	INTEGER 	CONN_STATE					// 
+	INTEGER 	IP_PORT						//
+	CHAR		IP_HOST[255]				//
+	INTEGER 	PEND							//
+	INTEGER 	CONN_STATE					//
 	// State
 	CHAR		DEV_ID[50]
 	CHAR		MODEL[50]
@@ -78,7 +78,7 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 	ELSE{
 		fnDebug(FALSE,'Connecting to Shure on ',"myShure.IP_HOST,':',ITOA(myShure.IP_PORT)")
 		myShure.CONN_STATE = CONN_STATE_CONNECTING
-		ip_client_open(dvDevice.port, myShure.IP_HOST, myShure.IP_PORT, IP_TCP) 
+		ip_client_open(dvDevice.port, myShure.IP_HOST, myShure.IP_PORT, IP_TCP)
 	}
 }
 DEFINE_FUNCTION fnCloseTCPConnection(){
@@ -95,7 +95,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_RETRY]{
 DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 	pDATA = MID_STRING(pDATA,3,LENGTH_ARRAY(pDATA)-4)
 	fnDebug(FALSE,'Shure->',pDATA)
-	
+
 	SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
 		CASE 'REP':{
 			SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
@@ -146,7 +146,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 			}
 		}
 	}
-	
+
 	IF(TIMELINE_ACTIVE(TLID_COMMS)){TIMELINE_KILL(TLID_COMMS)}
 	TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 }
@@ -228,7 +228,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 						}
 						ELSE{
 							myShure.IP_HOST = DATA.TEXT
-							myShure.IP_PORT = 2202 
+							myShure.IP_PORT = 2202
 						}
 						fnRetryConnection()
 					}

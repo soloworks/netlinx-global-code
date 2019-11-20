@@ -26,9 +26,9 @@ DEFINE_TYPE STRUCTURE uTVOneScaler{
 }
 DEFINE_VARIABLE
 (** Network / Comms **)
-LONG TLT_RETRY[]				= {10000}	
-LONG TLT_POLL[]				= {15000}	
-LONG TLT_COMMS[]				= {30000}		
+LONG TLT_RETRY[]				= {10000}
+LONG TLT_POLL[]				= {15000}
+LONG TLT_COMMS[]				= {30000}
 
 (** General **)
 uTVOneScaler myTVOneScaler
@@ -50,9 +50,9 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 	ELSE{
 		fnDebug(FALSE,"'Connecting to TVOne on Port ',ITOA(myTVOneScaler.IP_PORT),' on '",myTVOneScaler.IP_ADD)
 		myTVOneScaler.TRYING = TRUE
-		ip_client_open(dvDevice.port, myTVOneScaler.IP_ADD, myTVOneScaler.IP_PORT, IP_TCP) 
+		ip_client_open(dvDevice.port, myTVOneScaler.IP_ADD, myTVOneScaler.IP_PORT, IP_TCP)
 	}
-} 
+}
 (** Force connection Closed **)
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(dvDevice.port)
@@ -145,7 +145,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 			myTVOneScaler.CONNECTED = TRUE;
 		}
 		ELSE{
-			SEND_COMMAND dvDevice, 'SET MODE DATA' 
+			SEND_COMMAND dvDevice, 'SET MODE DATA'
 			SEND_COMMAND dvDevice, 'SET BAUD 57600 N 8 1 485 DISABLE'
 		}
 		fnPoll()
@@ -182,7 +182,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 	}
 	STRING:{
 		fnDebug(FALSE,'TVOne->AMX',"DATA.TEXT")
-		
+
 		WHILE(FIND_STRING(myTVOneScaler.Rx,"$0D,$0A",1) > 0){
 			IF(LEFT_STRING(myTVOneScaler.Rx,2) = "$0D,$0A") GET_BUFFER_STRING(myTVOneScaler.Rx,2)
 			ELSE fnProcessFeedback(REMOVE_STRING(myTVOneScaler.Rx,"$0D,$0A",1));
@@ -193,13 +193,13 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 }
 DEFINE_EVENT DATA_EVENT[vdvControl]{
 	ONLINE:{
-		
+
 	}
 	COMMAND:{
 		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
 			CASE 'PROPERTY':{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
-					CASE 'IP':{ 
+					CASE 'IP':{
 						myTVOneScaler.IP_ADD		= DATA.TEXT;
 						myTVOneScaler.IP_PORT	= 10001
 						IF(myTVOneScaler.CONNECTED){

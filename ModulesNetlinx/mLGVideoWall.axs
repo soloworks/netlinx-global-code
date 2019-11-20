@@ -29,8 +29,8 @@ DEFINE_TYPE STRUCTURE uLGVideoWall{
 	CHAR		  Rx[1000]			// Current Rx Queue
 	CHAR		  LAST_SENT[2]		// Last send command (for Polling reference)
 	INTEGER	  PEND				// True if command is pending
-	
-	uLGDisplay DISPLAY[16]	
+
+	uLGDisplay DISPLAY[16]
 }
 
 DEFINE_CONSTANT
@@ -303,9 +303,9 @@ DEFINE_EVENT DATA_EVENT[dvLink]{
 	STRING:{
 		fnDebug(DEBUG_DEV,'->RAW',DATA.TEXT)
 		WHILE(FIND_STRING(myLGVideoWall.Rx,'x',1) || FIND_STRING(myLGVideoWall.Rx,"$0D,$0D,$0A",1)){
-			
+
 			STACK_VAR INTEGER pID
-			
+
 			IF(FIND_STRING(myLGVideoWall.Rx,'x',1)){
 				pID = fnProcessFeedback(fnStripCharsRight(REMOVE_STRING(myLGVideoWall.Rx,'x',1),1))
 			}

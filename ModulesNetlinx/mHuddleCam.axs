@@ -2,8 +2,8 @@ MODULE_NAME='mHuddleCam'(DEV vdvControl, DEV dvDevice)
 INCLUDE 'CustomFunctions'
 /******************************************************************************
 	Huddlecam Camera Control
-	
-	
+
+
 ******************************************************************************/
 /******************************************************************************
 	Structures
@@ -93,14 +93,14 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 }
 
 DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[255]){
-	
+
 	// Debug the Data
 	fnDebug('CAM->',fnBytesToString(pDATA))
-	
+
 	// Protocol requires last command to be stored, and Tx Pend implmenetd
 	// So feedback is limited to knowing commands are sending
-	
-	
+
+
 	IF(TIMELINE_ACTIVE(TLID_COMMS)){TIMELINE_KILL(TLID_COMMS)}
 	TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 }

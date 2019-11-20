@@ -22,7 +22,7 @@ DEFINE_TYPE STRUCTURE uDelta{
 DEFINE_VARIABLE
 VOLATILE uDelta myDelta
 
-LONG TLT_RETRY[]				= {10000}		// 
+LONG TLT_RETRY[]				= {10000}		//
 LONG TLT_POLL[]				= {15000}		// Polling
 LONG TLT_COMMS[]				= {60000}		// Polling
 
@@ -40,9 +40,9 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 	IF(!myDelta.PORT){myDelta.PORT = defPORT}
 	fnDebug(FALSE,'Connecting to Delta on ',"myDelta.IP,':',ITOA(myDelta.PORT)")
 	myDelta.TRYING = TRUE
-	ip_client_open(ipDevice.port, myDelta.IP, myDelta.PORT, IP_TCP) 
-} 
- 
+	ip_client_open(ipDevice.port, myDelta.IP, myDelta.PORT, IP_TCP)
+}
+
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(ipDevice.port)
 }
@@ -82,7 +82,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 				PARAM = fnRemoveTrailingWhiteSpace(PARAM)
 				SWITCH(PARAM){
 					CASE 'AUDIOLEVEL':{ myDelta.VOLUME = ATOI(pDATA) }
-					CASE 'FILE':{ 
+					CASE 'FILE':{
 						IF(myDelta.FILE != fnRemoveWhiteSpace(pDATA)){
 							myDelta.FILE = fnRemoveWhiteSpace(pDATA)
 							SEND_STRING vdvControl, "'FILE-',myDelta.FILE"
@@ -102,7 +102,7 @@ DEFINE_FUNCTION fnInitPoll(){
 DEFINE_FUNCTION fnPoll(){
 	fnDebug(FALSE,'AMX->DELTA',"'STATUS',$0D")
 	SEND_STRING ipDevice,"'STATUS',$0D"
-	
+
 }
 DEFINE_EVENT TIMELINE_EVENT[TLID_POLL]{
 	fnPoll()
@@ -142,7 +142,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 
 DEFINE_EVENT DATA_EVENT[ipDevice]{
 	ONLINE:{
-		
+
 	}
 	OFFLINE:{
 		myDelta.CONNECTED = FALSE;

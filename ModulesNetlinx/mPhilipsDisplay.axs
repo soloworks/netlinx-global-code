@@ -56,12 +56,12 @@ DEFINE_START{
 /******************************************************************************
 	Communication Helper Functions
 ******************************************************************************/
-	(** Open a Network Connection **)	
-DEFINE_FUNCTION fnOpenConnection(){  
+	(** Open a Network Connection **)
+DEFINE_FUNCTION fnOpenConnection(){
 	IF(myPhilipsDisplay.CONN_STATE == CONN_STATE_OFFLINE){
 		fnDebug(FALSE,"'Connecting Philips on'","myPhilipsDisplay.IP_HOST,':',ITOA(myPhilipsDisplay.IP_PORT)")
 		myPhilipsDisplay.CONN_STATE = CONN_STATE_CONNECTING
-		ip_client_open(dvDevice.port, myPhilipsDisplay.IP_HOST, myPhilipsDisplay.IP_PORT, IP_TCP) 
+		ip_client_open(dvDevice.port, myPhilipsDisplay.IP_HOST, myPhilipsDisplay.IP_PORT, IP_TCP)
 	}
 }
 
@@ -104,7 +104,7 @@ DEFINE_FUNCTION fnSendFromQueue(){
 		toSend = "$00,toSend"
 		// Add MonitorID
 		toSend = "$01,toSend"
-		// Add Length - with checksum 
+		// Add Length - with checksum
 		toSend = "LENGTH_ARRAY(toSend)+2,toSend"
 		IF(1){
 			INTEGER chkSum
@@ -150,15 +150,15 @@ DEFINE_FUNCTION INTEGER fnGetInputByte(CHAR pInp[]){
 	Feedback Functions
 ******************************************************************************/
 DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
-	
+
 	STACK_VAR INTEGER pLEN
 
 	fnDebug(FALSE,'PHI->',fnBytesToString(pDATA))
-	
+
 	pLEN = GET_BUFFER_CHAR(pDATA)		// Pull Off Length
 	GET_BUFFER_CHAR(pDATA)				// Pull Off Control
 	GET_BUFFER_CHAR(pDATA)				// Pull Off Group
-	
+
 	SWITCH(GET_BUFFER_CHAR(pDATA)){
 		CASE $19:{	// Power Response
 			SWITCH(GET_BUFFER_CHAR(pDATA)){
@@ -179,11 +179,11 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 			}
 		}
 	}
-	
+
 	// Set Timeout
 	IF(TIMELINE_ACTIVE(TLID_COMMS)){TIMELINE_KILL(TLID_COMMS)}
 	TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
-	
+
 	myPhilipsDisplay.TxPend = FALSE
 	fnSendFromQueue()
 
@@ -191,7 +191,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 /******************************************************************************
 	Events
 ******************************************************************************/
-DEFINE_EVENT DATA_EVENT[dvDevice]{   
+DEFINE_EVENT DATA_EVENT[dvDevice]{
 	ONLINE:{
 			myPhilipsDisplay.CONN_STATE = CONN_STATE_CONNECTED
 		IF(myPhilipsDisplay.isIP){
@@ -204,14 +204,14 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 			fnPoll()
 			fnInitPoll()
 		}
-		
-	}   
+
+	}
 	OFFLINE:{
 		myPhilipsDisplay.CONN_STATE = CONN_STATE_OFFLINE
 		myPhilipsDisplay.Tx = ''
 		myPhilipsDisplay.TxPend = FALSE
 		IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){TIMELINE_KILL(TLID_TIMEOUT)}
-	}  
+	}
 	ONERROR:{
 		STACK_VAR CHAR _MSG[255]
 		myPhilipsDisplay.CONN_STATE = CONN_STATE_OFFLINE
@@ -256,10 +256,10 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{	// Control Events
 				}
 			}
 			CASE 'RAW':fnAddToQueue(DATA.TEXT)
-			
+
 			CASE 'INPUT':{
 				myPhilipsDisplay.desInput = fnGetInputByte(DATA.TEXT)
-				
+
 				IF(myPhilipsDisplay.POWER){
 					fnAddToQueue("$AC,myPhilipsDisplay.desInput,$09,$01,$00")
 				}
@@ -267,7 +267,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{	// Control Events
 					fnAddToQueue("$18,$02")
 				}
 			}
-			
+
 			CASE 'POWER':{
 				SWITCH(DATA.TEXT){
 					CASE 'ON':{

@@ -339,7 +339,7 @@ DEFINE_EVENT DATA_EVENT[dvRS232]{
 		WHILE(LENGTH_ARRAY(DATA.TEXT) && DATA.TEXT[1] != "'<'"){
 			fnDebug(DEBUG_DEV,'Consuming Garbage',GET_BUFFER_CHAR(DATA.TEXT))
 		}
-		
+
 		// Process a packet
 		WHILE(FIND_STRING(DATA.TEXT,"'/>'",1)){
 			// Clear any other garbage
@@ -349,7 +349,7 @@ DEFINE_EVENT DATA_EVENT[dvRS232]{
 			// Process
 			fnProcessFeedback(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,"'/>'",1),2))
 		}
-		
+
 	}
 }
 

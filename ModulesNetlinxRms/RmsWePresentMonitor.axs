@@ -119,7 +119,7 @@ DEFINE_FUNCTION RegisterAssetParameters()
 {
   //Register all snapi HAS_xyz components
   RegisterAssetParametersSnapiComponents(assetClientKey);
-  
+
  // submit all parameter registrations
   RmsAssetParameterSubmit(assetClientKey);
 }
@@ -190,7 +190,7 @@ DEFINE_FUNCTION RegisterAssetMetadata()
 {
 
 	RmsAssetMetadataEnqueueString(assetClientKey,'meta.network.ip','IP Address',MONITOR_ASSET_IP_ADDRESS)
-		  
+
   //Register all snapi HAS_xyz components
   RegisterAssetMetadataSnapiComponents(assetClientKey);
 
@@ -264,7 +264,7 @@ STACK_VAR
 
   SWITCH(methodKey){
 		CASE 'asset.customaction.input' :{
-			
+
 		}
 		DEFAULT :{
 		}

@@ -1,6 +1,6 @@
 MODULE_NAME='mTeradek'(DEV vdvControl, DEV ipDevice)
 /******************************************************************************
-	
+
 	Most of the device operation is done via HTTP requests to the system.cgi API. It's mostly self-documented, and you can see that by doing the following (I think):
 
 	http://ip.address/cgi-bin/system.cgi?command=help
@@ -14,7 +14,7 @@ MODULE_NAME='mTeradek'(DEV vdvControl, DEV ipDevice)
 	Updates look like the following:
 
 	http://ip.address/cgi-bin/api.cgi?command=update&Network.Interfaces.Eth0.ipmode=dhcp
-	
+
 ******************************************************************************/
 INCLUDE 'CustomFunctions'
 /******************************************************************************
@@ -40,7 +40,7 @@ DEFINE_TYPE STRUCTURE uSystem{
 	CHAR     Tx[1000]
 	CHAR		Rx[1000]
 	LONG     SESSIONID
-	
+
 	CHAR		BROADCAST_STATE[30]
 }
 
@@ -99,9 +99,9 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 	fnDebug(DEBUG_DEV,"'fnOpenTCPConnection','Called'")
 	fnDebug(DEBUG_STD,"'Connecting to ',myTeradek.IP_HOST,':',ITOA(myTeradek.IP_PORT)")
 	myTeradek.CONN_STATE = CONN_STATE_CONNECTING
-	ip_client_open(ipDevice.port, "myTeradek.IP_HOST", myTeradek.IP_PORT, IP_TCP) 
+	ip_client_open(ipDevice.port, "myTeradek.IP_HOST", myTeradek.IP_PORT, IP_TCP)
 	fnDebug(DEBUG_DEV,"'fnOpenTCPConnection','Ended'")
-} 
+}
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	fnDebug(DEBUG_DEV,"'fnCloseTCPConnection','Called'")
 	IP_CLIENT_CLOSE(ipDevice.port)
@@ -242,7 +242,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 						}
 						ELSE{
 							myTeradek.IP_HOST = DATA.TEXT
-							myTeradek.IP_PORT = 80 
+							myTeradek.IP_PORT = 80
 						}
 						fnPoll()
 					}
@@ -263,7 +263,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 ******************************************************************************/
 DEFINE_FUNCTION INTEGER fnProcessFeedback(){
 	STACK_VAR INTEGER RESPONSE_CODE
-	
+
 	// Process Headers
 	fnDebug(DEBUG_STD,"'fnProcessFeedback() Head STX-----------------------------'")
 	// Headers
@@ -282,7 +282,7 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(){
 		}
 	}
 	fnDebug(DEBUG_STD,"'fnProcessFeedback() RESPONSE_CODE=',ITOA(RESPONSE_CODE)")
-	
+
 	fnDebug(DEBUG_STD,"'fnProcessFeedback() Body STX-----------------------------'")
 	fnDebug(DEBUG_STD,"'fnProcessFeedback() myTeradek.Rx:'")
 	fnDebug(DEBUG_STD,"myTeradek.Rx")
@@ -305,15 +305,15 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(){
 			}
 		}
 	}
-	
+
 	fnDebug(DEBUG_STD,"'fnProcessFeedback() HTTP ETX-----------------------------'")
-	
+
 	IF(RESPONSE_CODE == 200){
 		IF(TIMELINE_ACTIVE(TLID_COMMS)){TIMELINE_KILL(TLID_COMMS)}
 		TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 		fnTimeoutConnection(FALSE)
 	}
-	
+
 	RETURN RESPONSE_CODE
 }
 /******************************************************************************
@@ -322,27 +322,27 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(){
 DEFINE_START{
 	CREATE_BUFFER ipDevice, myTeradek.Rx
 }
-DEFINE_EVENT DATA_EVENT[ipDevice]{ 
+DEFINE_EVENT DATA_EVENT[ipDevice]{
 	STRING:{
 		fnDebug(DEBUG_DEV,"'DATA_EVENT:STRING Called'")
 		fnDebug(DEBUG_STD,"'TER->','Partial Response Recieved'")
 		fnDebug(DEBUG_DEV,"'DATA_EVENT:STRING Ended'")
-	}  
+	}
 	ONLINE:{
 		fnDebug(DEBUG_DEV,"'DATA_EVENT:OFFLINE Called'")
-		
+
 		fnDebug(DEBUG_STD,"'TER->','ConnectionOpen'")
-		
+
 		fnDebugHTTP(DEBUG_DEV,'->TER',myTeradek.Tx)
-		
+
 		myTeradek.CONN_STATE = CONN_STATE_CONNECTED
 		SEND_STRING DATA.DEVICE, myTeradek.Tx
-		
+
 		fnDebug(DEBUG_STD,"'->TER','Request Sent'")
 		myTeradek.Tx = ''
-		
+
 		fnDebug(DEBUG_DEV,"'DATA_EVENT:OFFLINE Ended'")
-	} 
+	}
 	OFFLINE:{
 		fnDebug(DEBUG_DEV,"'DATA_EVENT:ONLINE Called'")
 		fnDebug(DEBUG_STD,"'TER->','ConnectionClosed'")
@@ -360,7 +360,7 @@ DEFINE_EVENT DATA_EVENT[ipDevice]{
 			}
 		}
 		fnDebug(DEBUG_DEV,"'DATA_EVENT:ONLINE Ended'")
-	} 
+	}
 	ONERROR:{
 		STACK_VAR INTEGER x
 		fnDebug(DEBUG_DEV,"'DATA_EVENT:ONERROR Called'")
@@ -383,7 +383,7 @@ DEFINE_PROGRAM{
 	[vdvControl,2] = (myTeradek.BROADCAST_STATE == 'Starting')
 	[vdvControl,3] = (myTeradek.BROADCAST_STATE == 'Live')
 	[vdvControl,4] = (myTeradek.BROADCAST_STATE == 'Stopping')
-	
+
 	[vdvControl,251] = (TIMELINE_ACTIVE(TLID_COMMS))
 	[vdvControl,252] = (TIMELINE_ACTIVE(TLID_COMMS))
 }

@@ -10,9 +10,9 @@ DEFINE_TYPE STRUCTURE uVaddioCam{
 	// Communications
 	CHAR 		RX[2000]						// Receieve Buffer
 	INTEGER 	IP_PORT						// Telnet Port 23
-	CHAR		IP_HOST[255]				//	
-	INTEGER 	IP_STATE						// 
-	INTEGER	DEBUG	
+	CHAR		IP_HOST[255]				//
+	INTEGER 	IP_STATE						//
+	INTEGER	DEBUG
 	CHAR 		USERNAME[20]
 	CHAR 		PASSWORD[20]
 }
@@ -55,9 +55,9 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 	ELSE{
 		fnDebug(FALSE,'Connecting to Vaddio on ',"myVaddioCam.IP_HOST,':',ITOA(myVaddioCam.IP_PORT)")
 		myVaddioCam.IP_STATE = IP_STATE_CONNECTING
-		ip_client_open(dvIP.port, myVaddioCam.IP_HOST, myVaddioCam.IP_PORT, IP_TCP) 
+		ip_client_open(dvIP.port, myVaddioCam.IP_HOST, myVaddioCam.IP_PORT, IP_TCP)
 	}
-} 
+}
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(dvIP.port)
 }
@@ -147,7 +147,7 @@ DEFINE_EVENT DATA_EVENT[dvIP]{
 			fnDebug(DEBUG_DEV,'->CAM.Telnet',NEG_PACKET)
 			SEND_STRING DATA.DEVICE,NEG_PACKET
 		}
-		
+
 		// Security Negotiation
 		IF(myVaddioCam.IP_STATE != IP_STATE_CONNECTED){
 			fnDebug(DEBUG_DEV,'CAM.Login->',myVaddioCam.Rx)
@@ -206,7 +206,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 						}
 						ELSE{
 							myVaddioCam.IP_HOST = DATA.TEXT
-							myVaddioCam.IP_PORT = 23 
+							myVaddioCam.IP_PORT = 23
 						}
 						fnRetryConnection()
 					}

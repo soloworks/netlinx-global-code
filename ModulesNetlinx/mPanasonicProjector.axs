@@ -100,14 +100,14 @@ DEFINE_START{
 	Functions
 ******************************************************************************/
 DEFINE_FUNCTION fnProcessFeedback(CHAR pData[]){
-	
+
 	SWITCH(myPanaProj.LAST_SENT){
 		CASE 'QPW':{
 			myPanaProj.POWER = ATOI(pData)
 			// Request Shutter Status
 			fnSendCommand('QSH','')
 		}
-			
+
 		CASE 'QSH':{
 			myPanaProj.VMUTE = ATOI(pData)
 			IF(myPanaProj.VMUTE != myPanaProj.DesVMUTE){
@@ -122,19 +122,19 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pData[]){
 DEFINE_FUNCTION fnSendCommand(CHAR pCmd[], CHAR pParam[]){
 	STACK_VAR CHAR pPacket[100]
 
-	// Build Command	
+	// Build Command
 	pPacket = "pCmd"
 	IF(LENGTH_ARRAY(pParam)) pPacket = "pPacket, ':', pParam"
 
 	// Store Command
 	myPanaProj.LAST_SENT = pPacket
-	
+
 	// Add delims
-	pPacket = "$02,'ADZZ;',pPacket,$03"	
+	pPacket = "$02,'ADZZ;',pPacket,$03"
 
 	// Send it out
 	SEND_STRING dvDevice, pPacket
-	
+
 	// Reset Polling
 	fnInitPoll()
 }

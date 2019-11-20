@@ -43,14 +43,14 @@ DEFINE_EVENT DATA_EVENT[vdvDevice]{
 			}
 			CASE 'PROPERTY':{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
-					CASE 'IP':{	
+					CASE 'IP':{
 						IF(FIND_STRING(DATA.TEXT,':',1)){
 							mySolstice.IP_HOST = fnStripCharsRight(REMOVE_STRING(DATA.TEXT,':',1),1)
 							mySolstice.IP_PORT = ATOI(DATA.TEXT)
 						}
 						ELSE{
 							mySolstice.IP_HOST = DATA.TEXT
-							mySolstice.IP_PORT = 80 
+							mySolstice.IP_PORT = 80
 						}
 						fnSendQuery()
 						fnInitPoll()
@@ -69,8 +69,8 @@ DEFINE_START{
 DEFINE_FUNCTION fnOpenTCPConnection(){
 	fnDebug(FALSE,"'Trying '","mySolstice.IP_HOST,':',ITOA(mySolstice.IP_PORT)")
 	mySolstice.CONN_STATE = CONN_TRYING
-	ip_client_open(ipDevice.port, "mySolstice.IP_HOST", mySolstice.IP_PORT, IP_TCP) 
-} 
+	ip_client_open(ipDevice.port, "mySolstice.IP_HOST", mySolstice.IP_PORT, IP_TCP)
+}
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(ipDevice.port)
 }
@@ -117,7 +117,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_POLL]{
 DEFINE_FUNCTION fnSendQuery(){
 	STACK_VAR CHAR toSend[1000]
 	(** Dump If Requested **)
-	
+
 	(** Build Header **)
 	toSend = "toSend,'GET / HTTP/1.0',$0D,$0A"
 	toSend = "toSend,'Host: ',mySolstice.IP_HOST,':',ITOA(mySolstice.IP_PORT),$0D,$0A"
@@ -127,7 +127,7 @@ DEFINE_FUNCTION fnSendQuery(){
 		fnOpenTCPConnection()
 	}
 }
-	
+
 DEFINE_EVENT DATA_EVENT[ipDevice]{
 	STRING:{
 		IF(!mySolstice.DISABLED){
@@ -165,7 +165,7 @@ DEFINE_EVENT DATA_EVENT[ipDevice]{
 					STACK_VAR INTEGER pEnd
 					STACK_VAR CHAR 	pName[100]
 					pStart 	= FIND_STRING(mySolstice.Rx,'<title>',1) + 7
-					pEnd 		= FIND_STRING(mySolstice.Rx,'</title>',1) - pStart 
+					pEnd 		= FIND_STRING(mySolstice.Rx,'</title>',1) - pStart
 					fnDebug(FALSE,'Start/End',"ITOA(pStart),'/',ITOA(pEnd)")
 					pName 	= MID_STRING(mySolstice.Rx,pStart,pEnd)
 					IF(mySolstice.DEVICE_NAME != pName){
@@ -185,14 +185,14 @@ DEFINE_EVENT DATA_EVENT[ipDevice]{
 			fnOpenTCPConnection()
 		}
 	}
-	ONLINE:{    
+	ONLINE:{
 		STACK_VAR CHAR toSend[1000]
 		toSend = REMOVE_STRING(mySolstice.Tx,"$0D,$0A,$0D,$0A",1)
 		mySolstice.CONN_STATE = CONN_ONLINE
 		fnDebug(FALSE,'->SOL',toSend)
 		mySolstice.HEADER_DONE = FALSE
 		SEND_STRING ipDevice,toSend
-	}    
+	}
 	ONERROR:{
 		IF(mySolstice.CONN_STATE == CONN_ONLINE){
 			mySolstice.CONN_STATE = CONN_OFFLINE

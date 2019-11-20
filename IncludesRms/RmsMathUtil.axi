@@ -72,21 +72,21 @@ PROGRAM_NAME='RmsMathUtil'
 (***********************************************************)
 DEFINE_FUNCTION SLONG RmsRoundToSignedLong(DOUBLE value)
 {
-  STACK_VAR DOUBLE remainder 
-  STACK_VAR SLONG whole_number 
-    
+  STACK_VAR DOUBLE remainder
+  STACK_VAR SLONG whole_number
+
   // casting to INT, decimal will be truncated
-  whole_number = TYPE_CAST(value); 
-  // find remainder (Note: can't use MOD with Double) 
-  remainder = value - whole_number;     
+  whole_number = TYPE_CAST(value);
+  // find remainder (Note: can't use MOD with Double)
+  remainder = value - whole_number;
 
   // if remainder is between -.5 and .5, then...
-  IF((remainder > -.5) && (remainder < .5))      
+  IF((remainder > -.5) && (remainder < .5))
   {
     // round to nearest truncated whole number
-    RETURN whole_number;        
+    RETURN whole_number;
   }
-  ELSE IF(remainder >= .5)        
+  ELSE IF(remainder >= .5)
   {
     // round up for positive numbers
     RETURN (whole_number + 1);
@@ -165,7 +165,7 @@ DEFINE_FUNCTION INTEGER RmsScaleLevelToPercent(DOUBLE currentLevel, SLONG maxLev
   STACK_VAR SLONG range;
   STACK_VAR SLONG max;
   STACK_VAR SLONG min;
-  
+
   // sanity check the min and max levels
   max = MAX_VALUE(maxLevel, minLevel);
   min = MIN_VALUE(maxLevel, minLevel);
@@ -173,7 +173,7 @@ DEFINE_FUNCTION INTEGER RmsScaleLevelToPercent(DOUBLE currentLevel, SLONG maxLev
   // determine range
   range = max - min;
 
-  // prevent divide by zero condition 
+  // prevent divide by zero condition
   IF(range == 0)
   {
     RETURN 0;
@@ -181,7 +181,7 @@ DEFINE_FUNCTION INTEGER RmsScaleLevelToPercent(DOUBLE currentLevel, SLONG maxLev
 
   // is/of = %/100 :: % = (is/of) * 100
   // shift current level value based on min scale range
-  RETURN RmsRoundToInt((((currentLevel - min) * 100.0)/range)); 
+  RETURN RmsRoundToInt((((currentLevel - min) * 100.0)/range));
 }
 
 
@@ -198,7 +198,7 @@ DEFINE_FUNCTION INTEGER RmsScaleLevelToPercent(DOUBLE currentLevel, SLONG maxLev
 DEFINE_FUNCTION INTEGER RmsScaleStdLevelToPercent(DOUBLE currentLevel)
 {
   // a standard level ranges from 0 to 255
-  RETURN RmsScaleLevelToPercent(currentLevel, 0 , 255); 
+  RETURN RmsScaleLevelToPercent(currentLevel, 0 , 255);
 }
 
 
@@ -217,20 +217,20 @@ DEFINE_FUNCTION SLONG RmsScalePercentToLevel(INTEGER percentValue, SLONG maxLeve
 {
   STACK_VAR LONG  range;
   STACK_VAR SLONG  max;
-  STACK_VAR SLONG  min; 
+  STACK_VAR SLONG  min;
   STACK_VAR SLONG  shift;
   STACK_VAR DOUBLE levelValue;
-  
+
   // sanity check the min and max levels
   max = MAX_VALUE(maxLevel, minLevel);
   min = MIN_VALUE(maxLevel, minLevel);
 
   // determine range & shift
   range = ABS_VALUE(max - min);
-  
+
   // is/of = %/100 :: is = (%/100) * of
   levelValue = (percentValue * range) / 100.0;
-  
+
   // shift level value based on min scale range
   RETURN RmsRoundToSignedLong((levelValue) + min);
 }
@@ -250,5 +250,5 @@ DEFINE_FUNCTION SLONG RmsScalePercentToLevel(INTEGER percentValue, SLONG maxLeve
 DEFINE_FUNCTION SLONG RmsScalePercentToStdLevel(INTEGER percentValue)
 {
   // a standard level ranges from 0 to 255
-  RETURN RmsScalePercentToLevel(percentValue, 0 , 255); 
+  RETURN RmsScalePercentToLevel(percentValue, 0 , 255);
 }

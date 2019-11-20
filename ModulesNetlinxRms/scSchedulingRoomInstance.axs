@@ -2069,7 +2069,7 @@ DEFINE_FUNCTION fnDisplayStatusMessage(CHAR pMsg[], CHAR pMsgDetail[50]){
 		SEND_COMMAND tp,"'^TXT-',ITOA(addMessageDetail),',0,',pTempMsgDetail"
 		fnSetupOverlay(0,OVERLAY_MESSAGE)
 	}
-	
+
 	// Debugging
 	fnDebug(DEBUG_DEV,'FUNCTION',"'fnDisplayStatusMessage(','pMsg=',pTempMsg,',pMsgDetail=',pTempMsgDetail,')'",'--> Done')
 }
