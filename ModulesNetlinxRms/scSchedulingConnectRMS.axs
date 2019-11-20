@@ -348,13 +348,16 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 					CASE 'CREATE':{
 						// Local Variables
 						STACK_VAR CHAR ToSend[300]
+						STACK_VAR CHAR TimeStamp[8]
+						TimeStamp = TIME
+						fnDebug(DEBUG_DEV,vdvRoom[pROOM],'ACTION-CREATE',"'Actual time stamp: ',TimeStamp,'::Text Rx:<',DATA.TEXT,'>>'")
 						// Build Message
 						ToSend = 'SCHEDULING.BOOKING.CREATE-'
 						// Add Start Date
 						ToSend = "ToSend,LDATE"
 						// Add Start Time
 						ToSend = "ToSend,',',fnGetCSV(DATA.TEXT,3)"
-						// Add Duration (Mins
+						// Add Duration (in Mins)
 						ToSend = "ToSend,',',ITOA((fnTimeToSeconds(fnGetCSV(DATA.TEXT,4))-fnTimeToSeconds(fnGetCSV(DATA.TEXT,3)))/60)"
 						// Add Subject
 						ToSend = "ToSend,',',fnGetCSV(DATA.TEXT,2)"
@@ -866,7 +869,7 @@ DEFINE_FUNCTION fnClearBookings(INTEGER r){
 	}
 }
 
-DEFINE_PROGRAM{
+DEFINE_FUNCTION func1(){
 	//Reset Bookings at midnight
 	STACK_VAR INTEGER r
 	IF(TIME = '00:00:00'){
@@ -879,9 +882,34 @@ DEFINE_PROGRAM{
 /********************************************************************************************************************************************************************************************************************************************************
 	Feedback
 ********************************************************************************************************************************************************************************************************************************************************/
-DEFINE_PROGRAM{
+DEFINE_FUNCTION func2(){
 	// Pass through various channels
 	[vdvRMSNetlinx,251] = [vdvRMSDuet,251]
+}
+/******************************************************************************
+	Replacement for Define_Program
+******************************************************************************/
+DEFINE_CONSTANT
+
+//TIMELINE IDS
+tlFeedback = 1
+
+DEFINE_VARIABLE
+
+//TIMELINE ARRAYS
+LONG tlFbTimes[] = { 500 }
+
+DEFINE_START{
+
+	//TIMELINE CREATE
+	TIMELINE_CREATE(tlFeedback,tlFbtIMES,LENGTH_ARRAY(tlFbTimes),TIMELINE_RELATIVE,TIMELINE_REPEAT)
+}
+
+DEFINE_EVENT TIMELINE_EVENT[tlFeedback]{
+	//Replacing the old DEFINE_PROGRAM with a TIMELINE_EVENT
+
+	func1()
+	func2()
 }
 /********************************************************************************************************************************************************************************************************************************************************
 	End Of File

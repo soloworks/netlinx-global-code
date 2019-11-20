@@ -2,25 +2,20 @@ MODULE_NAME='mShureMicroflex'(DEV vdvControl, DEV dvDevice)
 INCLUDE 'CustomFunctions'
 /******************************************************************************
 	Shure Microflex Module
-	By Solo Control Ltd (www.solocontrol.co.uk)	
+	By Solo Control Ltd (www.solocontrol.co.uk)
 ******************************************************************************/
 /******************************************************************************
 	Module Structures
 ******************************************************************************/
-DEFINE_CONSTANT
-// IP States
-INTEGER CONN_STATE_OFFLINE		= 0
-INTEGER CONN_STATE_CONNECTING	= 1
-INTEGER CONN_STATE_CONNECTED	= 2
 DEFINE_TYPE STRUCTURE uShure{
 	// Comms
 	INTEGER 	DEBUG							// Debugging Mode
 	CHAR 		Rx[2000]						// Receieve Buffer
 	CHAR 		Tx[2000]						// Transmit Buffer
-	INTEGER 	IP_PORT						// 
-	CHAR		IP_HOST[255]				//	
-	INTEGER 	PEND							//	
-	INTEGER 	CONN_STATE					// 
+	INTEGER 	IP_PORT						//
+	CHAR		IP_HOST[255]				//
+	INTEGER 	PEND							//
+	INTEGER 	CONN_STATE					//
 	// State
 	CHAR		DEV_ID[50]
 	CHAR		MODEL[50]
@@ -30,14 +25,28 @@ DEFINE_TYPE STRUCTURE uShure{
 	INTEGER	CUR_PRESET
 	INTEGER	DES_PRESET
 	INTEGER	MUTE_STATE
+	INTEGER  LED_STATE_MUTED
+	INTEGER  LED_STATE_UNMUTED
 }
 /******************************************************************************
 	Module Constants
 ******************************************************************************/
 DEFINE_CONSTANT
+// Timeline IDs
 LONG TLID_POLL		= 1
 LONG TLID_RETRY	= 2
 LONG TLID_COMMS	= 3
+
+DEFINE_CONSTANT
+// IP States
+INTEGER CONN_STATE_OFFLINE		= 0
+INTEGER CONN_STATE_CONNECTING	= 1
+INTEGER CONN_STATE_CONNECTED	= 2
+
+DEFINE_CONSTANT
+// MIC LED States
+INTEGER FLASHING  = 3
+
 /******************************************************************************
 	Module Variables
 ******************************************************************************/
@@ -78,7 +87,7 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 	ELSE{
 		fnDebug(FALSE,'Connecting to Shure on ',"myShure.IP_HOST,':',ITOA(myShure.IP_PORT)")
 		myShure.CONN_STATE = CONN_STATE_CONNECTING
-		ip_client_open(dvDevice.port, myShure.IP_HOST, myShure.IP_PORT, IP_TCP) 
+		ip_client_open(dvDevice.port, myShure.IP_HOST, myShure.IP_PORT, IP_TCP)
 	}
 }
 DEFINE_FUNCTION fnCloseTCPConnection(){
@@ -95,7 +104,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_RETRY]{
 DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 	pDATA = MID_STRING(pDATA,3,LENGTH_ARRAY(pDATA)-4)
 	fnDebug(FALSE,'Shure->',pDATA)
-	
+
 	SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
 		CASE 'REP':{
 			SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
@@ -136,6 +145,20 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 						CASE 'OFF':	myShure.MUTE_STATE = FALSE
 					}
 				}
+				CASE 'LED_STATE_MUTED':{
+					SWITCH(pDATA){
+						CASE 'ON':			myShure.LED_STATE_MUTED = TRUE
+						CASE 'OFF':			myShure.LED_STATE_MUTED = FALSE
+						CASE 'FLASHING':	myShure.LED_STATE_MUTED = FLASHING
+					}
+				}
+				CASE 'LED_STATE_UNMUTED':{
+					SWITCH(pDATA){
+						CASE 'ON':			myShure.LED_STATE_MUTED = TRUE
+						CASE 'OFF':			myShure.LED_STATE_MUTED = FALSE
+						CASE 'FLASHING':	myShure.LED_STATE_MUTED = FLASHING
+					}
+				}
 				CASE 'PRESET':{
 					myShure.CUR_PRESET = ATOI(pDATA)
 					IF(myShure.DES_PRESET && myShure.CUR_PRESET != myShure.DES_PRESET){
@@ -146,7 +169,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 			}
 		}
 	}
-	
+
 	IF(TIMELINE_ACTIVE(TLID_COMMS)){TIMELINE_KILL(TLID_COMMS)}
 	TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 }
@@ -228,7 +251,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 						}
 						ELSE{
 							myShure.IP_HOST = DATA.TEXT
-							myShure.IP_PORT = 2202 
+							myShure.IP_PORT = 2202
 						}
 						fnRetryConnection()
 					}
@@ -251,10 +274,20 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 					CASE 'OFF':	fnSendCommand('SET DEVICE_AUDIO_MUTE OFF')
 				}
 			}
+			CASE 'LEDS_STATE':
+			CASE 'LED_STATE':
+			CASE 'LEDSTATE':{
+				STACK_VAR CHAR pSTATE[7]
+				pSTATE = fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)
+				SWITCH(DATA.TEXT){
+					CASE 'ON':		fnSendCommand("'SET LED_STATE_',pSTATE,' ON'")
+					CASE 'OFF':		fnSendCommand("'SET LED_STATE_',pSTATE,' OFF'")
+					CASE 'FLASH':	fnSendCommand("'SET LED_STATE_',pSTATE,' FLASHING'")
+				}
+			}
 		}
 	}
 }
-
 /******************************************************************************
 	Device Feedback
 ******************************************************************************/
