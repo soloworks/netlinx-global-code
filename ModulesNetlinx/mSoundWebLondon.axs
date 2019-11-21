@@ -8,7 +8,7 @@ INCLUDE 'CustomFunctions'
 /******************************************************************************
 	Structures for Object Data
 ******************************************************************************/
-DEFINE_CONSTANT 
+DEFINE_CONSTANT
 INTEGER _MAX_OBJECTS_ = 60
 
 DEFINE_TYPE STRUCTURE uObject{

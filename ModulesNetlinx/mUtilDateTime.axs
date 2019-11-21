@@ -145,7 +145,7 @@ DEFINE_FUNCTION fnProcess(){
 		lastSplitMonth[1] = ATOI(LEFT_STRING(temp,1))
 		lastSplitMonth[2] = ATOI(RIGHT_STRING(temp,1))
 		fnSendMonth(0)
-	}	
+	}
 }
 /******************************************************************************
 	Events

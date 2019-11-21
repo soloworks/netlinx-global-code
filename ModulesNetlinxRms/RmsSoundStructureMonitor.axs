@@ -126,7 +126,7 @@ DEFINE_FUNCTION RegisterAssetParameters()
 	STACK_VAR INTEGER x
    //Register all snapi HAS_xyz components
    RegisterAssetParametersSnapiComponents(assetClientKey);
-  
+
 	FOR(x = 1; X <= 8; x++){
 		IF(LENGTH_ARRAY(MONITOR_META_DEV_TYPE[x])){
 			STACK_VAR INTEGER y
@@ -146,7 +146,7 @@ DEFINE_FUNCTION RegisterAssetParameters()
 				FALSE,
 				RMS_ASSET_PARAM_BARGRAPH_TEMPERATURE
 			)
-		   RmsAssetParameterThresholdEnqueue(	
+		   RmsAssetParameterThresholdEnqueue(
 			assetClientKey,
 			"'asset.custom.dev',ITOA(x),'.dev_temp1'",
 			"'Dev ',ITOA(x),': Temp Warning'",
@@ -170,7 +170,7 @@ DEFINE_FUNCTION RegisterAssetParameters()
 				FALSE,
 				RMS_ASSET_PARAM_BARGRAPH_TEMPERATURE
 			)
-		   RmsAssetParameterThresholdEnqueue(	
+		   RmsAssetParameterThresholdEnqueue(
 				assetClientKey,
 				"'asset.custom.dev',ITOA(x),'.dev_temp2'",
 				"'Dev ',ITOA(x),': Temp Warning'",
@@ -194,7 +194,7 @@ DEFINE_FUNCTION RegisterAssetParameters()
 				FALSE,
 				RMS_ASSET_PARAM_BARGRAPH_TEMPERATURE
 			)
-		   RmsAssetParameterThresholdEnqueue(	
+		   RmsAssetParameterThresholdEnqueue(
 				assetClientKey,
 				"'asset.custom.dev',ITOA(x),'.dev_temp3'",
 				"'Dev ',ITOA(x),': Temp Warning'",
@@ -215,7 +215,7 @@ DEFINE_FUNCTION RegisterAssetParameters()
 				'',
 				TRUE
 			)
-		   RmsAssetParameterThresholdEnqueue(	
+		   RmsAssetParameterThresholdEnqueue(
 				assetClientKey,
 				"'asset.custom.dev',ITOA(x),'.dev_status'",
 				"'Dev ',ITOA(x),': Status Error'",
@@ -417,7 +417,7 @@ STACK_VAR
 				CASE 'Off' :{ SEND_COMMAND vdvDevice, 'POWER-OFF' }
 			}
 		}
-		
+
 		DEFAULT :{
 		}
 	}
@@ -476,7 +476,7 @@ DATA_EVENT[vdvDevice]{
     SEND_COMMAND vdvDevice, "'PROPERTY-RMS-Type,Asset'"
   }
   COMMAND:{
-	
+
   }
   STRING:{
 		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
@@ -488,40 +488,40 @@ DATA_EVENT[vdvDevice]{
 					CASE 'DEV_HW_REV': { 	MONITOR_META_DEV_HW_REV[ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1))] = DATA.TEXT }
 					CASE 'DEV_FIRMWARE_REV': { 	 MONITOR_META_DEV_FIRMWARE_REV[ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1))] = DATA.TEXT }
 					CASE 'DEV_BOOTLOADER_VER': { 	 MONITOR_META_DEV_BOOTLOADER_VER[ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1))] = DATA.TEXT }
-					CASE 'DEV_TEMP1': { 	
+					CASE 'DEV_TEMP1': {
 						STACK_VAR INTEGER x
 						x = ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1))
 						MONITOR_PROP_DEV_TEMP1[x] = ATOI(DATA.TEXT)
 						IF(IsRmsReady()){ RmsAssetParameterSetValueNumber(assetClientKey,"'asset.custom.dev',ITOA(x),'.dev_temp1'",MONITOR_PROP_DEV_TEMP1[x]); }
 					}
-					CASE 'DEV_TEMP2': { 	
+					CASE 'DEV_TEMP2': {
 						STACK_VAR INTEGER x
 						x = ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1))
 						MONITOR_PROP_DEV_TEMP2[x] = ATOI(DATA.TEXT)
 						IF(IsRmsReady()){ RmsAssetParameterSetValueNumber(assetClientKey,"'asset.custom.dev',ITOA(x),'.dev_temp2'",MONITOR_PROP_DEV_TEMP2[x]); }
 					}
-					CASE 'DEV_TEMP3': { 	
+					CASE 'DEV_TEMP3': {
 						STACK_VAR INTEGER x
 						x = ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1))
 						MONITOR_PROP_DEV_TEMP3[x] = ATOI(DATA.TEXT)
 						IF(IsRmsReady()){ RmsAssetParameterSetValueNumber(assetClientKey,"'asset.custom.dev',ITOA(x),'.dev_temp3'",MONITOR_PROP_DEV_TEMP3[x]); }
 					}
-					CASE 'DEV_UPTIME': { 	
+					CASE 'DEV_UPTIME': {
 						STACK_VAR INTEGER x
 						x = ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1))
-						MONITOR_PROP_DEV_UPTIME[x] = DATA.TEXT 
+						MONITOR_PROP_DEV_UPTIME[x] = DATA.TEXT
 						IF(IsRmsReady()){ RmsAssetParameterSetValue(assetClientKey,"'asset.custom.dev',ITOA(x),'.dev_uptime'",DATA.TEXT); }
 					}
-					CASE 'DEV_STATUS': { 	
+					CASE 'DEV_STATUS': {
 						STACK_VAR INTEGER x
 						x = ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1))
-						MONITOR_PROP_DEV_STATUS[x] = DATA.TEXT 
+						MONITOR_PROP_DEV_STATUS[x] = DATA.TEXT
 						IF(IsRmsReady()){ RmsAssetParameterSetValue(assetClientKey,"'asset.custom.dev',ITOA(x),'.dev_status'",DATA.TEXT); }
 					}
-					CASE 'DEV_IP': { 	
+					CASE 'DEV_IP': {
 						STACK_VAR INTEGER x
 						x = ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1))
-						MONITOR_PROP_DEV_IP[x] = DATA.TEXT 
+						MONITOR_PROP_DEV_IP[x] = DATA.TEXT
 						IF(IsRmsReady()){ RmsAssetParameterSetValue(assetClientKey,"'asset.custom.dev',ITOA(x),'.ip'",DATA.TEXT); }
 					}
 				}

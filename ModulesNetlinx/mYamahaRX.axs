@@ -53,7 +53,7 @@ LONG		TLT_SEND[]	= {100}
 DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 	fnDebug(FALSE,'YAM->',pDATA)
 	SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,':',1),1)){
-		CASE '@MAIN':{	
+		CASE '@MAIN':{
 			SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,'=',1),1)){
 				CASE 'PWR':{
 					myYAMRXZones[1].POWER = (UPPER_STRING(pDATA) == 'ON')
@@ -202,7 +202,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 		}
 		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
 			CASE 'PROPERTY':{
-				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){	
+				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
 					CASE 'DEBUG':myYAMRXComms.DEBUG 	 = (DATA.TEXT == 'TRUE')
 					CASE 'IP':{
 						IF(FIND_STRING(DATA.TEXT,':',1)){
@@ -211,7 +211,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 						}
 						ELSE{
 							myYAMRXComms.IP_HOST = DATA.TEXT
-							myYAMRXComms.IP_PORT = 50000 
+							myYAMRXComms.IP_PORT = 50000
 						}
 						fnRetryConnection()
 					}

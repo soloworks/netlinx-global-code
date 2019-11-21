@@ -2,7 +2,7 @@ MODULE_NAME='mKMTronic'(DEV vdvControl, DEV ipUDP)
 INCLUDE 'CustomFunctions'
 /******************************************************************************
 	UDP Port 12345 being sent to 192.168.1.33 for feedback
-	
+
 ******************************************************************************/
 DEFINE_CONSTANT
 LONG TLID_POLL			= 1
@@ -37,7 +37,7 @@ DEFINE_FUNCTION fnInitPoll(){
 DEFINE_EVENT TIMELINE_EVENT[TLID_POLL]{
 	fnSendCommand('FF0000')
 }
-		
+
 DEFINE_EVENT DATA_EVENT[ipUDP]{
 	STRING:{
 		fnDebug('KMT->',DATA.TEXT)

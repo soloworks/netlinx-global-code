@@ -138,7 +138,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 			}
 			CASE 'STATE':{
 				STACK_VAR uKeyPair a[1]
-				
+
 				// Get Power State
 				SWITCH(DATA.TEXT){
 					CASE 'ON':		myInveo.RELAY_STATE = TRUE

@@ -53,7 +53,7 @@ DEFINE_START{
 }
 DEFINE_EVENT DATA_EVENT[dvRS232]{
 	ONLINE:{
-		SEND_COMMAND dvRS232, 'SET MODE DATA' 
+		SEND_COMMAND dvRS232, 'SET MODE DATA'
 		SEND_COMMAND dvRS232, 'SET BAUD 19200 N 8 1 485 DISABLE'
 		fnPoll()
 		fnInitPoll()
@@ -66,7 +66,7 @@ DEFINE_EVENT DATA_EVENT[dvRS232]{
 			TIMELINE_KILL(TLID_PEND)
 			fnActualSend()
 		}
-	} 
+	}
 }
 
 DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[255]){
@@ -116,7 +116,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 					CASE FALSE:{ fnSendCommand('set powerstate =off') }
 				}
 			}
-			CASE 'INPUT':{				
+			CASE 'INPUT':{
 				mySmartDisplay.newSOURCE = DATA.TEXT
 				IF(mySmartDisplay.POWER){
 					fnSendCommand("'set input=',mySmartDisplay.newSOURCE")
@@ -130,7 +130,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 		}
 	}
 }
-	
+
 DEFINE_FUNCTION fnSendCommand(CHAR pCMD[]){
 	mySmartComms.Tx = "mySmartComms.Tx,pCMD,$0D"
 	fnActualSend()

@@ -26,14 +26,14 @@ DEFINE_EVENT DATA_EVENT[dvRS232]{
 		SEND_COMMAND dvRS232, 'SET BAUD 9600 N 8 1 485 DISABLE'
 	}
 	STRING:{
-		
+
 	}
 }
 DEFINE_FUNCTION fnSendCommand(CHAR pCMD[]){
 	SEND_STRING dvRS232, "'ID',pCMD"
 }
 DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
-	
+
 }
 DEFINE_FUNCTION fnDebug(CHAR Msg[], CHAR MsgData[]){
 	IF(myNewHankComms.DEBUG){
@@ -94,5 +94,5 @@ DEFINE_EVENT BUTTON_EVENT[tp,0]{
 	Device Feedback
 ******************************************************************************/
 DEFINE_PROGRAM{
-	
+
 }

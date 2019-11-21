@@ -9,7 +9,7 @@ LONG TLID_POLL	 = 2
 DEFINE_VARIABLE
 INTEGER DEBUG = 0
 INTEGER doPOLL = TRUE
-LONG TLT_COMMS[] = {60000} 
+LONG TLT_COMMS[] = {60000}
 LONG TLT_POLL[]  = {15000}
 /******************************************************************************
 	Helper Functions
@@ -69,7 +69,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 				SWITCH(DATA.TEXT){
 					CASE 'HDMI':fnSendCommand('WP_Input[Hdmi]$')
 					CASE 'VGA': fnSendCommand('WP_Input[Vga]$')
-				}				
+				}
 			}
 		}
 	}

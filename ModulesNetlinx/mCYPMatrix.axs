@@ -3,7 +3,7 @@ MODULE_NAME='mCYPMatrix'(DEV vdvControl, DEV ipDevice)
 INCLUDE 'CustomFunctions'
 /******************************************************************************
 	By Solo Works (www.soloworks.co.uk)
-	
+
 	IP or RS232 control
 ******************************************************************************/
 /******************************************************************************
@@ -18,7 +18,7 @@ DEFINE_TYPE STRUCTURE uMatrix{
 	CHAR 	  	Rx[1000]
 	INTEGER 	DEBUG
 	INTEGER 	CONN_STATE
-	
+
 	// Status
 	SINTEGER CUR_VOL
 	SLONG    CUR_VOL_255
@@ -77,7 +77,7 @@ DEFINE_EVENT DATA_EVENT[ipDevice]{
 			fnSendFromQueue()
 		}
 		ELSE{
-			SEND_COMMAND ipDevice, 'SET MODE DATA' 
+			SEND_COMMAND ipDevice, 'SET MODE DATA'
 			SEND_COMMAND ipDevice, 'SET BAUD 19200 N 8 1 485 DISABLE'
 			fnPoll()
 			fnInitPoll()
@@ -94,7 +94,7 @@ DEFINE_EVENT DATA_EVENT[ipDevice]{
 		IF(myMatrix.isIP){
 			STACK_VAR CHAR _MSG[255]
 			myMatrix.CONN_STATE 	= CONN_STATE_OFFLINE
-			myMatrix.Tx 				= ''	
+			myMatrix.Tx 				= ''
 			SWITCH(DATA.NUMBER){
 				CASE 14:{_MSG = 'Local Port Already Used'}		// Local Port Already Used
 				DEFAULT:{
@@ -131,10 +131,10 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 	ELSE{
 		fnDebug(DEBUG_STD,'Connecting to CYP on ',"myMatrix.IP_HOST,':',ITOA(myMatrix.IP_PORT)")
 		myMatrix.CONN_STATE = CONN_STATE_CONNECTING
-		ip_client_open(ipDevice.port, myMatrix.IP_HOST, myMatrix.IP_PORT, IP_TCP) 
+		ip_client_open(ipDevice.port, myMatrix.IP_HOST, myMatrix.IP_PORT, IP_TCP)
 	}
-} 
- 
+}
+
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(ipDevice.port)
 }
@@ -155,11 +155,11 @@ DEFINE_FUNCTION fnPoll(){
 	Data Queue and Sending
 ******************************************************************************/
 DEFINE_FUNCTION fnAddToQueue(CHAR pCMD[], INTEGER isPoll){
-	
+
 	myMatrix.Tx = "myMatrix.Tx,pCMD,$0D,$0A"
-	
+
 	fnSendFromQueue()
-	
+
 	IF(!isPoll){
 		fnInitPoll()
 	}
@@ -194,7 +194,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMEOUT]{
 	myMatrix.Tx = ''
 }
 /******************************************************************************
-	Debug 
+	Debug
 ******************************************************************************/
 DEFINE_FUNCTION fnDebug(INTEGER pLEVEL, CHAR Msg[], CHAR MsgData[]){
 	IF(myMatrix.DEBUG >= pLEVEL)	{
@@ -202,11 +202,11 @@ DEFINE_FUNCTION fnDebug(INTEGER pLEVEL, CHAR Msg[], CHAR MsgData[]){
 	}
 }
 /******************************************************************************
-	Process Feedback 
+	Process Feedback
 ******************************************************************************/
 DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 	fnDebug(DEBUG_DEV,'fnProcessFeedback()',"'pDATA=',pDATA")
-	
+
 	SWITCH(pDATA){
 		CASE 'SOURCE':{
 			myMatrix.SOURCE = ATOI(pDATA)
@@ -223,11 +223,11 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 			myMatrix.MUTE = ATOI(pDATA)
 		}
 	}
-	
+
 	fnSendFromQueue()
-	
+
 	fnInitTimeout(FALSE)
-	
+
 	IF(TIMELINE_ACTIVE(TLID_COMMS)){ TIMELINE_KILL(TLID_COMMS) }
 	TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 }
@@ -318,7 +318,7 @@ DEFINE_PROGRAM{
 	SEND_LEVEL vdvControl,1,myMatrix.CUR_VOL
 	SEND_LEVEL vdvControl,3,myMatrix.CUR_VOL_255
 	[vdvControl, 199] = (myMatrix.MUTE)
-	
+
 	[vdvControl, 251] = (TIMELINE_ACTIVE(TLID_COMMS))
 	[vdvControl, 252] = (TIMELINE_ACTIVE(TLID_COMMS))
 }

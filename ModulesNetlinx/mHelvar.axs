@@ -48,7 +48,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 
 (** Code specific to SubSea7 London, needs ammending to cover all possiblities **)
 DEFINE_FUNCTION fnProcessFeedback(CHAR pcCMD[255]){
-	
+
 }
 
 DEFINE_PROGRAM{

@@ -3,7 +3,7 @@ MODULE_NAME='mLindyPIP'(DEV vdvControl, DEV dvComms)
 INCLUDE 'CustomFunctions'
 /******************************************************************************
 	By Solo Works (www.soloworks.co.uk)
-	Lindy PIP 
+	Lindy PIP
 	IP or RS232 control
 ******************************************************************************/
 /******************************************************************************
@@ -18,7 +18,7 @@ DEFINE_TYPE STRUCTURE uPIP{
 	CHAR 	  	Rx[1000]
 	INTEGER 	DEBUG
 	INTEGER 	CONN_STATE
-	
+
 	// Status
 }
 /******************************************************************************
@@ -67,7 +67,7 @@ DEFINE_EVENT DATA_EVENT[dvComms]{
 			fnSendFromQueue()
 		}
 		ELSE{
-			SEND_COMMAND dvComms, 'SET MODE DATA' 
+			SEND_COMMAND dvComms, 'SET MODE DATA'
 			SEND_COMMAND dvComms, 'SET BAUD 115200 N 8 1 485 DISABLE'
 			fnPoll()
 			fnInitPoll()
@@ -84,7 +84,7 @@ DEFINE_EVENT DATA_EVENT[dvComms]{
 		IF(myPIP.isIP){
 			STACK_VAR CHAR _MSG[255]
 			myPIP.CONN_STATE 	= CONN_STATE_OFFLINE
-			myPIP.Tx 				= ''	
+			myPIP.Tx 				= ''
 			SWITCH(DATA.NUMBER){
 				CASE 14:{_MSG = 'Local Port Already Used'}		// Local Port Already Used
 				DEFAULT:{
@@ -121,10 +121,10 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 	ELSE{
 		fnDebug(DEBUG_STD,'Connecting to CYP on ',"myPIP.IP_HOST,':',ITOA(myPIP.IP_PORT)")
 		myPIP.CONN_STATE = CONN_STATE_CONNECTING
-		ip_client_open(dvComms.port, myPIP.IP_HOST, myPIP.IP_PORT, IP_TCP) 
+		ip_client_open(dvComms.port, myPIP.IP_HOST, myPIP.IP_PORT, IP_TCP)
 	}
-} 
- 
+}
+
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(dvComms.port)
 }
@@ -179,7 +179,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMEOUT]{
 	myPIP.Tx = ''
 }
 /******************************************************************************
-	Debug 
+	Debug
 ******************************************************************************/
 DEFINE_FUNCTION fnDebug(INTEGER pLEVEL, CHAR Msg[], CHAR MsgData[]){
 	IF(myPIP.DEBUG >= pLEVEL)	{
@@ -187,19 +187,19 @@ DEFINE_FUNCTION fnDebug(INTEGER pLEVEL, CHAR Msg[], CHAR MsgData[]){
 	}
 }
 /******************************************************************************
-	Process Feedback 
+	Process Feedback
 ******************************************************************************/
 DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 	fnDebug(DEBUG_DEV,'fnProcessFeedback()',"'pDATA=',pDATA")
-	
+
 	SWITCH(pDATA){
 		CASE 'FAV':{}
 	}
-	
+
 	fnSendFromQueue()
-	
+
 	fnInitTimeout(FALSE)
-	
+
 	IF(TIMELINE_ACTIVE(TLID_COMMS)){ TIMELINE_KILL(TLID_COMMS) }
 	TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 }
@@ -267,7 +267,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 /******************************************************************************
 	Virtal Device Feedback
 ******************************************************************************/
-DEFINE_PROGRAM{	
+DEFINE_PROGRAM{
 	[vdvControl, 251] = (TIMELINE_ACTIVE(TLID_COMMS))
 	[vdvControl, 252] = (TIMELINE_ACTIVE(TLID_COMMS))
 }

@@ -323,7 +323,7 @@ DATA_EVENT[vdvDevice]
   }
   OFFLINE:
   {
-	
+
 	IF(vdvDevice.NUMBER){
 		 // update device online parameter value
 		 RmsAssetOnlineParameterUpdate(assetClientKey,DEVICE_ID(vdvDevice))

@@ -5,12 +5,12 @@ MODULE_NAME='mTimeEvents'(DEV vdvControl, DEV tp[])
 INCLUDE 'CustomFunctions'
 /******************************************************************************
 	By Solo Control Ltd (www.solocontrol.co.uk)
-	
+
 	Module for management of automatic events such as Shutdown
 	Interface ports for adjusting values via interface if required
 	Times in Mins
 	Module capable of 20 independant events & Panels
-	
+
 	Commands to Control Device:
 	SET-X,0:00	- X = EventID | 0:00 = Time
 	GET-X			- Report current time for Event X as 'TIME'
@@ -23,16 +23,16 @@ INCLUDE 'CustomFunctions'
 	TIME-X,0:00,00	- X = EventID | 0:00 = Time | 00 = WARN TIME
 	WARN-X		- Warning Event for EventID X
 	EVENT-X		- EventID X Triggered
-	
+
 	Feedback Channels on Control Device:
 	1-20			- Event Active/InActive
 	21-40			- Prevent Active / Inactive
 	Feedback Channels on Panel Device:
 	1-20			- Current Controlled Event
 	255			- Event Active
-	
-	
-	
+
+
+
 ******************************************************************************/
 /******************************************************************************
 	Interface Addresses
@@ -57,7 +57,7 @@ DEFINE_TYPE STRUCTURE uEVENT{
 	INTEGER 	bACTIVE			// Current Active State
 	INTEGER  iWARN				// Mins for Alert (0 = No Alert)
 	INTEGER	bPREVENT			// Don't trigger this time. Consume this.
-	INTEGER	bTriggered		// Has been triggered 
+	INTEGER	bTriggered		// Has been triggered
 	INTEGER  bWarned			// Has Warning Happened
 }
 DEFINE_TYPE STRUCTURE uPANEL{
@@ -94,7 +94,7 @@ DEFINE_FUNCTION fnUpdatePanel(INTEGER pPANEL){
 	SEND_COMMAND tp[pPANEL], "'^TXT-',ITOA(btnSelHour),',0,',fnPadLeadingChars(ITOA(myPANELS[pPANEL].iHOUR),'0',2)"
 	SEND_COMMAND tp[pPANEL], "'^TXT-',ITOA(btnSelMin),',0,', fnPadLeadingChars(ITOA(myPANELS[pPANEL].iMIN),'0',2)"
 }
-DEFINE_FUNCTION fnEventUpdated(INTEGER pEVENT){	
+DEFINE_FUNCTION fnEventUpdated(INTEGER pEVENT){
 	STACK_VAR INTEGER x;
 	FOR(x = 1; x <= LENGTH_ARRAY(tp); x++){
 		IF(myPANELS[x].iEVENT == pEVENT){
@@ -178,7 +178,7 @@ DEFINE_EVENT BUTTON_EVENT[tp,btnTimeDEC]{
 		STACK_VAR INTEGER p; p = GET_LAST(tp);
 		fnAdjustTime(p, -5, myPANELS[p].bEditHours);
 	}
-}	
+}
 (** Activate / DeActivate **)
 DEFINE_EVENT BUTTON_EVENT[tp,btnActive]{
 	PUSH:{
@@ -238,7 +238,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 				i = ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1));
 				myEVENTS[i].iWARN = ATOI(DATA.TEXT);
 				fnSendTime(i);
-				
+
 			}
 			CASE 'TPLINK':{
 				STACK_VAR INTEGER p;
@@ -285,7 +285,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_POLL]{
 				IF(!myEVENTS[x].bPREVENT){
 					SEND_STRING vdvControl, "'EVENT-',ITOA(x)";
 				}
-			}	
+			}
 			IF(!fnTimeCompareToMin(myEVENTS[x].tALARM,TIME) && (myEVENTS[x].bTriggered)){
 				myEVENTS[x].bTriggered 	= FALSE;
 				myEVENTS[x].bPREVENT 	= FALSE;

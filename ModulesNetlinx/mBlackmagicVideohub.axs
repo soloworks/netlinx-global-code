@@ -7,7 +7,7 @@ INCLUDE 'CustomFunctions'
 	Constants
 ******************************************************************************/
 DEFINE_TYPE STRUCTURE BMVidHub{
-	(** COMMS **)	
+	(** COMMS **)
 	INTEGER 	IP_PORT
 	CHAR 		IP_HOST[255]
 	CHAR 		Rx[3000]
@@ -65,8 +65,8 @@ DEFINE_START{
 DEFINE_FUNCTION fnOpenTCPConnection(){
 	fnDebug(FALSE,'BM Connecting to ',"myBMVidHub.IP_HOST,':',ITOA(myBMVidHub.IP_PORT)")
 	myBMVidHub.CONN_STATE = CONN_STATE_CONNECTING
-	IP_CLIENT_OPEN(ipDevice.port, myBMVidHub.IP_HOST, myBMVidHub.IP_PORT, IP_TCP) 
-} 
+	IP_CLIENT_OPEN(ipDevice.port, myBMVidHub.IP_HOST, myBMVidHub.IP_PORT, IP_TCP)
+}
 (** Force connection Closed **)
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(ipDevice.port)
@@ -128,13 +128,13 @@ DEFINE_FUNCTION fnSendFromQueue(){
 
 
 (** Process Feedback Packet **)
-DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){	
+DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 	// Debugging Feedback
 	SWITCH(LENGTH_ARRAY(pDATA)){
 		CASE 0:	fnDebug(FALSE,'BMV->','END MARKER')
 		DEFAULT: fnDebug(FALSE,'BMV->',pDATA)
 	}
-	
+
 	// Check if this is a header
 	SWITCH(pDATA){
 		CASE '':{
@@ -167,7 +167,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 			}
 		}
 	}
-	
+
 	// Start Communications Timer
 	IF(TIMELINE_ACTIVE(TLID_COMMS)){ TIMELINE_KILL(TLID_COMMS) }
 	TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)

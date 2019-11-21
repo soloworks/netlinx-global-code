@@ -2,7 +2,7 @@ MODULE_NAME='mCYPAmp'(DEV vdvControl, DEV ipDevice)
 INCLUDE 'CustomFunctions'
 /******************************************************************************
 	By Solo Works (www.soloworks.co.uk)
-	
+
 	IP or RS232 control
 ******************************************************************************/
 /******************************************************************************
@@ -33,7 +33,7 @@ DEFINE_TYPE STRUCTURE uAMP{
 	CHAR 	  	Rx[1000]
 	INTEGER 	DEBUG
 	INTEGER 	CONN_STATE
-		
+
 	uZone    Zone
 }
 
@@ -83,7 +83,7 @@ DEFINE_EVENT DATA_EVENT[ipDevice]{
 	ONLINE:{
 		myAMP.CONN_STATE = CONN_STATE_CONNECTED
 		IF(!myAMP.isIP){
-			SEND_COMMAND ipDevice, 'SET MODE DATA' 
+			SEND_COMMAND ipDevice, 'SET MODE DATA'
 			SEND_COMMAND ipDevice, 'SET BAUD 115200 N 8 1 485 DISABLE'
 			fnPoll()
 			fnInitPoll()
@@ -100,7 +100,7 @@ DEFINE_EVENT DATA_EVENT[ipDevice]{
 		IF(myAMP.isIP){
 			STACK_VAR CHAR _MSG[255]
 			myAMP.CONN_STATE 	= CONN_STATE_OFFLINE
-			myAMP.Tx 				= ''	
+			myAMP.Tx 				= ''
 			SWITCH(DATA.NUMBER){
 				CASE 14:{_MSG = 'Local Port Already Used'}		// Local Port Already Used
 				DEFAULT:{
@@ -142,10 +142,10 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 	ELSE{
 		fnDebug(DEBUG_STD,'Connecting to AMP on ',"myAMP.IP_HOST,':',ITOA(myAMP.IP_PORT)")
 		myAMP.CONN_STATE = CONN_STATE_CONNECTING
-		ip_client_open(ipDevice.port, myAMP.IP_HOST, myAMP.IP_PORT, IP_TCP) 
+		ip_client_open(ipDevice.port, myAMP.IP_HOST, myAMP.IP_PORT, IP_TCP)
 	}
-} 
- 
+}
+
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(ipDevice.port)
 }
@@ -166,11 +166,11 @@ DEFINE_FUNCTION fnPoll(){
 	Data Queue and Sending
 ******************************************************************************/
 DEFINE_FUNCTION fnAddToQueue(CHAR pCMD[], INTEGER isPoll){
-	
+
 	myAMP.Tx = "myAMP.Tx,pCMD,$0D"
-	
+
 	fnSendFromQueue()
-	
+
 	IF(!isPoll){
 		fnInitPoll()
 	}
@@ -205,7 +205,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMEOUT]{
 	myAMP.Tx = ''
 }
 /******************************************************************************
-	Debug 
+	Debug
 ******************************************************************************/
 DEFINE_FUNCTION fnDebug(INTEGER pLEVEL, CHAR Msg[], CHAR MsgData[]){
 	IF(myAMP.DEBUG >= pLEVEL)	{
@@ -213,7 +213,7 @@ DEFINE_FUNCTION fnDebug(INTEGER pLEVEL, CHAR Msg[], CHAR MsgData[]){
 	}
 }
 /******************************************************************************
-	Process Feedback 
+	Process Feedback
 ******************************************************************************/
 DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 	pDATA = fnRemoveWhiteSpace(pDATA)
@@ -225,7 +225,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 	IF(!LENGTH_ARRAY(pDATA)){
 		RETURN
 	}
-	
+
 	fnDebug(DEBUG_DEV,'fnProcessFeedback()',"'pDATA(str)=',pDATA")
 	SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
 		CASE 'POWER':{
@@ -243,7 +243,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 			myAMP.ZONE.CUR_VOL = ATOI(pDATA)
 			// Set up 255 range
 			myAMP.ZONE.CUR_VOL_255 = fnScaleRange(myAMP.ZONE.CUR_VOL,myAMP.ZONE.RANGE[1],myAMP.ZONE.RANGE[2],0,255)
-			
+
 			fnAddToQueue("'MUTE S'",TRUE)	// Query Zone 1 Mute
 		}
 		CASE 'MUTE':{
@@ -255,11 +255,11 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 			myAMP.Zone.CUR_INPUT = ATOI(pDATA)
 		}
 	}
-	
+
 	fnSendFromQueue()
-	
+
 	fnInitTimeout(FALSE)
-	
+
 	IF(TIMELINE_ACTIVE(TLID_COMMS)){ TIMELINE_KILL(TLID_COMMS) }
 	TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 }
@@ -300,7 +300,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 					}
 				}
 			}
-			CASE 'INPUT':{				
+			CASE 'INPUT':{
 				IF(myAMP.ZONE.POWER){
 					fnAddToQueue("'SOURCE ',DATA.TEXT",FALSE)
 				}
@@ -369,7 +369,7 @@ DEFINE_PROGRAM{
 	[vdvControl, 198] = (myAMP.ZONE.MICMUTE)
 	[vdvControl, 199] = (myAMP.ZONE.MUTE)
 	[vdvControl, 255] = (myAMP.ZONE.POWER)
-	
+
 	[vdvControl, 251] = (TIMELINE_ACTIVE(TLID_COMMS))
 	[vdvControl, 252] = (TIMELINE_ACTIVE(TLID_COMMS))
 }

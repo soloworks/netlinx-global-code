@@ -320,7 +320,7 @@ DEFINE_EVENT DATA_EVENT[ipWS]{
 				STACK_VAR CHAR HEAD_LINE[200]
 				fnDebug(WS.DEBUG,DEBUG_DEV,"'WS DATA_EVENT STRING Handling HTTP Handshaking'")
 				fnDebug(WS.DEBUG,DEBUG_DEV,"'WSHTTP->',WS.Rx")
-				
+
 				// Gather HTTP Code
 				HEAD_LINE = fnStripCharsRight(REMOVE_STRING(WS.Rx,"$0D,$0A",1),2)
 				WS.RESPONSE.HTTP_CODE = ATOI(fnGetSplitStringValue(HEAD_LINE,' ',2))
@@ -343,7 +343,7 @@ DEFINE_EVENT DATA_EVENT[ipWS]{
 						BREAK
 					}
 				}
-				
+
 				// Report anything except a good request
 				SWITCH(WS.RESPONSE.HTTP_CODE){
 					CASE 101:{	// Switching Protocols
@@ -359,7 +359,7 @@ DEFINE_EVENT DATA_EVENT[ipWS]{
 				}
 			}
 		}
-		
+
 		IF(WS.CONN_STATE == CONN_STATE_CONNECTED){
 			// Process Frames
 			fnDebug(WS.DEBUG,DEBUG_DEV,"'WS DATA_EVENT STRING Handling Socket Data'")
@@ -386,7 +386,7 @@ DEFINE_EVENT DATA_EVENT[ipWS]{
 		// Send the HTTP request through to the server
 		fnDebug(WS.DEBUG,DEBUG_DEV,"'->WSHTTP',HTTPSocketRequest()")
 		SEND_STRING DATA.DEVICE, HTTPSocketRequest()
-		
+
 		fnDebug(WS.DEBUG,DEBUG_DEV,"'DATA_EVENT ONLINE Ended'")
 	}
 	ONERROR:{

@@ -100,10 +100,10 @@ event callback method to your implementation code.
 (*                                                         *)
 (***********************************************************)
 // #DEFINE INCLUDE_SCHEDULING_BOOKINGS_RECORD_RESPONSE_CALLBACK
-DEFINE_FUNCTION RmsEventSchedulingBookingsRecordResponse(CHAR isDefaultLocation, 
-																													INTEGER recordIndex, 
-																													INTEGER recordCount, 
-																													CHAR bookingId[], 
+DEFINE_FUNCTION RmsEventSchedulingBookingsRecordResponse(CHAR isDefaultLocation,
+																													INTEGER recordIndex,
+																													INTEGER recordCount,
+																													CHAR bookingId[],
 																													RmsEventBookingResponse eventBookingResponse)
 {
 }
@@ -125,8 +125,8 @@ DEFINE_FUNCTION RmsEventSchedulingBookingsRecordResponse(CHAR isDefaultLocation,
 (*                                                         *)
 (***********************************************************)
 // #DEFINE INCLUDE_SCHEDULING_BOOKING_RESPONSE_CALLBACK
-DEFINE_FUNCTION RmsEventSchedulingBookingResponse(CHAR isDefaultLocation, 
-																									CHAR bookingId[], 
+DEFINE_FUNCTION RmsEventSchedulingBookingResponse(CHAR isDefaultLocation,
+																									CHAR bookingId[],
 																									RmsEventBookingResponse eventBookingResponse)
 {
 }
@@ -151,10 +151,10 @@ DEFINE_FUNCTION RmsEventSchedulingBookingResponse(CHAR isDefaultLocation,
 (*                                                         *)
 (***********************************************************)
 // #DEFINE INCLUDE_SCHEDULING_ACTIVE_RESPONSE_CALLBACK
-DEFINE_FUNCTION RmsEventSchedulingActiveResponse(CHAR isDefaultLocation, 
-																									INTEGER recordIndex, 
-																									INTEGER recordCount, 
-																									CHAR bookingId[], 
+DEFINE_FUNCTION RmsEventSchedulingActiveResponse(CHAR isDefaultLocation,
+																									INTEGER recordIndex,
+																									INTEGER recordCount,
+																									CHAR bookingId[],
 																									RmsEventBookingResponse eventBookingResponse)
 {
 }
@@ -179,10 +179,10 @@ DEFINE_FUNCTION RmsEventSchedulingActiveResponse(CHAR isDefaultLocation,
 (*                                                         *)
 (***********************************************************)
 // #DEFINE INCLUDE_SCHEDULING_NEXT_ACTIVE_RESPONSE_CALLBACK
-DEFINE_FUNCTION RmsEventSchedulingNextActiveResponse(CHAR isDefaultLocation, 
-																											INTEGER recordIndex, 
-																											INTEGER recordCount, 
-																											CHAR bookingId[], 
+DEFINE_FUNCTION RmsEventSchedulingNextActiveResponse(CHAR isDefaultLocation,
+																											INTEGER recordIndex,
+																											INTEGER recordCount,
+																											CHAR bookingId[],
 																											RmsEventBookingResponse eventBookingResponse)
 {
 }
@@ -242,8 +242,8 @@ DEFINE_FUNCTION RmsEventSchedulingSummaryDailyResponse(CHAR isDefaultLocation,
 (*                                                         *)
 (***********************************************************)
 // #DEFINE INCLUDE_SCHEDULING_CREATE_RESPONSE_CALLBACK
-DEFINE_FUNCTION RmsEventSchedulingCreateResponse(CHAR isDefaultLocation, 
-																									CHAR responseText[], 
+DEFINE_FUNCTION RmsEventSchedulingCreateResponse(CHAR isDefaultLocation,
+																									CHAR responseText[],
 																									RmsEventBookingResponse eventBookingResponse)
 {
 }
@@ -265,8 +265,8 @@ DEFINE_FUNCTION RmsEventSchedulingCreateResponse(CHAR isDefaultLocation,
 (*                                                         *)
 (***********************************************************)
 // #DEFINE INCLUDE_SCHEDULING_EXTEND_RESPONSE_CALLBACK
-DEFINE_FUNCTION RmsEventSchedulingExtendResponse(CHAR isDefaultLocation, 
-																									CHAR responseText[], 
+DEFINE_FUNCTION RmsEventSchedulingExtendResponse(CHAR isDefaultLocation,
+																									CHAR responseText[],
 																									RmsEventBookingResponse eventBookingResponse)
 {
 }
@@ -288,8 +288,8 @@ DEFINE_FUNCTION RmsEventSchedulingExtendResponse(CHAR isDefaultLocation,
 (*                                                         *)
 (***********************************************************)
 // #DEFINE INCLUDE_SCHEDULING_END_RESPONSE_CALLBACK
-DEFINE_FUNCTION RmsEventSchedulingEndResponse(CHAR isDefaultLocation, 
-																								CHAR responseText[], 
+DEFINE_FUNCTION RmsEventSchedulingEndResponse(CHAR isDefaultLocation,
+																								CHAR responseText[],
 																								RmsEventBookingResponse eventBookingResponse)
 {
 }
@@ -308,7 +308,7 @@ DEFINE_FUNCTION RmsEventSchedulingEndResponse(CHAR isDefaultLocation,
 (*                                                         *)
 (***********************************************************)
 // #DEFINE INCLUDE_SCHEDULING_ACTIVE_UPDATED_CALLBACK
-DEFINE_FUNCTION RmsEventSchedulingActiveUpdated(CHAR bookingId[], 
+DEFINE_FUNCTION RmsEventSchedulingActiveUpdated(CHAR bookingId[],
 																									RmsEventBookingResponse eventBookingResponse)
 {
 }
@@ -327,7 +327,7 @@ DEFINE_FUNCTION RmsEventSchedulingActiveUpdated(CHAR bookingId[],
 (*                                                         *)
 (***********************************************************)
 // #DEFINE INCLUDE_SCHEDULING_NEXT_ACTIVE_UPDATED_CALLBACK
-DEFINE_FUNCTION RmsEventSchedulingNextActiveUpdated(CHAR bookingId[], 
+DEFINE_FUNCTION RmsEventSchedulingNextActiveUpdated(CHAR bookingId[],
 																											RmsEventBookingResponse eventBookingResponse)
 {
 }
@@ -345,7 +345,7 @@ DEFINE_FUNCTION RmsEventSchedulingNextActiveUpdated(CHAR bookingId[],
 (*                                                         *)
 (***********************************************************)
 // #DEFINE INCLUDE_SCHEDULING_EVENT_ENDED_CALLBACK
-DEFINE_FUNCTION RmsEventSchedulingEventEnded(CHAR bookingId[], 
+DEFINE_FUNCTION RmsEventSchedulingEventEnded(CHAR bookingId[],
 																							RmsEventBookingResponse eventBookingResponse)
 {
 }
@@ -363,7 +363,7 @@ DEFINE_FUNCTION RmsEventSchedulingEventEnded(CHAR bookingId[],
 (*                                                         *)
 (***********************************************************)
 // #DEFINE INCLUDE_SCHEDULING_EVENT_STARTED_CALLBACK
-DEFINE_FUNCTION RmsEventSchedulingEventStarted(CHAR bookingId[], 
+DEFINE_FUNCTION RmsEventSchedulingEventStarted(CHAR bookingId[],
 																								RmsEventBookingResponse eventBookingResponse)
 {
 }
@@ -381,7 +381,7 @@ DEFINE_FUNCTION RmsEventSchedulingEventStarted(CHAR bookingId[],
 (*                                                         *)
 (***********************************************************)
 // #DEFINE INCLUDE_SCHEDULING_EVENT_UPDATED_CALLBACK
-DEFINE_FUNCTION RmsEventSchedulingEventUpdated(CHAR bookingId[], 
+DEFINE_FUNCTION RmsEventSchedulingEventUpdated(CHAR bookingId[],
 																								RmsEventBookingResponse eventBookingResponse)
 {
 }
@@ -454,20 +454,20 @@ CUSTOM_EVENT[vdvRMS,
   STACK_VAR INTEGER recordIndex;
   STACK_VAR CHAR bookingId[RMS_MAX_PARAM_LEN];
   STACK_VAR RmsEventBookingResponse eventBookingResponse;
-    
+
   // value1 - is default location
   isDefaultLocation = TYPE_CAST(custom.value1);
-  
+
   // value2 - booking index
   recordIndex = TYPE_CAST(custom.value2);
-  
+
     // value3 - booking record count
   recordCount = TYPE_CAST(custom.value3);
-  
+
   // The text member of the custom event contains
   // the booking ID
   bookingId = custom.text;
-    
+
   // the 'flag' property determines if the 'encode' contains data
   IF(custom.flag == TRUE)
   {
@@ -493,14 +493,14 @@ CUSTOM_EVENT[vdvRMS,
   STACK_VAR CHAR isDefaultLocation;
   STACK_VAR CHAR bookingId[RMS_MAX_PARAM_LEN];
   STACK_VAR RmsEventBookingResponse eventBookingResponse;
-    
+
   // value1 - is default location
   isDefaultLocation = TYPE_CAST(custom.value1);
-    
+
   // The text member of the custom event contains
   // the booking ID
   bookingId = custom.text;
-  
+
   // the 'flag' property determines if the 'encode' contains data
   IF(custom.flag == TRUE)
   {
@@ -528,20 +528,20 @@ CUSTOM_EVENT[vdvRMS,
   STACK_VAR INTEGER recordCount;
   STACK_VAR INTEGER recordIndex;
   STACK_VAR RmsEventBookingResponse eventBookingResponse;
-    
+
   // value1 - is default location
   isDefaultLocation = TYPE_CAST(custom.value1);
-    
+
   // value2 - current record index
   recordIndex = TYPE_CAST(custom.value2);
-  
+
   // value3 - the total number of records
   recordCount = TYPE_CAST(custom.value3);
-  
+
   // The text member of the custom event contains
   // the booking ID
   bookingId = custom.text;
-  
+
   // the 'flag' property determines if the 'encode' contains data
   IF(custom.flag == TRUE)
   {
@@ -569,20 +569,20 @@ CUSTOM_EVENT[vdvRMS,
   STACK_VAR INTEGER recordCount;
   STACK_VAR INTEGER recordIndex;
   STACK_VAR RmsEventBookingResponse eventBookingResponse;
-    
+
   // value1 - is default location
   isDefaultLocation = TYPE_CAST(custom.value1);
-    
+
   // value2 - current record index
   recordIndex = TYPE_CAST(custom.value2);
-  
+
   // value3 - the total number of records
   recordCount = TYPE_CAST(custom.value3);
-    
+
   // The text member of the custom event contains
   // the booking ID
   bookingId = custom.text;
-  
+
   // the 'flag' property determines if the 'encode' contains data
   IF(custom.flag == TRUE)
   {
@@ -609,22 +609,22 @@ CUSTOM_EVENT[vdvRMS,
   STACK_VAR CHAR isDefaultLocation;
   STACK_VAR CHAR responseText[RMS_MAX_PARAM_LEN];
   STACK_VAR RmsEventBookingResponse eventBookingResponse;
-    
+
   // value1 - is default location
   isDefaultLocation = TYPE_CAST(custom.value1);
-     
+
   // The text member of the custom event contains
   // the booking ID if successful, else an error
   // message indicating the failure
   responseText = custom.text;
-  
+
   // the 'flag' property determines if the 'encode' contains data
   IF(custom.flag == TRUE)
   {
     // decode custom enceded data to event booking structure
     STRING_TO_VARIABLE(eventBookingResponse, custom.encode, 1);
   }
- 
+
   // invoke the callback method
   RmsEventSchedulingCreateResponse(isDefaultLocation, responseText, eventBookingResponse);
 }
@@ -644,22 +644,22 @@ CUSTOM_EVENT[vdvRMS,
   STACK_VAR CHAR isDefaultLocation;
   STACK_VAR CHAR responseText[RMS_MAX_PARAM_LEN];
   STACK_VAR RmsEventBookingResponse eventBookingResponse;
-    
+
   // value1 - is default location
   isDefaultLocation = TYPE_CAST(custom.value1);
-    
+
   // The text member of the custom event contains
   // the booking ID if successful, else an error
   // message indicating the failure
   responseText = custom.text;
-  
+
   // the 'flag' property determines if the 'encode' contains data
   IF(custom.flag == TRUE)
   {
     // decode custom enceded data to event booking structure
     STRING_TO_VARIABLE(eventBookingResponse, custom.encode, 1);
   }
- 
+
   // invoke the callback method
   RmsEventSchedulingExtendResponse(isDefaultLocation, responseText, eventBookingResponse);
 }
@@ -679,22 +679,22 @@ CUSTOM_EVENT[vdvRMS,
   STACK_VAR CHAR isDefaultLocation;
   STACK_VAR CHAR responseText[RMS_MAX_PARAM_LEN];
   STACK_VAR RmsEventBookingResponse eventBookingResponse;
-    
+
   // value1 - is default location
   isDefaultLocation = TYPE_CAST(custom.value1);
-    
+
   // The text member of the custom event contains
   // the booking ID if successful, else an error
   // message indicating the failure
   responseText = custom.text;
-  
+
   // the 'flag' property determines if the 'encode' contains data
   IF(custom.flag == TRUE)
   {
     // decode custom enceded data to event booking structure
     STRING_TO_VARIABLE(eventBookingResponse, custom.encode, 1);
   }
- 
+
   // invoke the callback method
   RmsEventSchedulingEndResponse(isDefaultLocation, responseText, eventBookingResponse);
 }
@@ -712,17 +712,17 @@ CUSTOM_EVENT[vdvRMS,
 {
   STACK_VAR CHAR isDefaultLocation;
   STACK_VAR RmsEventBookingDailyCount dailyCount;
-  
+
   // value1 - is default location
   isDefaultLocation = TYPE_CAST(custom.value1);
-           
+
   // the 'flag' property determines if the 'encode' contains data
   IF(custom.flag == TRUE)
   {
     // decode custom enceded data to event booking structure
     STRING_TO_VARIABLE(dailyCount, custom.encode, 1);
   }
- 
+
   // invoke the callback method
   RmsEventSchedulingSummariesDailyResponse(isDefaultLocation, dailyCount);
 }
@@ -741,17 +741,17 @@ CUSTOM_EVENT[vdvRMS,
 {
   STACK_VAR CHAR isDefaultLocation;
   STACK_VAR RmsEventBookingDailyCount dailyCount;
-  
+
   // value1 - is default location
   isDefaultLocation = TYPE_CAST(custom.value1);
-           
+
   // the 'flag' property determines if the 'encode' contains data
   IF(custom.flag == TRUE)
   {
     // decode custom enceded data to event booking structure
     STRING_TO_VARIABLE(dailyCount, custom.encode, 1);
   }
- 
+
   // invoke the callback method
   RmsEventSchedulingSummaryDailyResponse(isDefaultLocation, dailyCount);
 }
@@ -770,17 +770,17 @@ CUSTOM_EVENT[vdvRMS,
 {
   STACK_VAR CHAR bookingId[RMS_MAX_PARAM_LEN];
   STACK_VAR RmsEventBookingResponse eventBookingResponse;
-       
+
   // The text member of the custom event contains the booking ID
   bookingId = custom.text;
-  
+
   // the 'flag' property determines if the 'encode' contains data
   IF(custom.flag == TRUE)
   {
     // decode custom enceded data to event booking structure
     STRING_TO_VARIABLE(eventBookingResponse, custom.encode, 1);
   }
- 
+
   // invoke the callback method
   RmsEventSchedulingActiveUpdated(bookingId, eventBookingResponse);
 }
@@ -799,17 +799,17 @@ CUSTOM_EVENT[vdvRMS,
 {
   STACK_VAR CHAR bookingId[RMS_MAX_PARAM_LEN];
   STACK_VAR RmsEventBookingResponse eventBookingResponse;
-       
+
   // The text member of the custom event contains the booking ID
   bookingId = custom.text;
-  
+
   // the 'flag' property determines if the 'encode' contains data
   IF(custom.flag == TRUE)
   {
     // decode custom enceded data to event booking structure
     STRING_TO_VARIABLE(eventBookingResponse, custom.encode, 1);
   }
- 
+
   // invoke the callback method
   RmsEventSchedulingNextActiveUpdated(bookingId, eventBookingResponse);
 }
@@ -827,17 +827,17 @@ CUSTOM_EVENT[vdvRMS,
 {
   STACK_VAR CHAR bookingId[RMS_MAX_PARAM_LEN];
   STACK_VAR RmsEventBookingResponse eventBookingResponse;
-       
+
   // The text member of the custom event contains the booking ID
   bookingId = custom.text;
-  
+
   // the 'flag' property determines if the 'encode' contains data
   IF(custom.flag == TRUE)
   {
     // decode custom enceded data to event booking structure
     STRING_TO_VARIABLE(eventBookingResponse, custom.encode, 1);
   }
- 
+
   // invoke the callback method
   RmsEventSchedulingEventEnded(bookingId, eventBookingResponse);
 }
@@ -855,17 +855,17 @@ CUSTOM_EVENT[vdvRMS,
 {
   STACK_VAR CHAR bookingId[RMS_MAX_PARAM_LEN];
   STACK_VAR RmsEventBookingResponse eventBookingResponse;
-       
+
   // The text member of the custom event contains the booking ID
   bookingId = custom.text;
-  
+
   // the 'flag' property determines if the 'encode' contains data
   IF(custom.flag == TRUE)
   {
     // decode custom enceded data to event booking structure
     STRING_TO_VARIABLE(eventBookingResponse, custom.encode, 1);
   }
- 
+
   // invoke the callback method
   RmsEventSchedulingEventStarted(bookingId, eventBookingResponse);
 }
@@ -883,17 +883,17 @@ CUSTOM_EVENT[vdvRMS,
 {
   STACK_VAR CHAR bookingId[RMS_MAX_PARAM_LEN];
   STACK_VAR RmsEventBookingResponse eventBookingResponse;
-       
+
   // The text member of the custom event contains the booking ID
   bookingId = custom.text;
-  
+
   // the 'flag' property determines if the 'encode' contains data
   IF(custom.flag == TRUE)
   {
     // decode custom enceded data to event booking structure
     STRING_TO_VARIABLE(eventBookingResponse, custom.encode, 1);
   }
- 
+
   // invoke the callback method
   RmsEventSchedulingEventUpdated(bookingId, eventBookingResponse);
 }
@@ -911,17 +911,17 @@ CUSTOM_EVENT[vdvRMS,
 {
   STACK_VAR RmsEventBookingMonthlySummary monthlySummary;
   STACK_VAR INTEGER dailyCountsTotal;
-         
+
   // A count of the daily count entries
   dailyCountsTotal = TYPE_CAST(custom.value1);
-  
+
   // the 'flag' property determines if the 'encode' contains data
   IF(custom.flag == TRUE)
   {
     // decode custom enceded data to event booking structure
     STRING_TO_VARIABLE(monthlySummary, custom.encode, 1);
   }
- 
+
   // invoke the callback method
   RmsEventSchedulingMonthlySummaryUpdated(dailyCountsTotal, monthlySummary);
 }
@@ -939,7 +939,7 @@ CUSTOM_EVENT[vdvRMS,
 {
   STACK_VAR CHAR isDefaultLocation;
   STACK_VAR RmsEventBookingDailyCount dailyCount;
-  
+
   // value1 - is default location
   isDefaultLocation = TYPE_CAST(custom.value1);
 
@@ -949,7 +949,7 @@ CUSTOM_EVENT[vdvRMS,
     // decode custom enceded data to event booking structure
     STRING_TO_VARIABLE(dailyCount, custom.encode, 1);
   }
- 
+
   // invoke the callback method
   RmsEventSchedulingDailyCount(isDefaultLocation, dailyCount);
 }

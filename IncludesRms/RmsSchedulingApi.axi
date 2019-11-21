@@ -192,7 +192,7 @@ STRUCTURE RmsEventBookingResponse
     CHAR isSuccessful;
     CHAR failureDescription[RMS_MAX_PARAM_LEN];		// Not used if result is from a successful event
     LONG totalAttendeeCount;											// In some cases attendee names may be truncated
-    																							// due to the length, totalAttendeeCount is helpful 
+    																							// due to the length, totalAttendeeCount is helpful
     																							// to indicate the total number of attendees
 }
 

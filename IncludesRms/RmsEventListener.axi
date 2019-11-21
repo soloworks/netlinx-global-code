@@ -532,7 +532,7 @@ DATA_EVENT[vdvRMS]
         rmsParam2 = RmsParseCmdParam(DATA.TEXT);
         rmsParam3 = RmsParseCmdParam(DATA.TEXT);
         rmsParam4 = RmsParseCmdParam(DATA.TEXT);
-	
+
 	// invoke callback method
         //
         // PARAM 1 : <asset-client-key>  (STRING)

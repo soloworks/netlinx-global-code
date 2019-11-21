@@ -1,9 +1,9 @@
 MODULE_NAME='mDGXMatrix'(DEV vdvControl, DEV tp[], DEV dvDGX)
 INCLUDE 'CustomFunctions'
 /******************************************************************************
-	Basic Control for AMX DGX with TP which emulates standard control via 
+	Basic Control for AMX DGX with TP which emulates standard control via
 	front panel
-	
+
 	Buttons:
 	 98 - Take
 	 99 - Cancel
@@ -21,7 +21,7 @@ INTEGER btnOutput = 401
 DEFINE_TYPE STRUCTURE uPanel{
 	INTEGER curINPUT
 	INTEGER newSTATE[256]
-}	
+}
 DEFINE_TYPE STRUCTURE uMatrix{
 	INTEGER STATE[256]
 }
@@ -99,7 +99,7 @@ LONG TLID_SEND = 1
 DEFINE_VARIABLE
 LONG TLT_SEND[] = {200}
 CHAR DISCONNECT[1000]
-				
+
 DEFINE_EVENT BUTTON_EVENT[tp,0]{
 	PUSH:{
 		STACK_VAR INTEGER btn
@@ -131,8 +131,8 @@ DEFINE_EVENT BUTTON_EVENT[tp,0]{
 					TIMELINE_CREATE(TLID_SEND,TLT_SEND,LENGTH_ARRAY(TLT_SEND),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 				}
 				myDGXPanel[pnl].curINPUT = 0
-				FOR(x = 1; x <= 256; x++){ 
-					myDGXPanel[pnl].newSTATE[x] = 0 
+				FOR(x = 1; x <= 256; x++){
+					myDGXPanel[pnl].newSTATE[x] = 0
 				}
 			}
 			ACTIVE(btn == btnCancel):{	// Cancel Changes
@@ -144,8 +144,8 @@ DEFINE_EVENT BUTTON_EVENT[tp,0]{
 			ACTIVE(btn >= btnInput && btn <= btnInput + 256):{					// Select Input
 				STACK_VAR INTEGER x
 				myDGXPanel[pnl].curINPUT = btn - btnInput
-				FOR(x = 1; x <= 256; x++){ 
-					myDGXPanel[pnl].newSTATE[x] = 0 
+				FOR(x = 1; x <= 256; x++){
+					myDGXPanel[pnl].newSTATE[x] = 0
 				}
 				SEND_COMMAND dvDGX,"'SI',ITOA(myDGXPanel[pnl].curINPUT),'T'"
 			}

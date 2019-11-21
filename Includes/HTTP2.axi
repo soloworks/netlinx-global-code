@@ -1,9 +1,9 @@
 PROGRAM_NAME='HTTP2'
 /******************************************************************************
 	HTTP/2 Implementation Include for Netlinx
-    
+
    Initial version without TLS
-	 
+
 	Reference: https://httpwg.org/specs/rfc7540.html
 ******************************************************************************/
 /******************************************************************************
@@ -114,7 +114,7 @@ DEFINE_FUNCTION fnHTTP2SetDebug(uDebug d){
 /******************************************************************************
 	Frame Helper Function
 	Converts a Frame structure into an array of bytes
-	
+
  +-----------------------------------------------+
  |                 Length (24)                   |
  +---------------+---------------+---------------+
@@ -124,7 +124,7 @@ DEFINE_FUNCTION fnHTTP2SetDebug(uDebug d){
  +=+=============================================================+
  |                   Frame Payload (0...)                      ...
  +---------------------------------------------------------------+
- 
+
 ******************************************************************************/
 DEFINE_FUNCTION CHAR[10000] fnHTTP2BuildFramePacket(uHTTP2Frame f){
 	// Set Return Variable
@@ -210,12 +210,12 @@ DEFINE_FUNCTION fnHTTP2SendRequest(
 	STACK_VAR uHTTP2Request r
 	// Add in new headers for Method, Schema and Path
 	fnHTTP2AddHeader(r.headers,'method',
-	
+
 	// Setup a new Frame
 	STACK_VAR uHTTP2Frame f
 	f.identifier = HTTP2.CURRENT_ID
 	f.type = HTTP2_FRAME_TYPE_HEADERS
-	
+
 
 	fnAddToQueue(fnHTTP2BuildFramePacket(f))
 }
@@ -243,7 +243,7 @@ DEFINE_EVENT DATA_EVENT[ipHTTP2]{
 		// Send the HTTP request through to the server
 		fnDebug(HTTP2.DEBUG,DEBUG_DEV,"'->HTTP2: ',HTTP2ConnPreface")
 		SEND_STRING DATA.DEVICE, HTTP2ConnPreface
-		
+
 		fnDebug(HTTP2.DEBUG,DEBUG_DEV,"'DATA_EVENT ONLINE Ended'")
 	}
 	ONERROR:{

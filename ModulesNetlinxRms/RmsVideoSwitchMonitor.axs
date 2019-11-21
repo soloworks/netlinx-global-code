@@ -119,7 +119,7 @@ DEFINE_FUNCTION RegisterAssetParameters()
 {
   //Register all snapi HAS_xyz components
   RegisterAssetParametersSnapiComponents(assetClientKey);
-  
+
 	// Standby State
 	RmsAssetParameterEnqueueEnumeration(
 		assetClientKey,
@@ -149,7 +149,7 @@ DEFINE_FUNCTION RegisterAssetParameters()
 		FALSE,
 		RMS_ASSET_PARAM_BARGRAPH_TEMPERATURE
 	)
-	
+
 	// IP Address
 	RmsAssetParameterEnqueueString(
 		assetClientKey,
@@ -241,7 +241,7 @@ DEFINE_FUNCTION RegisterAssetMetadata()
 	RmsAssetMetadataEnqueueString(assetClientKey,'meta.firmware.short','Firmware (Short)',MONITOR_ASSET_FIRMWAREVERSION_S)
 	RmsAssetMetadataEnqueueString(assetClientKey,'meta.partnumber','Part Number',MONITOR_ASSET_PART_NUMBER)
 	RmsAssetMetadataEnqueueString(assetClientKey,'meta.network.mac','MAC Address',MONITOR_ASSET_MAC_ADDRESS)
-		  
+
   //Register all snapi HAS_xyz components
   RegisterAssetMetadataSnapiComponents(assetClientKey);
 
@@ -382,7 +382,7 @@ DATA_EVENT[vdvDevice]{
     SEND_COMMAND vdvDevice, "'PROPERTY-RMS-Type,Asset'"
   }
   COMMAND:{
-		
+
   }
   STRING:{
 		SWITCH(REMOVE_STRING(DATA.TEXT,'-',1)){
@@ -396,19 +396,19 @@ DATA_EVENT[vdvDevice]{
 							CASE 'MODEL,':{ 	 MONITOR_ASSET_MODELNAME 			= DATA.TEXT }
 							CASE 'FW2,':{ 		 MONITOR_ASSET_FIRMWAREVERSION = DATA.TEXT }
 							CASE 'FW1,':{
-								MONITOR_ASSET_FIRMWAREVERSION_S = DATA.TEXT 
+								MONITOR_ASSET_FIRMWAREVERSION_S = DATA.TEXT
 								IF(IsRmsReady()){
 									RmsAssetMetadataUpdateString( assetClientKey, 'meta.firmware.short', MONITOR_ASSET_FIRMWAREVERSION_S)
 								}
 							}
 							CASE 'NET_MAC,':{
-								MONITOR_ASSET_MAC_ADDRESS = DATA.TEXT 
+								MONITOR_ASSET_MAC_ADDRESS = DATA.TEXT
 								IF(IsRmsReady()){
 									RmsAssetMetadataUpdateString( assetClientKey, 'meta.network.mac', MONITOR_ASSET_MAC_ADDRESS)
 								}
 							}
 							CASE 'PART,':{
-								MONITOR_ASSET_PART_NUMBER = DATA.TEXT  
+								MONITOR_ASSET_PART_NUMBER = DATA.TEXT
 								IF(IsRmsReady()){
 									RmsAssetMetadataUpdateString( assetClientKey, 'meta.partnumber', MONITOR_ASSET_PART_NUMBER)
 								}

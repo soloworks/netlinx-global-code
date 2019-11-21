@@ -63,8 +63,8 @@ PROGRAM_NAME='RmsGuiApi'
 (***********************************************************)
 DEFINE_CONSTANT
 
-RMS_GUI_SET_INTERNAL_COMMAND_HEADER = 'SET_INTERNAL_PANEL-'; 
-RMS_GUI_SET_EXTERNAL_COMMAND_HEADER = 'SET_EXTERNAL_PANEL-'; 
+RMS_GUI_SET_INTERNAL_COMMAND_HEADER = 'SET_INTERNAL_PANEL-';
+RMS_GUI_SET_EXTERNAL_COMMAND_HEADER = 'SET_EXTERNAL_PANEL-';
 RMS_GUI_SET_DEFAULT_EVENT_BOOKING_SUBJECT_COMMAND_HEADER = 'SET_DEFAULT_EVENT_BOOKING_SUBJECT';
 RMS_GUI_SET_DEFAULT_EVENT_BOOKING_BODY_COMMAND_HEADER = 'SET_DEFAULT_EVENT_BOOKING_BODY';
 RMS_GUI_SET_DEFAULT_EVENT_BOOKING_DURATION_COMMAND_HEADER = 'SET_DEFAULT_EVENT_BOOKING_DURATION';
@@ -105,7 +105,7 @@ DEFINE_FUNCTION CHAR RmsSetInternalPanel(DEV baseTouchPanelDps, DEV rmsTouchPane
     rmsCommand = RmsPackCmdParam(rmsCommand,RmsDevToString(baseTouchPanelDPS));
     rmsCommand = RmsPackCmdParam(rmsCommand,RmsDevToString(rmsTouchPanelDps));
     SEND_COMMAND vdvRMSGui, rmsCommand;
-    
+
     RETURN TRUE;
 }
 
@@ -127,7 +127,7 @@ DEFINE_FUNCTION CHAR RmsSetExternalPanel(DEV baseTouchPanelDps, DEV rmsTouchPane
     rmsCommand = RmsPackCmdParam(rmsCommand,RmsDevToString(baseTouchPanelDPS));
     rmsCommand = RmsPackCmdParam(rmsCommand,RmsDevToString(rmsTouchPanelDps));
     SEND_COMMAND vdvRMSGui, rmsCommand;
-    
+
     RETURN TRUE;
 }
 
@@ -147,7 +147,7 @@ DEFINE_FUNCTION CHAR RmsSetDefaultEventBookingSubject(CHAR subject[RMS_MAX_PARAM
     rmsCommand = RmsPackCmdHeader(RMS_GUI_SET_DEFAULT_EVENT_BOOKING_SUBJECT_COMMAND_HEADER);
     rmsCommand = RmsPackCmdParam(rmsCommand,subject);
     SEND_COMMAND vdvRMSGui, rmsCommand;
-    
+
     RETURN TRUE;
 }
 
@@ -167,7 +167,7 @@ DEFINE_FUNCTION CHAR RmsSetDefaultEventBookingBody(CHAR body[RMS_MAX_PARAM_LEN])
     rmsCommand = RmsPackCmdHeader(RMS_GUI_SET_DEFAULT_EVENT_BOOKING_BODY_COMMAND_HEADER);
     rmsCommand = RmsPackCmdParam(rmsCommand,body);
     SEND_COMMAND vdvRMSGui, rmsCommand;
-    
+
     RETURN TRUE;
 }
 
@@ -227,7 +227,7 @@ DEFINE_FUNCTION CHAR RmsEnableLedSupport(CHAR enableLedSupport)
     rmsCommand = RmsPackCmdHeader(RMS_GUI_ENABLE_LED_SUPPORT_COMMAND_HEADER);
     rmsCommand = RmsPackCmdParam(rmsCommand,RmsBooleanString(enableLedSupport));
     SEND_COMMAND vdvRMSGui, rmsCommand;
-    
+
     RETURN TRUE;
 }
 
@@ -245,7 +245,7 @@ DEFINE_FUNCTION CHAR RmsEnableLedSupport(CHAR enableLedSupport)
 (*                                                         *)
 (* Sample patterns for the date October 7th, 2013:         *)
 (*        M/d/yy = 10/7/13                                 *)
-(*        yyyy-MM-dd = 2013-10-07                          *) 
+(*        yyyy-MM-dd = 2013-10-07                          *)
 (*                                                         *)
 (* Rtrn:  1 if call was successful                         *)
 (*        0 if call was unsuccessful                       *)
@@ -256,7 +256,7 @@ DEFINE_FUNCTION CHAR RmsSetGuiDatePattern(CHAR datePattern[RMS_MAX_PARAM_LEN])
     rmsCommand = RmsPackCmdHeader(RMS_GUI_SET_DATE_PATTERN_COMMAND_HEADER);
     rmsCommand = RmsPackCmdParam(rmsCommand,datePattern);
     SEND_COMMAND vdvRMSGui, rmsCommand;
-    
+
     RETURN TRUE;
 }
 
@@ -274,7 +274,7 @@ DEFINE_FUNCTION CHAR RmsSetGuiDatePattern(CHAR datePattern[RMS_MAX_PARAM_LEN])
 (*                                                         *)
 (* Sample patterns for the time 5:38 PM:                   *)
 (*        h:mm a = 5:38 PM                                 *)
-(*        HH:mm = 17:38                                    *) 
+(*        HH:mm = 17:38                                    *)
 (*                                                         *)
 (* Rtrn:  1 if call was successful                         *)
 (*        0 if call was unsuccessful                       *)
@@ -285,7 +285,7 @@ DEFINE_FUNCTION CHAR RmsSetGuiTimePattern(CHAR timePattern[RMS_MAX_PARAM_LEN])
     rmsCommand = RmsPackCmdHeader(RMS_GUI_SET_TIME_PATTERN_COMMAND_HEADER);
     rmsCommand = RmsPackCmdParam(rmsCommand,timePattern);
     SEND_COMMAND vdvRMSGui, rmsCommand;
-    
+
     RETURN TRUE;
 }
 

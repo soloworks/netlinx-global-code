@@ -10,10 +10,10 @@ MODULE_NAME='mBacnetIP'(DEV vdvControl,DEV vdvZone[],DEV tp[],DEV ipUDP)
 	myBACnetMSG.APDU_REQUEST_TYPE 	= APDU_REQUEST_UNCONFIRMED
 	myBACnetMSG.APDU_SERVICE_CHOICE 	= APDU_SERVICE_CHOICE_WHOIS
 	fnSendCommand(myBACnetMSG)
-	
+
 	Module expects main instance ID to be 1
-	
-	
+
+
 ******************************************************************************/
 /******************************************************************************
 	Structures
@@ -45,7 +45,7 @@ DEFINE_TYPE STRUCTURE uBACnetIP{
 	uObject 	PROCESSOR
 }
 
-DEFINE_CONSTANT 
+DEFINE_CONSTANT
 INTEGER MAX_OBJECTS = 8
 DEFINE_TYPE STRUCTURE uBACnetZone{
 	uObject	OBJ_INSTANCE[MAX_OBJECTS]
@@ -180,7 +180,7 @@ VOLATILE uPanel		myBACnetPanel[20]
 /******************************************************************************
 	Communication Helpers
 ******************************************************************************/
-DEFINE_FUNCTION fnDebug(INTEGER pDebug,CHAR pMSG[]){	
+DEFINE_FUNCTION fnDebug(INTEGER pDebug,CHAR pMSG[]){
 	IF(pDebug <= myBACnetIP.DEBUG){
 		STACK_VAR CHAR pMSG_COPY[10000]
 		pMSG_COPY = pMSG
@@ -194,26 +194,26 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[10000]){
 	STACK_VAR INTEGER BVLC_TYPE
 	STACK_VAR INTEGER BVLC_FUNCTION
 	STACK_VAR INTEGER BVLC_LENGTH
-	
+
 	STACK_VAR INTEGER NPDU_VERSION
 	STACK_VAR INTEGER NPDU_CONTROL
 	STACK_VAR INTEGER NPDU_ADDRESS
 	STACK_VAR INTEGER NPDU_MAC
 	STACK_VAR INTEGER NPDU_HOPS
-	
+
 	STACK_VAR LONG    APDU_TYPE
 	STACK_VAR INTEGER APDU_SERVICE
 	STACK_VAR INTEGER APDU_INVOKE_ID
 	STACK_VAR LONG    APDU_OBJ_TYPE
 	STACK_VAR LONG 	APDU_OBJ_INST_NO
 	STACK_VAR LONG 	APDU_PROPERTY_ID
-	
+
 	// BVLC Section
 	BVLC_TYPE 		= GET_BUFFER_CHAR(pDATA)
 	BVLC_FUNCTION 	= GET_BUFFER_CHAR(pDATA)
 	BVLC_LENGTH		= (256*GET_BUFFER_CHAR(pDATA))+GET_BUFFER_CHAR(pDATA)
 	fnDebug(DEBUG_DEV,"'fnProcessFeedback:FeedBackBVLC::','TYPE[',ITOA(BVLC_TYPE),'] FUNCTION[',ITOA(BVLC_FUNCTION),'] LENGTH[',ITOA(BVLC_LENGTH),']'")
-	
+
 	// NPDU Section
 	NPDU_VERSION 	= GET_BUFFER_CHAR(pDATA)
 	NPDU_CONTROL 	= GET_BUFFER_CHAR(pDATA)
@@ -221,10 +221,10 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[10000]){
 	//NPDU_ADDRESS	= (256*GET_BUFFER_CHAR(pDATA))+GET_BUFFER_CHAR(pDATA)
 	//NPDU_MAC 		= GET_BUFFER_CHAR(pDATA)
 	//NPDU_HOPS 		= GET_BUFFER_CHAR(pDATA)
-	
+
 	// APDU Section
 	APDU_TYPE 		= GET_BUFFER_CHAR(pDATA)
-	
+
 	SWITCH(APDU_TYPE){
 		CASE $00:{
 			fnDebug(DEBUG_DEV,"'fnProcessFeedback:FeedBackType::ConfirmedReq'")
@@ -289,7 +289,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[10000]){
 				}
 			}
 			fnDebug(DEBUG_DEV,"'fnProcessFeedback:FeedBackAPDU::','TYPE[',ITOA(APDU_TYPE),'] SERVICE[',ITOA(APDU_SERVICE),'] OBJ_TYPE[',ITOA(APDU_OBJ_TYPE),'] INST_NO[',ITOA(APDU_OBJ_INST_NO),']'")
-				
+
 			SWITCH(APDU_SERVICE){
 				CASE 12:{	// Read Property Response
 					//GET_BUFFER_CHAR(pDATA)	// Remove Context Flag
@@ -359,19 +359,19 @@ DEFINE_FUNCTION fnProcessProperty(LONG OBJ_TYPE,LONG INST_NO, INTEGER PROP_ID, C
 				fnDebug(DEBUG_DEV,"'fnProcessProperty:OBJ_NAME:Found:VALUE[',pOBJ_NAME,']'")
 				IF(myBACnetIP.PROCESSOR.TYPE == OBJ_TYPE && INST_NO == myBACnetIP.PROCESSOR.INSTANCE_NO){
 					fnDebug(DEBUG_DEV,"'fnProcessProperty:OBJ_NAME:Is System'")
-		
+
 					IF(myBACnetIP.PROCESSOR.PROP_NAME != pOBJ_NAME){
 						fnDebug(DEBUG_DEV,"'fnProcessProperty:OBJ_NAME:Processing'")
 						myBACnetIP.PROCESSOR.PROP_NAME  = pOBJ_NAME
 						SEND_STRING vdvControl,"'PROPERTY-META,SYSNAME,',myBACnetIP.PROCESSOR.PROP_NAME"
-						
+
 						// Init a new Poll
 						fnPoll()
 					}
 					ELSE{
 						fnDebug(DEBUG_DEV,"'fnProcessProperty:OBJ_NAME:NoChange'")
 					}
-					
+
 					// IP Link is UP, reset comms flag
 					fnInitCommsTimeout(0,0)
 				}
@@ -593,7 +593,7 @@ DEFINE_FUNCTION fnQueueCommand(uBACnetMSG pMSG, INTEGER isPolling){
 	toSend = "toSend,NPDU_CONTROL"	// Flags
 	IF(pMSG.NPDU_DNET){					// Add DNET Details
 		STACK_VAR INTEGER pRemainder
-		pRemainder = pMSG.NPDU_DNET MOD 256							
+		pRemainder = pMSG.NPDU_DNET MOD 256
 		toSend = "toSend,(pMSG.NPDU_DNET-pRemainder) / 256"	// DNET Part 1
 		toSend = "toSend,pRemainder"									// DNET Part 2
 		toSend = "toSend,LENGTH_ARRAY(pMSG.NPDU_DADR)"			// DADR Length
@@ -601,7 +601,7 @@ DEFINE_FUNCTION fnQueueCommand(uBACnetMSG pMSG, INTEGER isPolling){
 	}
 	IF(pMSG.NPDU_SNET){					// Add SNET Details
 		STACK_VAR INTEGER pRemainder
-		pRemainder = pMSG.NPDU_SNET MOD 256							
+		pRemainder = pMSG.NPDU_SNET MOD 256
 		toSend = "toSend,(pMSG.NPDU_SNET-pRemainder) / 256"	// SNET Part 1
 		toSend = "toSend,pRemainder"									// SNET Part 2
 		toSend = "toSend,LENGTH_ARRAY(pMSG.NPDU_SADR)"			// SADR Length
@@ -636,8 +636,8 @@ DEFINE_FUNCTION fnQueueCommand(uBACnetMSG pMSG, INTEGER isPolling){
 				toSend = "toSend,myBACnetIP.InvokeID"	// Invoke ID
 				// Service Choice
 				toSend = "toSend,pMSG.APDU_SERVICE_CHOICE"
-				
-				
+
+
 				SWITCH(pMSG.APDU_SERVICE_CHOICE){
 					CASE APDU_SERVICE_CHOICE_WRITEPROP:
 					CASE APDU_SERVICE_CHOICE_READPROP:
@@ -707,7 +707,7 @@ DEFINE_FUNCTION fnQueueCommand(uBACnetMSG pMSG, INTEGER isPolling){
 	ELSE{
 		myBACnetIP.TxCmd = "myBACnetIP.TxCmd,toSend,'DELIMIT'"
 	}
-	
+
 	fnSendFromQueue()
 }
 DEFINE_FUNCTION fnSendFromQueue(){
@@ -724,13 +724,13 @@ DEFINE_FUNCTION fnSendFromQueue(){
 				fnDebug(DEBUG_STD,"'Sending from Poll Queue'")
 			}
 			toSend = fnStripCharsRight(toSend,7)
-			
+
 			myBACnetIP.PendID = toSend[9]
 			fnDebug(DEBUG_STD,"'Pending::Activate ',ITOA(myBACnetIP.PendID)")
-			
+
 			fnDebug(DEBUG_DEV,"'->BacNET ',fnBytesToString(toSend)")
 			SEND_STRING ipUDP,toSend
-			
+
 			IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){TIMELINE_KILL(TLID_TIMEOUT)}
 			TIMELINE_CREATE(TLID_TIMEOUT,TLT_TIMEOUT,LENGTH_ARRAY(TLT_TIMEOUT),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 		}
@@ -832,16 +832,16 @@ DEFINE_FUNCTION CHAR[4] fnBuildObjectIdentifier(LONG pTYPE,LONG pInstNo){
 	STACK_VAR CHAR pInstAsBin[24]
 	STACK_VAR CHAR pResult[4]
 	STACK_VAR INTEGER x
-	
+
 	fnDebug(DEBUG_DEV,"'fnBuildObjectIdentifier::pTYPE[',ITOA(pTYPE),']pInstNo[',ITOA(pInstNo),']'")
 	fnDebug(DEBUG_DEV,"'fnBuildObjectIdentifier::pInstAsBytes[',fnBytesToString(fnLongToByte(pInstNo,0)),']'")
-	
+
 	// Set Variables
 	pTypeAsBin  = fnPadLeadingChars(fnBytesToBinary("pType"),'0',10)
 	pInstAsBin  = fnPadLeadingChars(RIGHT_STRING(fnBytesToBinary(fnLongToByte(pInstNo,0)),22),'0',22)
-	
+
 	pResult = fnPadLeadingChars(fnBinaryToByte("pTypeAsBin,pInstAsBin"),$00,4)
-	
+
 	fnDebug(DEBUG_DEV,"'fnBuildObjectIdentifier::pTypeAsBin[',pTypeAsBin,']pInstAsBin[',pInstAsBin,']'")
 	fnDebug(DEBUG_DEV,"'fnBuildObjectIdentifier::pFullBin[',pTypeAsBin,pInstAsBin,']'")
 	fnDebug(DEBUG_DEV,"'fnBuildObjectIdentifier::pResultAsLong[',ITOA(fnBinaryToLong("pTypeAsBin,pInstAsBin")),']'")
@@ -854,16 +854,16 @@ DEFINE_FUNCTION LONG fnGetObjectInstNoFromIdentifier(CHAR pIdent[4]){
 	STACK_VAR CHAR pIdentAsBin[32]
 	STACK_VAR CHAR pInstancePart[22]
 	STACK_VAR LONG pReturn
-	
+
 	fnDebug(DEBUG_DEV,"'fnGetObjectInstNoFromIdentifier::pIdent[',fnBytesToString(pIdent),']'")
 
 	pIdentAsBin = fnBytesToBinary(pIdent)
 	pInstancePart = RIGHT_STRING(pIdentAsBin,22)
 	pReturn = fnBinaryToLong(pInstancePart)
-	
+
 	fnDebug(DEBUG_DEV,"'fnGetObjectInstNoFromIdentifier::pIdentAsBin[',pIdentAsBin,']'")
 	fnDebug(DEBUG_DEV,"'fnGetObjectInstNoFromIdentifier::pInstancePart[',pInstancePart,'] pReturn[',ITOA(pReturn),']'")
-	
+
 	RETURN pReturn
 }
 
@@ -871,16 +871,16 @@ DEFINE_FUNCTION LONG fnGetObjectTypeFromIdentifier(CHAR pIdent[4]){
 	STACK_VAR CHAR pIdentAsBin[32]
 	STACK_VAR CHAR pTypePart[10]
 	STACK_VAR LONG pReturn
-	
+
 	fnDebug(DEBUG_DEV,"'fnGetObjectTypeFromIdentifier::pIdent[',fnBytesToString(pIdent),']'")
 
 	pIdentAsBin = fnBytesToBinary(pIdent)
 	pTypePart = LEFT_STRING(pIdentAsBin,10)
 	pReturn = fnBinaryToLong(pTypePart)
-	
+
 	fnDebug(DEBUG_DEV,"'fnGetObjectTypeFromIdentifier::pIdentAsBin[',pIdentAsBin,']'")
 	fnDebug(DEBUG_DEV,"'fnGetObjectTypeFromIdentifier::pTypePart[',pTypePart,'] pReturn[',ITOA(pReturn),']'")
-	
+
 	RETURN pReturn
 }
 /******************************************************************************
@@ -895,9 +895,9 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_POLL]{
 }
 DEFINE_FUNCTION fnPoll(){
 	STACK_VAR CHAR PROPS[10]
-	
+
 	fnDebug(DEBUG_DEV,"'fnPoll::Called'")
-	
+
 	// Poll out the Processor name based on ID to check connection to correct system
 	fnDebug(DEBUG_DEV,"'fnPoll::ProcessorNameNotDiscoveredYet'")
 	PROPS = "PROPS,APDU_PROPERTY_ID_OBJ_NAME"
@@ -925,11 +925,11 @@ DEFINE_FUNCTION fnPoll(){
 			}
 		}
 	}
-	
+
 	fnDebug(DEBUG_STD,"'fnPoll::Ended'")
 }
 /******************************************************************************
-	Device Events - Virtual Devices - Main 
+	Device Events - Virtual Devices - Main
 ******************************************************************************/
 DEFINE_EVENT DATA_EVENT[vdvControl]{
 	COMMAND:{
@@ -978,7 +978,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 	}
 }
 /******************************************************************************
-	Device Events - Virtual Devices - Zones 
+	Device Events - Virtual Devices - Zones
 ******************************************************************************/
 DEFINE_EVENT DATA_EVENT[vdvZone]{
 	COMMAND:{
@@ -1111,10 +1111,10 @@ DEFINE_EVENT DATA_EVENT[ipUDP]{
 ******************************************************************************/
 DEFINE_FUNCTION fnInitCommsTimeout(INTEGER pZone,INTEGER pObject){
 	STACK_VAR LONG TLID
-	
+
 	fnDebug(DEBUG_DEV,"'fnInitCommsTimeout::pZone=',ITOA(pZone),',pObject=',ITOA(pObject)")
 	TLID = TLID_COMMS_000 + (pZone*1000) + pObject
-	
+
 	fnDebug(DEBUG_DEV,"'TIMELINE_CREATE::TLID_COMMS::',ITOA(TLID)")
 	IF(TIMELINE_ACTIVE(TLID)){TIMELINE_KILL(TLID)}
 	TIMELINE_CREATE(TLID,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
@@ -1123,7 +1123,7 @@ DEFINE_FUNCTION fnInitCommsTimeout(INTEGER pZone,INTEGER pObject){
 DEFINE_PROGRAM{
 	STACK_VAR INTEGER z
 	STACK_VAR INTEGER o
-	
+
 	// Zone Comms Feedback
 	FOR(z = 1; z <= LENGTH_ARRAY(vdvZone); z++){
 		STACK_VAR INTEGER ZoneFaultFound
@@ -1138,7 +1138,7 @@ DEFINE_PROGRAM{
 		[vdvZone[z],251] = (!ZoneFaultFound)
 		[vdvZone[z],252] = (!ZoneFaultFound)
 	}
-	
+
 	// Module Comms Feedback
 	[vdvControl,251] = (TIMELINE_ACTIVE(TLID_COMMS_000))
 	[vdvControl,252] = (TIMELINE_ACTIVE(TLID_COMMS_000))

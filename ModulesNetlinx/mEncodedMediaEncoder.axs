@@ -357,7 +357,7 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(){
 	fnDebug(DEBUG_STD,"'fnProcessFeedback() Head END-----------------------------'")
 
 	fnDebug(DEBUG_STD,"'fnProcessFeedback() Body START---------------------------'")
-	
+
 	fnProcessBody(myEncoder.Rx)
 
 
@@ -485,7 +485,7 @@ DEFINE_PROGRAM{
 		SEND_LEVEL vdvControl,f,myEncoder.FEED[f].DURATION
 
 		[vdvControl,251] = (TIMELINE_ACTIVE(TLID_COMMS))
-		[vdvControl,252] = (TIMELINE_ACTIVE(TLID_COMMS))	
+		[vdvControl,252] = (TIMELINE_ACTIVE(TLID_COMMS))
 	}
 }
 /******************************************************************************

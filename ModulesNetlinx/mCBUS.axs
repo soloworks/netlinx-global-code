@@ -14,15 +14,15 @@ INTEGER MAX_APPS = 10
 DEFINE_TYPE STRUCTURE uComms{
 	CHAR 		Rx[1000]						// Receieve Buffer
 	CHAR		Tx[1000]						// Transmit Buffer
-	INTEGER 	IP_PORT						// 
-	CHAR		IP_HOST[255]				//	
-	INTEGER 	IP_STATE						// 
-	INTEGER 	DEBUG							// Debugging	
+	INTEGER 	IP_PORT						//
+	CHAR		IP_HOST[255]				//
+	INTEGER 	IP_STATE						//
+	INTEGER 	DEBUG							// Debugging
 }
 
 DEFINE_TYPE STRUCTURE uCBUS{
 	uComms	COMMS
-	
+
 	CHAR		META_MAKE[18]
 	CHAR		META_MODEL[18]
 	CHAR 		META_FIRMWARE[18]
@@ -69,15 +69,15 @@ DEFINE_FUNCTION fnInitateLogFile(){
 	STACK_VAR LONG HFile
 	STACK_VAR CHAR pTIMESTAMP[255]
 	STACK_VAR CHAR pFILELINE[255]
-	
+
 	pTIMESTAMP = "ITOA(DATE_TO_YEAR(LDATE)),'_'"
 	pTIMESTAMP = "pTIMESTAMP,FORMAT('%02d',DATE_TO_MONTH(LDATE)),'_'"
 	pTIMESTAMP = "pTIMESTAMP,FORMAT('%02d',DATE_TO_DAY(LDATE)),'_'"
-	
+
 	pTIMESTAMP = "pTIMESTAMP,FORMAT('%02d',TIME_TO_HOUR(TIME)),'_'"
 	pTIMESTAMP = "pTIMESTAMP,FORMAT('%02d',TIME_TO_MINUTE(TIME)),'_'"
 	pTIMESTAMP = "pTIMESTAMP,FORMAT('%02d',TIME_TO_SECOND(TIME))"
-	
+
 	DEBUG_LOG_FILENAME = "'DEBUG_LOG_mCBUS_',ITOA(vdvCBUS.Number),'_',pTIMESTAMP,'.log'"
 	fnDebug(DEBUG_LOG,'fnInitateLogFile','File Created',pTIMESTAMP)
 }
@@ -127,9 +127,9 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 		IF(!myCBUS.COMMS.IP_PORT){myCBUS.COMMS.IP_PORT = 20023}
 		fnDebug(DEBUG_STD,'fnOpenTCPConnection','Connecting to CBUS on ',"myCBUS.COMMS.IP_HOST,':',ITOA(myCBUS.COMMS.IP_PORT)")
 		myCBUS.COMMS.IP_STATE = IP_STATE_CONNECTING
-		ip_client_open(ipCBUS.port, myCBUS.COMMS.IP_HOST, myCBUS.COMMS.IP_PORT, IP_TCP) 
+		ip_client_open(ipCBUS.port, myCBUS.COMMS.IP_HOST, myCBUS.COMMS.IP_PORT, IP_TCP)
 	}
-} 
+}
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(ipCBUS.port)
 }
@@ -229,7 +229,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA_ASCII[]){
 			}
 			// Should just have SAL Data left
 			fnDebug(DEBUG_DEV,'fnProcessFeedback',"'Application=',ITOA(pApp)","'SALData=',fnBytesToString(pDATA)")
-				
+
 			SWITCH(pDATA[1]){
 				CASE $01:{	// Group Off
 					fnDebug(DEBUG_DEV,'fnProcessFeedback','GROUP:OFF',"'ADDRESS HEX=',ITOHEX(pApp),':',ITOHEX(pDATA[2]),' ADDRESS DEC=',ITOA(pApp),':',ITOA(pDATA[2])")
@@ -278,7 +278,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA_ASCII[]){
 			}
 		}
 	}
-	
+
 	// Start comms timeline
 	IF(TIMELINE_ACTIVE(TLID_COMMS)){TIMELINE_KILL(TLID_COMMS)}
 	TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
@@ -316,7 +316,7 @@ DEFINE_EVENT DATA_EVENT[vdvCBUS]{
 						}
 						ELSE{
 							myCBUS.COMMS.IP_HOST = DATA.TEXT
-							myCBUS.COMMS.IP_PORT = 10001 
+							myCBUS.COMMS.IP_PORT = 10001
 						}
 						fnRetryConnection()
 					}

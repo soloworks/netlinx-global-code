@@ -24,7 +24,7 @@ DEFINE_EVENT DATA_EVENT[dvRS232]{
 		}
 	}
 	STRING:{
-		
+
 	}
 }
 
@@ -40,7 +40,7 @@ DEFINE_EVENT CHANNEL_EVENT[vdvControl,0]{
 				CASE MENU_LT:			fnSendCommand('/A187FFFF/RU')
 				CASE MENU_DN:			fnSendCommand('/A185FFFF/RU')
 				CASE MENU_SELECT:		fnSendCommand('/A181AFEF/RU')
-				
+
 		  }
 	 }
 }

@@ -46,7 +46,7 @@ DEFINE_TYPE STRUCTURE uScreen{
 	SINTEGER desINPUT
 	// Comms Sertings
 	uComms	COMMS
-	
+
 	INTEGER  CARRIER_ENABLED
 }
 /******************************************************************************
@@ -628,7 +628,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 		}
 		IF(!myNECDisplay.COMMS.DISABLED){
 			SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
-				CASE 'CARRIER':{	
+				CASE 'CARRIER':{
 					SWITCH(DATA.TEXT){
 						CASE 'INIT':{
 							myNECDisplay.CARRIER_ENABLED = TRUE

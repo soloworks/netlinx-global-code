@@ -5,7 +5,7 @@ MODULE_NAME='mChristieLSeries'(DEV vdvControl,DEV dvDEV)
 INCLUDE 'CustomFunctions'
 /******************************************************************************
 	Basic module tested on the Christie 775G
-	
+
 ******************************************************************************/
 /******************************************************************************
 	Module Constants & Variables
@@ -74,9 +74,9 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 	IF(!myChristieL.PORT){myChristieL.PORT = defPORT}
 	fnDebug(FALSE,"'TRY','[',ITOA(dvDEV.PORT),']->CHR'","myChristieL.IP,':',ITOA(myChristieL.PORT)")
 	myChristieL.TRYING = TRUE
-	ip_client_open(dvDEV.port, myChristieL.IP, myChristieL.PORT, IP_TCP) 
-} 
- 
+	ip_client_open(dvDEV.port, myChristieL.IP, myChristieL.PORT, IP_TCP)
+}
+
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(dvDEV.port)
 }
@@ -89,7 +89,7 @@ DEFINE_FUNCTION fnTryConnection(){
 DEFINE_EVENT TIMELINE_EVENT[TLID_RETRY]{
 	fnTryConnection()
 }
-DEFINE_FUNCTION fnInitTimeout(){	
+DEFINE_FUNCTION fnInitTimeout(){
 	IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){TIMELINE_KILL(TLID_TIMEOUT)}
 	TIMELINE_CREATE(TLID_TIMEOUT,TLT_TIMEOUT,LENGTH_ARRAY(TLT_TIMEOUT),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 }
@@ -129,7 +129,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_SEND]{
 /******************************************************************************
 	Utility Functions - Data Recieve
 ******************************************************************************/
-DEFINE_FUNCTION fnProcessFeedback(CHAR pData[]){	
+DEFINE_FUNCTION fnProcessFeedback(CHAR pData[]){
 	fnDebug(FALSE,'CHR->AMX',pData)
 	IF(GET_BUFFER_CHAR(pDATA) == $1D){
 		SWITCH(myChristieL.LASTPOLL){
@@ -250,17 +250,17 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
 			CASE 'PROPERTY':{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
-					CASE 'IP':{		
+					CASE 'IP':{
 						myChristieL.IP = DATA.TEXT
 						fnPoll()
 						fnInitPoll()
 					}
-					CASE 'PORT':{		
+					CASE 'PORT':{
 						myChristieL.PORT = ATOI(DATA.TEXT)
 						fnPoll()
 						fnInitPoll()
 					}
-					CASE 'DEBUG': 	myChristieL.DEBUG = (ATOI(DATA.TEXT) || DATA.TEXT == 'TRUE');	
+					CASE 'DEBUG': 	myChristieL.DEBUG = (ATOI(DATA.TEXT) || DATA.TEXT == 'TRUE');
 				}
 			}
 			CASE 'ADJUST':{
@@ -280,7 +280,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 			CASE 'RAW':{
 				fnSendCommand(DATA.TEXT)
 			}
-			CASE 'MUTE':{	
+			CASE 'MUTE':{
 				SWITCH(DATA.TEXT){
 					CASE 'ON':	myChristieL.desVMUTE = desTRUE;  myChristieL.VMUTE = TRUE
 					CASE 'OFF':	myChristieL.desVMUTE = desFALSE; myChristieL.VMUTE = FALSE
@@ -349,10 +349,10 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_BUSY]{
 
 		ElapsedSecs = TIMELINE.REPETITION;
 		RemainSecs = _TotalSecs - ElapsedSecs;
-		  
+
 		TextSecs = ITOA(RemainSecs % 60)
 		IF(LENGTH_ARRAY(TextSecs) = 1) TextSecs = "'0',Textsecs"
-		
+
 		SEND_STRING vdvControl, "'TIME_RAW-',ITOA(RemainSecs),':',ITOA(_TotalSecs)"
 		SEND_STRING vdvControl, "'TIME-',ITOA(RemainSecs / 60),':',TextSecs"
 	}

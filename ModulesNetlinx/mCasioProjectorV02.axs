@@ -110,16 +110,16 @@ DEFINE_FUNCTION fnDebug(INTEGER pFORCE,CHAR pMsg[], CHAR pMsgData[]){
 }
 	(** Process Feedback from Projector **)
 DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
-	
+
 	IF(pDATA[1] == '>'){
 		RETURN
 	}
 	// Eat the initial "'*'"
 	GET_BUFFER_CHAR(pDATA)
-	
+
 	// Eat the final '#'
 	pDATA = fnStripCharsRight(pDATA,1)
-	
+
 	SWITCH(UPPER_STRING(fnStripCharsRight(REMOVE_STRING(pDATA,'=',1),1))){
 		CASE 'POW':{
 			SWITCH(UPPER_STRING(pDATA)){
@@ -145,7 +145,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 			}
 		}
 	}
-	
+
 	IF(TIMELINE_ACTIVE(TLID_COMMS)){TIMELINE_KILL(TLID_COMMS)}
 	TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 	myCasioProj.TxPend = FALSE

@@ -118,7 +118,7 @@ DEFINE_FUNCTION RegisterAssetParameters()
 {
   //Register all snapi HAS_xyz components
   RegisterAssetParametersSnapiComponents(assetClientKey);
- 
+
 	// IP Address
 	RmsAssetParameterEnqueueString(
 		assetClientKey,
@@ -163,7 +163,7 @@ DEFINE_FUNCTION SynchronizeAssetParameters()
    SynchronizeAssetParametersSnapiComponents(assetClientKey)
 	// IP Address
 	RmsAssetParameterEnqueueSetValue(assetClientKey,'asset.network.ip',MONITOR_ASSET_IP_ADDRESS);
-	
+
 	RmsAssetParameterUpdatesSubmit (assetClientKey)
 }
 
@@ -329,7 +329,7 @@ DATA_EVENT[vdvDevice]{
     SEND_COMMAND vdvDevice, "'PROPERTY-RMS-Type,Asset'"
   }
   COMMAND:{
-		
+
   }
   STRING:{
 		SWITCH(REMOVE_STRING(DATA.TEXT,'-',1)){

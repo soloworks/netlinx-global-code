@@ -2,10 +2,10 @@
 INCLUDE 'CustomFunctions'
 /******************************************************************************
 	Basic module for monitoring Solstice Pod based on an HTML / HTTP Response
-	
+
 	Live Stream 1: rtsp://192.168.64.239/
 	Live Stream 2: rtsp://192.168.64.239/video?inst=2
-	
+
 ******************************************************************************/
 /******************************************************************************
 	Structures
@@ -42,7 +42,7 @@ LONG TLT_COMM[] = { 120000 }
 
 /******************************************************************************
 	Connection Utlity Functions
-******************************************************************************/ 
+******************************************************************************/
 DEFINE_FUNCTION fnStartHTTPConnection(){
 	IF(!LENGTH_ARRAY(myBoschCamera.IP_HOST)){
 		fnDebug(TRUE,'Bosch IP not set','')
@@ -50,9 +50,9 @@ DEFINE_FUNCTION fnStartHTTPConnection(){
 	ELSE{
 		fnDebug(FALSE,'Connecting to Bosch on',"myBoschCamera.IP_HOST,':',ITOA(myBoschCamera.IP_PORT)")
 		myBoschCamera.IP_CONN_STATE = IP_STATE_REQUESTING
-		ip_client_open(ipDevice.port, myBoschCamera.IP_HOST, myBoschCamera.IP_PORT, IP_TCP) 
+		ip_client_open(ipDevice.port, myBoschCamera.IP_HOST, myBoschCamera.IP_PORT, IP_TCP)
 	}
-} 
+}
 DEFINE_FUNCTION fnCloseHTTPConnection(){
 	IP_CLIENT_CLOSE(ipDevice.port)
 }
@@ -74,7 +74,7 @@ DEFINE_FUNCTION fnDebugHTTP(CHAR Msg[], CHAR MsgData[]){
 }
 /******************************************************************************
 	Command Format Utlity Functions
-******************************************************************************/ 
+******************************************************************************/
 
 DEFINE_FUNCTION CHAR[1000] fnGetBICOMviaRCP(CHAR pREQ[2],CHAR pBOSCHID[4],CHAR pObjectID[4],CHAR pOperation[]){
 	STACK_VAR CHAR pReturn[1000]
@@ -84,7 +84,7 @@ DEFINE_FUNCTION CHAR[1000] fnGetBICOMviaRCP(CHAR pREQ[2],CHAR pBOSCHID[4],CHAR p
 }
 /******************************************************************************
 	Command Queuing Utlity Functions
-******************************************************************************/ 
+******************************************************************************/
 
 DEFINE_FUNCTION fnAddToQueue(CHAR pDATA[]){
 	STACK_VAR CHAR pRequest[1000]
@@ -103,7 +103,7 @@ DEFINE_FUNCTION fnSendFromQueue(){
 }
 /******************************************************************************
 	Polling Utlity Functions
-******************************************************************************/ 
+******************************************************************************/
 DEFINE_FUNCTION fnInitPoll(){
 	IF(TIMELINE_ACTIVE(TLID_POLL)){TIMELINE_KILL(TLID_POLL)}
 	TIMELINE_CREATE(TLID_POLL,TLT_POLL,LENGTH_ARRAY(TLT_POLL),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
@@ -170,13 +170,13 @@ DEFINE_EVENT DATA_EVENT[ipDevice]{
 		myBoschCamera.IP_CONN_STATE = IP_STATE_IDLE
 		fnSendFromQueue()
 	}
-	ONLINE:{    
+	ONLINE:{
 		STACK_VAR CHAR toSend[1000]
 		myBoschCamera.IP_CONN_STATE = IP_STATE_CONNECTED
 		toSend = REMOVE_STRING(myBoschCamera.Tx,"$0D,$0A,$0D,$0A",1)
 		SEND_STRING ipDevice,toSend
 		fnDebugHTTP('->BOSCH',toSend)
-	}    
+	}
 	ONERROR:{
 		STACK_VAR CHAR pERROR[50]
 		SWITCH(DATA.NUMBER){

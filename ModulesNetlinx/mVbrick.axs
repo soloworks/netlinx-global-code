@@ -5,12 +5,12 @@
 	ACTION-CLEAR
 	ACTION-BEGIN
 	ACTION-QUIT
-	
+
 	Where x = ID 1-4:
 	STREAM-x,APPLY
 	STREAM-x,START
 	STREAM-x,STOP
-	
+
 ******************************************************************************/
 INCLUDE 'CustomFunctions'
 /******************************************************************************
@@ -61,9 +61,9 @@ DEFINE_FUNCTION fnDebug(INTEGER bForce, CHAR Msg[], CHAR MsgData[]){
 DEFINE_FUNCTION fnOpenTCPConnection(){
 	fnDebug(FALSE,'Connecting to Vbrick on ',"myTCP.IP,':',ITOA(myTCP.PORT)")
 	myTCP.CONN_STATE = CONN_TRYING
-	ip_client_open(ipConn.port, myTCP.IP, myTCP.PORT, IP_TCP) 
-} 
- 
+	ip_client_open(ipConn.port, myTCP.IP, myTCP.PORT, IP_TCP)
+}
+
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(ipConn.port)
 }
@@ -161,13 +161,13 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
 			CASE 'PROPERTY':{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
-					CASE 'IP':{ 
+					CASE 'IP':{
 						myTCP.IP = fnStripCharsRight(REMOVE_STRING(DATA.TEXT,':',1),1)
 						myTCP.PORT = ATOI(DATA.TEXT)
 						IF(TIMELINE_ACTIVE(TLID_BOOT)){TIMELINE_KILL(TLID_BOOT)}
 						TIMELINE_CREATE(TLID_BOOT,TLT_BOOT,LENGTH_ARRAY(TLT_BOOT),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 					}
-					CASE 'DEBUG': myTCP.DEBUG = (ATOI(DATA.TEXT) || DATA.TEXT == 'TRUE');	
+					CASE 'DEBUG': myTCP.DEBUG = (ATOI(DATA.TEXT) || DATA.TEXT == 'TRUE');
 				}
 			}
 			CASE 'RAW':{

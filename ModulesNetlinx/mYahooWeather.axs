@@ -1,4 +1,4 @@
-MODULE_NAME='mYahooWeather'(DEV vdvControl, DEV tp[], DEV ipDevice) 
+MODULE_NAME='mYahooWeather'(DEV vdvControl, DEV tp[], DEV ipDevice)
 INCLUDE 'CustomFunctions'
 /******************************************************************************
 	Basic parsing module for Yahoo Weather, with UI
@@ -118,7 +118,7 @@ DEFINE_FUNCTION fnFeedbackNew(){
 		SEND_STRING vdvControl, "'REGION-',newWeather.REGION"
 		SEND_COMMAND tp, "'^TXT-',ITOA(addREGION+addOFFSET),',0,',newWeather.REGION"
 	}
-	
+
 	IF(newWeather.windCHILL != curWeather.windCHILL){
 		SEND_STRING vdvControl, "'WIND-CHILL,',ITOA(newWeather.windCHILL)"
 		SEND_COMMAND tp, "'^TXT-',ITOA(addwindCHILL+addOFFSET),',0,',ITOA(newWeather.windCHILL)"
@@ -133,7 +133,7 @@ DEFINE_FUNCTION fnFeedbackNew(){
 		SEND_STRING vdvControl, "'WIND-SPEED,',ITOA(newWeather.windSPEED)"
 		SEND_COMMAND tp, "'^TXT-',ITOA(addwindSPEED+addOFFSET),',0,',ITOA(newWeather.windSPEED)"
 	}
-	
+
 	IF(newWeather.SUNRISE != curWeather.SUNRISE){
 		SEND_STRING vdvControl, "'SUNRISE-',newWeather.SUNRISE"
 		SEND_COMMAND tp, "'^TXT-',ITOA(addSUNRISE+addOFFSET),',0,',newWeather.SUNRISE"
@@ -142,7 +142,7 @@ DEFINE_FUNCTION fnFeedbackNew(){
 		SEND_STRING vdvControl, "'SUNSET-',newWeather.SUNSET"
 		SEND_COMMAND tp, "'^TXT-',ITOA(addSUNSET+addOFFSET),',0,',newWeather.SUNSET"
 	}
-	
+
 	IF(newWeather.condTEXT != curWeather.condTEXT){
 		SEND_STRING  vdvControl, "'CONDITION-TEXT,',newWeather.condTEXT"
 		SEND_LEVEL   tp,lvlcondCODE+lvlOFFSET,newWeather.condCODE+1
@@ -158,7 +158,7 @@ DEFINE_FUNCTION fnFeedbackNew(){
 		SEND_COMMAND tp, "'^TXT-',ITOA(addcondTEMP_Split[2]+addOFFSET),',0,',ITOA(newWeather.condTEMP_SPLIT[2])"
 		SEND_STRING vdvControl, "'CONDITION-TEMP,',ITOA(newWeather.condTEMP)"
 		SEND_COMMAND tp, "'^TXT-',ITOA(addcondTEMP+addOFFSET),',0,',ITOA(newWeather.condTEMP)"
-		
+
 	}
 	IF(newWeather.condDATE != curWeather.condDATE){
 		SEND_STRING vdvControl, "'CONDITION-DATE,',newWeather.condDATE"
@@ -171,15 +171,15 @@ DEFINE_FUNCTION fnRefreshPanel(INTEGER pPanel){
 	SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addCITY+addOFFSET),',0,',curWeather.CITY"
 	SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addCOUNTRY+addOFFSET),',0,',curWeather.COUNTRY"
 	SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addREGION+addOFFSET),',0,',curWeather.REGION"
-	
+
 	SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addwindCHILL+addOFFSET),',0,',ITOA(curWeather.windCHILL)"
 	SEND_LEVEL 	 tp[pPanel], lvlwindDEGREE+lvlOFFSET, curWeather.windDEGREE
 	SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addwindDIR+addOFFSET),',0,',fnGetWindDir(curWeather.windDEGREE)"
 	SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addwindSPEED+addOFFSET),',0,',ITOA(curWeather.windSPEED)"
-	
+
 	SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addSUNRISE+addOFFSET),',0,',ITOA(curWeather.SUNRISE)"
 	SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addSUNSET+addOFFSET),',0,',ITOA(curWeather.SUNSET)"
-	
+
 	SEND_LEVEL   tp[pPanel], lvlcondCODE+lvlOFFSET, curWeather.condCODE+1
 	SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addcondTEXT+addOFFSET),',0,',curWeather.condTEXT"
 	IF(curWeather.condTEMP_SPLIT[1]){
@@ -222,8 +222,8 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_BOOT]{
 	TIMELINE_CREATE(TLID_POLL,TLT_POLL,LENGTH_ARRAY(TLT_POLL),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
 }
 
-DEFINE_FUNCTION fnSendQuery(){ //Goes to an external site and gets the RSS Data		
-	IF(!myCOMMS.WOEID){myCOMMS.WOEID = 44418}		// Default to London	
+DEFINE_FUNCTION fnSendQuery(){ //Goes to an external site and gets the RSS Data
+	IF(!myCOMMS.WOEID){myCOMMS.WOEID = 44418}		// Default to London
 	IF(myCOMMS.UNITS == ''){myCOMMS.UNITS = 'c'}	// Default to London
 	SEND_STRING ipDevice,"'GET /forecastrss?w=',ITOA(myCOMMS.WOEID),'&u=c',' HTTP/1.1',13,10"
 	SEND_STRING ipDevice,"'Host: weather.yahooapis.com',13,10"

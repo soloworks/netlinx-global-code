@@ -2,7 +2,7 @@ MODULE_NAME='mBoseESP'(DEV vdvControl, DEV vdvObjects[], DEV dvDevice)
 INCLUDE 'CustomFunctions'
 /******************************************************************************
 	Bose ESP Module
-	By Solo Control Ltd (www.solocontrol.co.uk)	
+	By Solo Control Ltd (www.solocontrol.co.uk)
 ******************************************************************************/
 /******************************************************************************
 	Module Structures
@@ -12,14 +12,14 @@ DEFINE_CONSTANT
 INTEGER OBJ_TYPE_GAIN			= 1
 // Object States
 INTEGER OBJ_STATE_MUTE_GAIN	= 1	// Object Mute State
-// Object Level 
+// Object Level
 INTEGER OBJ_LEVEL_GAIN			= 1	// Object Gain Value
 INTEGER OBJ_LEVEL_STEP			= 2	// Object Step value for VOL changes
 // IP States
 INTEGER IP_STATE_OFFLINE		= 0
 INTEGER IP_STATE_CONNECTING	= 1
 INTEGER IP_STATE_CONNECTED		= 2
-// Generic Object 
+// Generic Object
 DEFINE_TYPE STRUCTURE uObject{
 	INTEGER	TYPE
 	CHAR 		ID[255]			// Main Reference Tag
@@ -48,11 +48,11 @@ DEFINE_TYPE STRUCTURE uDevice{
 DEFINE_TYPE STRUCTURE uESP{
 	// Comms
 	CHAR 		RX[2000]						// Receieve Buffer
-	INTEGER 	IP_PORT						// 
-	CHAR		IP_HOST[255]				//	
-	INTEGER 	IP_STATE						// 
-	INTEGER	isIP					
-	INTEGER 	DEBUG							// Debugging	
+	INTEGER 	IP_PORT						//
+	CHAR		IP_HOST[255]				//
+	INTEGER 	IP_STATE						//
+	INTEGER	isIP
+	INTEGER 	DEBUG							// Debugging
 	CHAR		BAUD[10]						// Current Baud Rate for RS232
 	// State
 	CHAR 		SYS_NAME[255]				// System Name
@@ -137,7 +137,7 @@ DEFINE_START{
 DEFINE_FUNCTION fnSendCommand(CHAR pDATA[]){
 	STACK_VAR CHAR toSend[255]
 	toSend = "pDATA,$0D"
-	
+
 	IF(myESPUnit.IP_STATE == IP_STATE_CONNECTED){
 		fnDebug(FALSE,'->ESP',toSend)
 		SEND_STRING dvDevice, toSend
@@ -159,9 +159,9 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 	ELSE{
 		fnDebug(FALSE,'Connecting to ESP on ',"myESPUnit.IP_HOST,':',ITOA(myESPUnit.IP_PORT)")
 		myESPUnit.IP_STATE = IP_STATE_CONNECTING
-		ip_client_open(dvDevice.port, myESPUnit.IP_HOST, myESPUnit.IP_PORT, IP_TCP) 
+		ip_client_open(dvDevice.port, myESPUnit.IP_HOST, myESPUnit.IP_PORT, IP_TCP)
 	}
-} 
+}
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(dvDevice.port)
 }
@@ -323,7 +323,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 						}
 						ELSE{
 							myESPUnit.IP_HOST = DATA.TEXT
-							myESPUnit.IP_PORT = 10055 
+							myESPUnit.IP_PORT = 10055
 						}
 						fnRetryConnection()
 					}

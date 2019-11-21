@@ -62,7 +62,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 	GET_BUFFER_CHAR(DATA.TEXT)
 	SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
 		CASE 'RPT':{	// Position Response
-			myMoog.POSITION = ATOI(pDATA)	
+			myMoog.POSITION = ATOI(pDATA)
 		}
 	}
 }

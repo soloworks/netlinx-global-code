@@ -86,7 +86,7 @@ DEFINE_FUNCTION RegisterAssetParameters()
 {
   //Register all snapi HAS_xyz components
   RegisterAssetParametersSnapiComponents(assetClientKey);
-  
+
 	// Current Input
 	RmsAssetParameterEnqueueEnumeration(
 		assetClientKey,
@@ -198,18 +198,18 @@ DEFINE_FUNCTION SynchronizeAssetParameters()
 	RmsAssetParameterEnqueueSetValueBoolean(assetClientKey,'asset.custom.power',[vdvDevice,255])
 	// Input State
 	RmsAssetParameterEnqueueSetValue(assetClientKey,"'asset.custom.input'",  myAsset.INPUT)
-	
+
 	IF(myAsset.LAMPLIFE){
 		RmsAssetParameterEnqueueSetValueDecimal(assetClientKey,"'display.usage'",  myAsset.LAMPHOURS)
 	}
-	
+
 	IF(myAsset.VOL_RANGE[1] != myAsset.VOL_RANGE[2]){
 		// Mute State
 		RmsAssetParameterEnqueueSetValueBoolean(assetClientKey,'asset.custom.mute',[vdvDevice,199]);
 		// Volume State
 		RmsAssetParameterEnqueueSetValueLevel(assetClientKey,'asset.custom.volume',myAsset.VOL);
 	}
-	
+
 	RmsAssetParameterUpdatesSubmit (assetClientKey)
 }
 (***********************************************************)
@@ -227,7 +227,7 @@ DEFINE_FUNCTION SynchronizeAssetParameters()
 DEFINE_FUNCTION RegisterAssetMetadata()
 {
 
-		  
+
   //Register all snapi HAS_xyz components
   RegisterAssetMetadataSnapiComponents(assetClientKey);
 
@@ -285,7 +285,7 @@ DEFINE_FUNCTION RegisterAssetControlMethods()
 	  RmsAssetControlMethodArgumentLevel  (assetClientKey,  'asset.customaction.volume', 0,
 																			 'Volume', 'Set Volume',
 																			 30,myAsset.VOL_RANGE[1],myAsset.VOL_RANGE[2],5);
-	
+
 		// Mute Control
 	  RmsAssetControlMethodEnqueue        (assetClientKey,  'asset.customaction.mute', 'Mute Status', 'Set Mute');
 	  RmsAssetControlMethodArgumentEnum   (assetClientKey,  'asset.customaction.mute', 0,

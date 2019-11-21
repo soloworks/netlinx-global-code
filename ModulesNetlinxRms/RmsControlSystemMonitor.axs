@@ -326,11 +326,11 @@ DATA_EVENT[vdvDevice]
 {
   ONLINE:
   {
-	
+
   }
   OFFLINE:
   {
-	
+
   }
 }
 

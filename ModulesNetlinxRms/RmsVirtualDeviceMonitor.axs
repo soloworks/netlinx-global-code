@@ -102,7 +102,7 @@ DEFINE_FUNCTION RegisterAsset(RmsAsset asset)
   asset.manufacturerUrl = '';
   asset.modelName = 'VirtualDevice';
   asset.modelUrl = '';
-	
+
   // register the virtual device
   IF(!DISABLED){
 		RmsAssetRegister(vdvDevice,asset);

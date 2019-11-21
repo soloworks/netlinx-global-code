@@ -17,7 +17,7 @@ DEFINE_TYPE STRUCTURE uIPTV{
 	CHAR	  SOFTWARE[255]
 	CHAR	  MODEL[255]
 	CHAR 	  CHAN[255]
-	
+
 	INTEGER CONFIG_FILE_FOUND
 }
 DEFINE_TYPE STRUCTURE uChan{
@@ -96,8 +96,8 @@ DEFINE_FUNCTION fnOpenTCPConnection(){
 			IP_CLIENT_OPEN(dvExterity.port, myIPTVComms.IP, myIPTVComms.PORT, IP_TCP)
 		}
 	}
-} 
- 
+}
+
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(dvExterity.port)
 }
@@ -169,7 +169,7 @@ DEFINE_START{
 	myIPTVComms.PASSWORD = 'labrador'
 	CREATE_BUFFER dvExterity, myIPTVComms.Rx
 	myIPTVComms.isIP = !(dvExterity.NUMBER)
-	
+
 	fnLoadConfigFile('ExterityConfig.txt')
 }
 
@@ -181,7 +181,7 @@ DEFINE_EVENT DATA_EVENT[dvExterity]{
 			myIPTVComms.TRYING 		= FALSE;
 		}
 		ELSE{
-			SEND_COMMAND dvExterity, 'SET MODE DATA' 
+			SEND_COMMAND dvExterity, 'SET MODE DATA'
 			SEND_COMMAND dvExterity, 'SET BAUD 115200 N 8 1 485 DISABLE'
 		}
 		fnPoll()
@@ -240,7 +240,7 @@ DEFINE_EVENT DATA_EVENT[dvExterity]{
 				STACK_VAR CHAR _LINE[255]
 				fnDebug(FALSE,'IPTV->AMX',DATA.TEXT);
 				_LINE = fnStripCharsRight(REMOVE_STRING(myIPTVComms.Rx,"$0D,$0A",1),2)
-				
+
 				IF(FIND_STRING(_LINE,'Exterity Control Interface',1)){
 					myIPTVComms.Rx = ''
 					myIPTVComms.PASSED = TRUE
@@ -291,8 +291,8 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 					CASE 'INC':SEND_STRING dvExterity,"'^send:rm_chup!',$0D"
 					CASE 'DEC':SEND_STRING dvExterity,"'^send:rm_chdown!',$0D"
 					DEFAULT:{
-						SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){		
-							CASE 'URI':fnSendCommand('playChannelUri',DATA.TEXT)		
+						SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
+							CASE 'URI':fnSendCommand('playChannelUri',DATA.TEXT)
 							CASE 'NUM':fnSendCommand('playChannelNumber',DATA.TEXT)
 						}
 					}
@@ -429,7 +429,7 @@ DEFINE_FUNCTION fnProcessConfig(CHAR pFILE[]){
 	STACK_VAR CHAR  thisLine[1000]
 	STACK_VAR INTEGER _LINE
 	STACK_VAR INTEGER x
-	
+
 	// Load Config
 	fnDebug(FALSE,'Opening File ',pFILE)
 	slFileHandle = FILE_OPEN(pFILE,FILE_READ_ONLY)

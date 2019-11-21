@@ -43,14 +43,14 @@ DEFINE_EVENT DATA_EVENT[vdvDevice]{
 			}
 			CASE 'PROPERTY':{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
-					CASE 'IP':{	
+					CASE 'IP':{
 						IF(FIND_STRING(DATA.TEXT,':',1)){
 							myWePresent.IP_HOST = fnStripCharsRight(REMOVE_STRING(DATA.TEXT,':',1),1)
 							myWePresent.IP_PORT = ATOI(DATA.TEXT)
 						}
 						ELSE{
 							myWePresent.IP_HOST = DATA.TEXT
-							myWePresent.IP_PORT = 80 
+							myWePresent.IP_PORT = 80
 						}
 						fnSendQuery()
 						fnInitPoll()
@@ -69,8 +69,8 @@ DEFINE_START{
 DEFINE_FUNCTION fnOpenTCPConnection(){
 	fnDebug(FALSE,"'Trying '","myWePresent.IP_HOST,':',ITOA(myWePresent.IP_PORT)")
 	myWePresent.CONN_STATE = CONN_TRYING
-	ip_client_open(ipDevice.port, "myWePresent.IP_HOST", myWePresent.IP_PORT, IP_TCP) 
-} 
+	ip_client_open(ipDevice.port, "myWePresent.IP_HOST", myWePresent.IP_PORT, IP_TCP)
+}
 DEFINE_FUNCTION fnCloseTCPConnection(){
 	IP_CLIENT_CLOSE(ipDevice.port)
 }
@@ -117,7 +117,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_POLL]{
 DEFINE_FUNCTION fnSendQuery(){
 	STACK_VAR CHAR toSend[1000]
 	(** Dump If Requested **)
-	
+
 	(** Build Header **)
 	toSend = "toSend,'GET / HTTP/1.0',$0D,$0A"
 	toSend = "toSend,'Host: ',myWePresent.IP_HOST,':',ITOA(myWePresent.IP_PORT),$0D,$0A"
@@ -127,7 +127,7 @@ DEFINE_FUNCTION fnSendQuery(){
 		fnOpenTCPConnection()
 	}
 }
-	
+
 DEFINE_EVENT DATA_EVENT[ipDevice]{
 	STRING:{
 		IF(!myWePresent.DISABLED){
@@ -165,7 +165,7 @@ DEFINE_EVENT DATA_EVENT[ipDevice]{
 					STACK_VAR INTEGER pEnd
 					STACK_VAR CHAR 	pName[100]
 					pStart 	= FIND_STRING(myWePresent.Rx,'<title>',1) + 7
-					pEnd 		= FIND_STRING(myWePresent.Rx,'</title>',1) - pStart 
+					pEnd 		= FIND_STRING(myWePresent.Rx,'</title>',1) - pStart
 					fnDebug(FALSE,'Start/End',"ITOA(pStart),'/',ITOA(pEnd)")
 					pName 	= MID_STRING(myWePresent.Rx,pStart,pEnd)
 					IF(myWePresent.DEVICE_NAME != pName){
@@ -185,14 +185,14 @@ DEFINE_EVENT DATA_EVENT[ipDevice]{
 			fnOpenTCPConnection()
 		}
 	}
-	ONLINE:{    
+	ONLINE:{
 		STACK_VAR CHAR toSend[1000]
 		toSend = REMOVE_STRING(myWePresent.Tx,"$0D,$0A,$0D,$0A",1)
 		myWePresent.CONN_STATE = CONN_ONLINE
 		fnDebug(FALSE,'->WeP',toSend)
 		myWePresent.HEADER_DONE = FALSE
 		SEND_STRING ipDevice,toSend
-	}    
+	}
 	ONERROR:{
 		IF(myWePresent.CONN_STATE == CONN_ONLINE){
 			myWePresent.CONN_STATE = CONN_OFFLINE

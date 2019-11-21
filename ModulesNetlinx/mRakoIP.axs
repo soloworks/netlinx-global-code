@@ -154,8 +154,8 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 			}
 			IF(fnGetSplitStringValue(pDATA,':',4) != ''){
 				pMSG = "pMsg,',',fnGetSplitStringValue(pDATA,':',4)"
-			}			
-			
+			}
+
 			fnDebug(TRUE,pCMD,pMSG)
 			SEND_STRING vdvControl,"pCMD,'-',pMSG"
 		}

@@ -259,7 +259,7 @@ DEFINE_FUNCTION RmsEventAssetRegistered(CHAR registeredAssetClientKey[], LONG as
     // and is not known until the asset registration event is received. This statement ensures that
     // the actual asset client key is alway known
     assetClientKey = registeredAssetClientKey;
-  
+
     // set registered state flag for this asset
     ON[assetRegistered];
 

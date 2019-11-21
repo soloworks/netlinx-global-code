@@ -327,7 +327,7 @@ DATA_EVENT[vdvDevice]{
     SEND_COMMAND vdvDevice, "'PROPERTY-RMS-Type,Asset'"
   }
   COMMAND:{
-		
+
   }
   STRING:{
 		SWITCH(REMOVE_STRING(DATA.TEXT,'-',1)){
