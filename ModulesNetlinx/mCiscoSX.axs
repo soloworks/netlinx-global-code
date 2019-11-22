@@ -327,7 +327,8 @@ INTEGER btnDirMethods[] = {
 INTEGER btnDirControl[] = {
 	651,652,653,654	// PREV|NEXT|RESET|CLEARSEARCH
 }
-INTEGER btnDirDial	 	= 655
+INTEGER btnDirDial	 		= 655
+INTEGER btnRecentCallDial	= 656
 
 INTEGER btnDirSearchKB[] = {
 	661,662,663,664,665,666,667,668,669,670,	// Row One
@@ -339,13 +340,10 @@ INTEGER btnDirSearchKB[] = {
 	690,	// NUMLOCK
 	691,	// DELETE
 	692,	// SUBMIT
-	693	// CANCEL
+	693,	// CANCEL
+	694,695,696,697,698,699,700,701,702,703	// Row 4 (Digits)
 }
 
-/******************************************************************************
-	Button Numbers - Recent Calls List
-******************************************************************************/
-INTEGER btnRecentCallDial	 	= 701
 /******************************************************************************
 	Button Numbers - Custom Speed Dialing
 ******************************************************************************/
@@ -2029,6 +2027,9 @@ DEFINE_FUNCTION fnDrawSearchKB(INTEGER pPanel){
 	FOR(x = 1; x <= 26; x++){
 		SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(btnDirSearchKB[x]),',0,',DialKB[1][x]"
 	}
+	FOR(x = 1; x <= 10; x++){
+		SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(btnDirSearchKB[33+x]),',0,',DialKB[3][x]"
+	}
 }
 
 DEFINE_FUNCTION fnUpdatePanelDialString(INTEGER pPanel){
@@ -2847,7 +2848,14 @@ DEFINE_EVENT BUTTON_EVENT[tp,btnDirSearchKB]{
 				fnLoadDirectory()
 			}
 			CASE 33:mySX.DIRECTORY.SEARCH2 =  mySX.DIRECTORY.SEARCH1
-			DEFAULT:mySX.DIRECTORY.SEARCH2 = "mySX.DIRECTORY.SEARCH2,DialKB[1][GET_LAST(btnDirSearchKB)]"
+			DEFAULT:{
+				IF(GET_LAST(btnDirSearchKB) <= 26){
+					mySX.DIRECTORY.SEARCH2 = "mySX.DIRECTORY.SEARCH2,DialKB[1][GET_LAST(btnDirSearchKB)]"
+				}
+				ELSE{
+					mySX.DIRECTORY.SEARCH2 = "mySX.DIRECTORY.SEARCH2,DialKB[3][GET_LAST(btnDirSearchKB)-33]"
+				}
+			}
 		}
 		fnDisplaySearchStrings()
 	}
