@@ -261,7 +261,17 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
 			CASE 'PROPERTY':{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
-					CASE 'IP':{ 	_IP 	= DATA.TEXT;fnCloseConnection(); }
+					CASE 'IP':{
+						IF(FIND_STRING(DATA.TEXT,':',1)){
+							_IP   = fnStripCharsRight(REMOVE_STRING(DATA.TEXT,':',1),1)
+							_PORT = ATOI(DATA.TEXT)
+						}
+						ELSE{
+							_IP   = DATA.TEXT
+							_PORT = 1024
+						}
+						fnCloseConnection()
+					}
 					CASE 'DEBUG':{ DEBUG = ATOI(DATA.TEXT) }
 				}
 			}
