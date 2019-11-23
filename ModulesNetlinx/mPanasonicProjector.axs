@@ -209,6 +209,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 						SEND_COMMAND dvDevice, "'SET BAUD ',myPanaProj.BAUD,' N 8 1 485 DISABLE'"
 						fnPoll()
 					}
+					CASE 'DEBUG':{ myPanaProj.DEBUG = ATOI(DATA.TEXT) }
 				}
 			}
 			CASE 'RAW':{

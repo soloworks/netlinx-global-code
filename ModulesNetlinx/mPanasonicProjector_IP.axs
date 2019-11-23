@@ -240,6 +240,12 @@ DEFINE_EVENT DATA_EVENT[ipDevice]{
 			CASE 17:{_MSG = 'Local port not Open'}				// Local Port Not Open
 		}
 		fnDebug(TRUE,"'Pana IP Error:[',_IP,']'","'[',ITOA(DATA.NUMBER),'][',_MSG,']'")
+		SWITCH(DATA.NUMBER){
+			CASE 6:
+			CASE 14:
+			CASE 15:
+			CASE 16:{bConnOpen = TRUE}// This is so that the connection can be closed before retrying.
+		}
 	}
 	STRING:{
 		fnDebug(FALSE,'Pana->AMX',DATA.TEXT);
