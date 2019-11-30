@@ -8,7 +8,7 @@ INCLUDE 'md5'
 	vdvControl Commands
 	DEBUG-X 				= Debugging Off (Default)
 	INPUT-XXX 			= Go to Input, power on if required
-		[VIDEO|SVIDEO|RGB1|RGB2|AUX|DVI]
+		[VIDEO|SVIDEO|VGA1|VGA2|AUX|DVI|HDMI]
 	POWER-ON|OFF 		= Send input X to ouput Y
 	FREEZE-ON|OFF		= Picture Freeze
 	BLANK-ON|OFF		= Video Mute
@@ -416,12 +416,12 @@ DEFINE_FUNCTION fnSendInputCommand(){
 		  CASE 'VGA2':		fnSendCommand('IIS','RG2');
 		  CASE 'AUX':		fnSendCommand('IIS','AUX');
 		  CASE 'DVI1':		fnSendCommand('IIS','DVI');
-		  CASE 'HDMI1':		fnSendCommand('IIS','HD1');
+		  CASE 'HDMI1':	fnSendCommand('IIS','HD1');
 	}
 	IF(TIMELINE_ACTIVE(TLID_AUTOADJ)){TIMELINE_KILL(TLID_AUTOADJ)}
 	SWITCH(doINPUT){
-		CASE 'RGB1':
-		CASE 'RGB2':{
+		CASE 'VGA1':
+		CASE 'VGA2':{
 			TIMELINE_CREATE(TLID_AUTOADJ,TLT_AUTOADJ,LENGTH_ARRAY(TLT_AUTOADJ),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 		}
 	}
