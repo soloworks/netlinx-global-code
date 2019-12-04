@@ -559,7 +559,15 @@ DEFINE_FUNCTION SLONG fnScaleRange(SLONG slNum_In, SLONG slMin_In, SLONG slMax_I
         SEND_STRING 0, "'Scale_Range() Error: Invalid value. Enter a value between ',ITOA(slMin_In),' and ',ITOA(slMax_In),'.'"
         Return -1
     }
-    ELSE
+    ELSE IF (slPassByReferenceBug == slMin_In)
+	 {
+		Return slMin_Out
+	 }
+    ELSE IF (slPassByReferenceBug == slMax_In)
+	 {
+		Return slMax_Out
+	 }
+	 ELSE
     {
         slRange_In = slMax_In - slMin_In      // Establish input range
         slRange_Out = slMax_Out - slMin_Out   // Establish output range
