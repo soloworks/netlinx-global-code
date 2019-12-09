@@ -244,6 +244,10 @@
 <FilePathName>ModulesNetlinx\mDataPathFX4.axs</FilePathName>
 <Comments></Comments>
 </File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mDataPathIolite</Identifier>
+<FilePathName>ModulesNetlinx\mDataPathIolite.axs</FilePathName>
+<Comments></Comments>
+</File>
 <File CompileType="Netlinx" Type="Module"><Identifier>mDeltaPlayer</Identifier>
 <FilePathName>ModulesNetlinx\mDeltaPlayer.axs</FilePathName>
 <Comments></Comments>
