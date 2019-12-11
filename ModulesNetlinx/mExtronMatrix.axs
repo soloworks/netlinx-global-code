@@ -11,11 +11,12 @@ DEFINE_TYPE STRUCTURE uAudio{
 }
 DEFINE_TYPE STRUCTURE uMatrix{
 	// Communications
-	//CHAR 		RX[2000]						// Receieve Buffer
-	INTEGER 	IP_PORT						//
-	CHAR		IP_HOST[255]				//
-	INTEGER 	IP_STATE						//
+	//CHAR 		RX[2000]			// Receieve Buffer
+	INTEGER 	IP_PORT				//
+	CHAR		IP_HOST[255]		//
+	INTEGER 	IP_STATE				//
 	INTEGER	isIP
+	CHAR     PASSWORD[20]
 
 	INTEGER DEBUG					// Debuging ON/OFF
 	INTEGER DISABLED				// Disable Module
@@ -40,28 +41,28 @@ DEFINE_TYPE STRUCTURE uMatrix{
 }
 
 DEFINE_CONSTANT
-LONG TLID_COMMS 	= 1
-LONG TLID_POLL	 	= 2
-LONG TLID_SEND		= 3
-LONG TLID_RETRY	= 5
+LONG TLID_COMMS 	 = 11
+LONG TLID_POLL	 	 = 12
+LONG TLID_SEND		 = 13
+LONG TLID_RETRY	 = 15
 
-LONG TLID_GAIN_00	 = 10
-LONG TLID_GAIN_01	 = 11
-LONG TLID_GAIN_02	 = 12
-LONG TLID_GAIN_03	 = 13
-LONG TLID_GAIN_04	 = 14
-LONG TLID_GAIN_05	 = 15
-LONG TLID_GAIN_06	 = 16
-LONG TLID_GAIN_07	 = 17
-LONG TLID_GAIN_08	 = 18
-LONG TLID_GAIN_09	 = 19
-LONG TLID_GAIN_10	 = 20
-LONG TLID_GAIN_11	 = 21
-LONG TLID_GAIN_12	 = 22
-LONG TLID_GAIN_13	 = 23
-LONG TLID_GAIN_14	 = 24
-LONG TLID_GAIN_15	 = 25
-LONG TLID_GAIN_16	 = 26
+LONG TLID_GAIN_00	 = 20
+LONG TLID_GAIN_01	 = 21
+LONG TLID_GAIN_02	 = 22
+LONG TLID_GAIN_03	 = 23
+LONG TLID_GAIN_04	 = 24
+LONG TLID_GAIN_05	 = 25
+LONG TLID_GAIN_06	 = 26
+LONG TLID_GAIN_07	 = 27
+LONG TLID_GAIN_08	 = 28
+LONG TLID_GAIN_09	 = 29
+LONG TLID_GAIN_10	 = 30
+LONG TLID_GAIN_11	 = 31
+LONG TLID_GAIN_12	 = 32
+LONG TLID_GAIN_13	 = 33
+LONG TLID_GAIN_14	 = 34
+LONG TLID_GAIN_15	 = 35
+LONG TLID_GAIN_16	 = 36
 
 // IP States
 INTEGER IP_STATE_OFFLINE		= 0
@@ -79,7 +80,7 @@ INTEGER MODEL_DTPCrossPoint1084K = 8
 INTEGER MODEL_DTPCrossPoint864K = 9
 
 DEFINE_VARIABLE
-LONG TLT_COMMS[] 	= {90000 }
+LONG TLT_COMMS[] 	= { 90000 }
 LONG TLT_POLL[]  	= {  2000 }
 LONG TLT_SEND[]	= {  2000 }
 LONG TLT_GAIN[]	= {   150 }
@@ -200,6 +201,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 			// Set Verbose Mode
 			#WARN 'Implement with Tagged Responses & Verbose = 3'
 			//fnAddToQueue("$1B,'3CV',$0D")
+			fnAddToQueue('I')
 			fnPoll()
 			fnInitPoll()
 		}
@@ -240,12 +242,22 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 		IF(!myMatrix.DISABLED){
 			fnDebug(FALSE,'Extron->AMX', DATA.TEXT);
 			SELECT{
+				ACTIVE(DATA.TEXT == "$0D,$0A,'Password:'"):{
+					SEND_STRING dvDevice,"myMatrix.PASSWORD,$0D"
+				}
 				ACTIVE(myMatrix.LAST_SENT == '0LS'):{
 					STACK_VAR INTEGER x
 					STACK_VAR CHAR States[16]
 					States = fnStripCharsRight(DATA.TEXT,2)
-					FOR(x = 1; x <= myMatrix.VID_MTX_SIZE[1]; x++){
-						myMatrix.SIGNAL_PRESENT[x] = ATOI("States[x]")
+					IF(!myMatrix.VID_MTX_SIZE[1]){
+						fnAddToQueue('I')
+					}
+					ELSE{
+						FOR(x = 1; x <= myMatrix.VID_MTX_SIZE[1]; x++){
+							myMatrix.SIGNAL_PRESENT[x] = ATOI("States[x]")
+							[vdvControl[1],x] = (myMatrix.SIGNAL_PRESENT[x])
+							fnDebug(FALSE,'ACTIVE SOURCE FEEDBACK: ', "'[vdvControl[1],',ITOA(x),'] = (',ITOA(myMatrix.SIGNAL_PRESENT[x]),')'")
+						}
 					}
 				}
 				ACTIVE(myMatrix.LAST_SENT == 'N'):{
@@ -318,15 +330,34 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 					SEND_STRING vdvControl,"'PROPERTY-META,FW1,',myMatrix.META_FIRMWARE"
 				}
 				ACTIVE(myMatrix.LAST_SENT == 'I'):{
-					GET_BUFFER_CHAR(DATA.TEXT)	// REMOVE 'V'
-					myMatrix.VID_MTX_SIZE[1] = ATOI(GET_BUFFER_STRING(DATA.TEXT,2))
-					GET_BUFFER_CHAR(DATA.TEXT)	// REMOVE 'X'
-					myMatrix.VID_MTX_SIZE[2] = ATOI(GET_BUFFER_STRING(DATA.TEXT,2))
-					GET_BUFFER_CHAR(DATA.TEXT)	// REMOVE ' '
-					GET_BUFFER_CHAR(DATA.TEXT)	// REMOVE 'A'
-					myMatrix.AUD_MTX_SIZE[1] = ATOI(GET_BUFFER_STRING(DATA.TEXT,2))
-					GET_BUFFER_CHAR(DATA.TEXT)	// REMOVE 'X'
-					myMatrix.AUD_MTX_SIZE[2] = ATOI(GET_BUFFER_STRING(DATA.TEXT,2))
+					IF(FIND_STRING(DATA.TEXT,'DTPCP',1)){
+						REMOVE_STRING(DATA.TEXT,'DTPCP',1)
+						SWITCH(fnStripCharsRight(DATA.TEXT,2)){
+							CASE '108':{
+								myMatrix.VID_MTX_SIZE[1] = 10
+								myMatrix.VID_MTX_SIZE[2] = 8
+								myMatrix.AUD_MTX_SIZE[1] = 10
+								myMatrix.AUD_MTX_SIZE[2] = 8
+							}
+							CASE '86':{
+								myMatrix.VID_MTX_SIZE[1] = 8
+								myMatrix.VID_MTX_SIZE[2] = 6
+								myMatrix.AUD_MTX_SIZE[1] = 8
+								myMatrix.AUD_MTX_SIZE[2] = 6
+							}
+						}
+					}
+					ELSE{
+						GET_BUFFER_CHAR(DATA.TEXT)	// REMOVE 'V'
+						myMatrix.VID_MTX_SIZE[1] = ATOI(GET_BUFFER_STRING(DATA.TEXT,2))
+						GET_BUFFER_CHAR(DATA.TEXT)	// REMOVE 'X'
+						myMatrix.VID_MTX_SIZE[2] = ATOI(GET_BUFFER_STRING(DATA.TEXT,2))
+						GET_BUFFER_CHAR(DATA.TEXT)	// REMOVE ' '
+						GET_BUFFER_CHAR(DATA.TEXT)	// REMOVE 'A'
+						myMatrix.AUD_MTX_SIZE[1] = ATOI(GET_BUFFER_STRING(DATA.TEXT,2))
+						GET_BUFFER_CHAR(DATA.TEXT)	// REMOVE 'X'
+						myMatrix.AUD_MTX_SIZE[2] = ATOI(GET_BUFFER_STRING(DATA.TEXT,2))
+					}
 				}
 				ACTIVE(myMatrix.LAST_SENT == 'S'):{
 					// System Status Poll
@@ -419,6 +450,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 				CASE 'PROPERTY':{
 					SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
 						CASE 'DEBUG': 		myMatrix.DEBUG 	= (ATOI(DATA.TEXT) || DATA.TEXT == 'TRUE');
+						CASE 'PASSWORD':  myMatrix.PASSWORD = DATA.TEXT
 						CASE 'IP':{
 							IF(FIND_STRING(DATA.TEXT,':',1)){
 								myMatrix.IP_HOST = fnStripCharsRight(REMOVE_STRING(DATA.TEXT,':',1),1)
@@ -520,11 +552,13 @@ DEFINE_PROGRAM{
 				SEND_LEVEL vdvControl[x],1,myMatrix.AUDIO[x].GAIN
 			}
 		}
+		/* Now done on the receipt of the feedback from device
 		// Signal Detection
 		FOR(x = 1; x <= myMatrix.VID_MTX_SIZE[1]; x++){
 			[vdvControl[1],x] = (myMatrix.SIGNAL_PRESENT[x])
+			SEND_STRING 0, "'[vdvControl[1],',ITOA(x),'] = (',ITOA(myMatrix.SIGNAL_PRESENT[x]),')'"
 		}
-
+		*/
 		[vdvControl[1],251] = (TIMELINE_ACTIVE(TLID_COMMS))
 		[vdvControl[1],252] = (TIMELINE_ACTIVE(TLID_COMMS))
 	}
