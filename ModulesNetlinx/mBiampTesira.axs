@@ -473,6 +473,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pFBData[4000]){
 				DEFAULT:{
 					STACK_VAR INTEGER o
 					LOCAL_VAR SINTEGER NEW_RANGE_LOW
+					LOCAL_VAR SINTEGER NEW_RANGE_HIGH
 					fnDebug(DEBUG_DEV,'fnProcessFeedback',"'myBiAmp.TxPend::',myBiAmp.TxPend")
 					FOR(o=1; o<=LENGTH_ARRAY(vdvObjects); o++){
 						STACK_VAR CHAR pDATA[4000]
@@ -510,15 +511,15 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pFBData[4000]){
 								}
 								IF(myBiAmp.TxPend == "'"',myObjects[o].TAG1,'" get minLevel "',myObjects[o].INDEX1,'"'"){
 									REMOVE_STRING(pDATA,'"value":',1)
-									//myObjects[o].VAL_MIN = ATOI(pDATA)
 									NEW_RANGE_LOW = ATOI(pDATA)
 								}
 								IF(myBiAmp.TxPend == "'"',myObjects[o].TAG1,'" get maxLevel "',myObjects[o].INDEX1,'"'"){
 									REMOVE_STRING(pDATA,'"value":',1)
+									NEW_RANGE_HIGH = ATOI(pDATA)
 									IF(myObjects[o].VAL_MIN != NEW_RANGE_LOW || myObjects[o].VAL_MAX != ATOI(pDATA)){
 										myObjects[o].VAL_MIN = NEW_RANGE_LOW
-										myObjects[o].VAL_MAX = ATOI(pDATA)
-										SEND_STRING vdvObjects[o],"'RANGE-',ITOA(myObjects[o].VAL_MIN),',',ITOA(myObjects[o].VAL_MAX)"
+										myObjects[o].VAL_MAX = NEW_RANGE_HIGH
+										SEND_STRING vdvObjects[o],"myObjects[o].TAG1,',RANGE-',ITOA(myObjects[o].VAL_MIN),',',ITOA(myObjects[o].VAL_MAX)"
 									}
 								}
 							}
