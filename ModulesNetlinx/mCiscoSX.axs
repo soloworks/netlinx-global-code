@@ -1815,7 +1815,15 @@ DEFINE_EVENT DATA_EVENT[vdvControl[1]]{
 						}
 					}
 					ELSE{
-						fnQueueTx('xCommand Video Input',"'SetMainVideoSource ConnectorId: ',DATA.TEXT")
+						STACK_VAR INTEGER ConnectorID
+						ConnectorID = ATOI(DATA.TEXT)
+						//fnQueueTx('xCommand Video Input',"'SetMainVideoSource ConnectorId: ',ITOA(ConnectorID)")
+						IF(mySX.CAMERA[ConnectorID].CONNECTOR_OVERRIDE){
+							fnQueueTx("'xCommand Video Input'","' SetMainVideoSource ConnectorId: ', ITOA(mySX.CAMERA[ConnectorID].CONNECTOR_OVERRIDE)")
+						}
+						ELSE{
+							fnQueueTx("'xCommand Video Input'","' SetMainVideoSource ConnectorId: ', ITOA(mySX.CAMERA[ConnectorID].CONNECTOR)")
+						}
 					}
 				}
 				CASE 'TRACKING':{
