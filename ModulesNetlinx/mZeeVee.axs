@@ -145,7 +145,7 @@ DEFINE_FUNCTION fnSendFromQueue(){
 ******************************************************************************/
 DEFINE_FUNCTION fnInitPoll(){
 	IF(TIMELINE_ACTIVE(TLID_POLL_LONG)){  TIMELINE_KILL(TLID_POLL_LONG) }
-	TIMELINE_CREATE(TLID_POLL_LONG,TLT_POLL_LONG,LENGTH_ARRAY(TLT_POLL_LONG),TIMELINE_RELATIVE,TIMELINE_REPEAT)
+	TIMELINE_CREATE(TLID_POLL_LONG,TLT_POLL_LONG,LENGTH_ARRAY(TLT_POLL_LONG),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
 }
 DEFINE_EVENT TIMELINE_EVENT[TLID_POLL_LONG]{
 	fnPoll()
@@ -218,6 +218,12 @@ DEFINE_EVENT DATA_EVENT[dvIP]{
 					CASE 16:{_MSG = 'Too many open Sockets'}			// Too many open sockets
 					CASE 17:{_MSG = 'Local port not Open'}				// Local Port Not Open
 				}
+				myZeeVeeServer.IP_STATE	= IP_STATE_OFFLINE
+				myZeeVeeServer.Rx = ''
+				myZeeVeeServer.TxCmd = ''
+				myZeeVeeServer.TxQry = ''
+				myZeeVeeServer.PENDING = FALSE
+				myZeeVeeServer.PROCESSING = FALSE
 				fnRetryConnection()
 			}
 		}
@@ -526,6 +532,9 @@ DEFINE_EVENT DATA_EVENT[vdvServer]{
 						fnAddToQueue("'join ',fnGetCSV(DATA.TEXT,1),' ',fnGetCSV(DATA.TEXT,2),' genlocked'",TRUE)
 					}
 				}
+			}
+			CASE 'DISCONNECT':{	
+				
 			}
 		}
 	}
