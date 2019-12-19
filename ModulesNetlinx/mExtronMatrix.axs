@@ -2,7 +2,7 @@ MODULE_NAME='mExtronMatrix'(DEV vdvControl[], DEV dvDevice)
 INCLUDE 'CustomFunctions'
 /******************************************************************************
 	Extron Matrix Module - RMS Enabled
-	
+
 	For DSP enabled matrix under simple output gain control
 	uses virtual DSP channels 1+ as gain & mute point
 ******************************************************************************/
@@ -183,8 +183,15 @@ DEFINE_FUNCTION fnPoll(){
 		IF(myMatrix.HAS_AUDIO){
 			STACK_VAR INTEGER x
 			FOR(x = 1; x <= myMatrix.AUD_MTX_SIZE[2]; x++){
-				fnAddToQueue("ITOA(x),'V'")
-				fnAddToQueue("ITOA(x),'Z'")
+				SWITCH(myMatrix.MODEL_ID){
+					CASE MODEL_DTPCP824K:{
+						fnAddToQueue("$1B,'G',ITOA(50100+x-1),'AU',$0D")
+					}
+					DEFAULT:{
+						fnAddToQueue("ITOA(x),'V'")
+						fnAddToQueue("ITOA(x),'Z'")
+					}
+				}
 			}
 		}
 	}
@@ -311,6 +318,10 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 						CASE MODEL_DTPCP824K:	myMatrix.HAS_AUDIO = TRUE
 						DEFAULT:						myMatrix.HAS_AUDIO = FALSE
 					}
+					SWITCH(myMatrix.MODEL_ID){
+						CASE MODEL_DTPCP824K:	SEND_STRING vdvControl, 'RANGE--100,12'
+						DEFAULT:						SEND_STRING vdvControl, 'RANGE-0,100'
+					}
 					SEND_STRING vdvControl,"'PROPERTY-META,MODEL,',myMatrix.META_MODEL"
 					IF(!myMatrix.HAS_NETWORK){
 						SEND_STRING vdvControl,"'PROPERTY-META,NET_MAC,N/A'"
@@ -367,6 +378,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 					}
 				}
 				ACTIVE(1):{	// Referenced Notifications
+					SEND_COMMAND 0, "'ref==',DATA.TEXT"
 					SELECT{
 						ACTIVE(FIND_STRING(DATA.TEXT,'Vol',1)):{
 							STACK_VAR INTEGER OUTPUT
@@ -377,6 +389,24 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 						}
 						ACTIVE(LEFT_STRING(DATA.TEXT,3) == 'Amt'):{
 							GET_BUFFER_STRING(DATA.TEXT,3)
+							//myMatrix.MUTE = ATOI(DATA.TEXT)
+						}
+						ACTIVE(LEFT_STRING(DATA.TEXT,3) == 'DsG'):{
+							STACK_VAR INTEGER o
+							STACK_VAR CHAR v[10]
+							//DsG50100*-730$0D$0A
+							GET_BUFFER_STRING(DATA.TEXT,3)
+							SEND_STRING 0, "'fb==',DATA.TEXT"
+							o = ATOI(GET_BUFFER_STRING(DATA.TEXT,5))
+							GET_BUFFER_CHAR(DATA.TEXT)
+							v = DATA.TEXT
+							SEND_STRING 0, "'v==',v"
+							SET_LENGTH_ARRAY(v,LENGTH_ARRAY(v)-3)
+							SEND_STRING 0, "'v==',v"
+							SWITCH(o){
+								CASE 50100:myMatrix.AUDIO[1].GAIN = ATOI(v)
+								CASE 50200:myMatrix.AUDIO[2].GAIN = ATOI(v)
+							}
 							//myMatrix.MUTE = ATOI(DATA.TEXT)
 						}
 					}
@@ -415,7 +445,6 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_COMMS]{
 ******************************************************************************/
 DEFINE_EVENT DATA_EVENT[vdvControl]{
 	ONLINE:{
-		SEND_STRING DATA.DEVICE, 'RANGE-0,100'
 	}
 	COMMAND:{// Enable / Disable Module
 		SWITCH(DATA.TEXT){
@@ -459,7 +488,11 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 								//VOL = VOL + ATOI(DATA.TEXT)
 								VOL = ATOI(DATA.TEXT)
 								IF(!TIMELINE_ACTIVE(TLID_GAIN_00+pOUTPUT)){
-									fnAddToQueue("ITOA(pOUTPUT),'*',ITOA(VOL),'V'")
+									SWITCH(myMatrix.MODEL_ID){
+										CASE MODEL_DTPCP824K:   fnAddToQueue("$1B,'G',ITOA(50100+pOUTPUT-1),'*',ITOA(VOL),'0AU',$0D")
+										DEFAULT:						fnAddToQueue("ITOA(pOUTPUT),'*',ITOA(VOL),'V'")
+									}
+									
 									TIMELINE_CREATE(TLID_GAIN_00+pOUTPUT,TLT_GAIN,LENGTH_ARRAY(TLT_GAIN),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 								}
 								ELSE{
@@ -487,7 +520,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 								}
 							}
 						}
-						// Correct Mute State Value for 
+						// Correct Mute State Value for
 						SWITCH(myMatrix.MODEL_ID){
 							CASE MODEL_DTPCP824K:{
 								IF(myMatrix.AUDIO[pOUTPUT].MUTE == 6){
@@ -531,7 +564,10 @@ TIMELINE_EVENT[TLID_GAIN_16]{
 	STACK_VAR INTEGER pOUTPUT
 	pOUTPUT = TIMELINE.ID-TLID_GAIN_00
 	IF(myMatrix.AUDIO[pOUTPUT].GAIN_PEND){
-		fnAddToQueue("ITOA(pOUTPUT),'*',ITOA(myMatrix.AUDIO[pOUTPUT].LAST_GAIN),'V'")
+		SWITCH(myMatrix.MODEL_ID){
+			CASE MODEL_DTPCP824K:   fnAddToQueue("$1B,'G',ITOA(50100+pOUTPUT-1),'*',ITOA(myMatrix.AUDIO[pOUTPUT].LAST_GAIN),'0AU',$0D")
+			DEFAULT:						fnAddToQueue("ITOA(pOUTPUT),'*',ITOA(myMatrix.AUDIO[pOUTPUT].LAST_GAIN),'V'")
+		}
 		myMatrix.AUDIO[pOUTPUT].LAST_GAIN = 0
 		myMatrix.AUDIO[pOUTPUT].GAIN_PEND = FALSE
 		TIMELINE_CREATE(TLID_GAIN_00+pOUTPUT,TLT_GAIN,LENGTH_ARRAY(TLT_GAIN),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
