@@ -410,7 +410,7 @@ DEFINE_FUNCTION SLONG fnTimeToSecondsLocal(CHAR pTIME[8]){
 	TOTAL = TOTAL +(MINS * 60)
 	TOTAL = TOTAL +(SECONDS)
 
-	fnDebug(DEBUG_ERR,'FUNCTION','fnTimeToSecondsLocal',"'(pTIME = ',pTIME,',',' and Returned TOTOAL = ',ITOA(TOTAL),')'")
+	fnDebug(DEBUG_ERR,'FUNCTION','fnTimeToSecondsLocal',"'(pTIME = ',pTIME,',',' and Returned TOTAL = ',ITOA(TOTAL),')'")
 	// Return
 	RETURN( TOTAL )
 }
@@ -426,8 +426,12 @@ DEFINE_FUNCTION CHAR[100] fnSecondsToDurationTextLocal(SLONG pDurationParam, INT
 ******************************************************************************/
 	STACK_VAR CHAR pReturnString[64]
 
-	pReturnString = fnSecondsToDurationText(pDurationParam, pHandleSeconds)
-
+	IF(pDurationParam > 0 || pHandleSeconds > 0){
+		pReturnString = fnSecondsToDurationText(pDurationParam, pHandleSeconds)
+	}
+	ELSE{
+		pReturnString = '< 1 min'
+	}
 	fnDebug(DEBUG_ERR,'FUNCTION','fnSecondsToDurationTextLocal',"'(',pWHEN,', pHandleSeconds = ',ITOA(pHandleSeconds),' pDuration = ',itoa(pDurationParam),' and pReturnString = ',pReturnString,')'")
 	RETURN pReturnString
 }
@@ -556,6 +560,16 @@ DEFINE_FUNCTION INTEGER fnAddSlot(uSlot S){
 	Timeline instead of Feedback to determine Remaining Time
 ********************************************************************************************************************************************************************************************************************************************************/
 DEFINE_VARIABLE VOLATILE CHAR TIME_DEBUGGING[13][128]
+DEFINE_FUNCTION																	fnSingleBeep(){
+	SEND_COMMAND tp,"'ABEEP'" // For G4 Panels
+}
+DEFINE_FUNCTION																	fnDoubleBeep(){
+	SEND_COMMAND tp,"'ADBEEP'" // For G4 Panels
+}
+DEFINE_FUNCTION																	fnTripleBeep(){
+	SEND_COMMAND tp,"'ABEEP'" // For G4 Panels
+	wait 1 SEND_COMMAND tp,"'ADBEEP'" // For G4 Panels
+}
 DEFINE_FUNCTION																	fnStartTimeCheck(){
 	// Create timeline to check for time ticking over to new Minute value
 	TIMELINE_CREATE(TLID_FB_TIME_CHECK,TLT_FB_TIME_CHECK,LENGTH_ARRAY(TLT_FB_TIME_CHECK),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
@@ -594,9 +608,9 @@ DEFINE_FUNCTION																	fnFeedbackTimeCheck(){
 			REMAINING_SECS = myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS + CORRECTION
 			myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_MINS = fnSecsToMins(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS,FALSE)
 			myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT = fnSecondsToDurationTextLocal(REMAINING_SECS,0,'Remaining Seconds Text')
-			TIME_DEBUGGING[08] = "'myRoom.SLOTS[',ITOA(myRoom.SLOT_CURRENT),'].SLOT_REMAIN_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS)"
-			TIME_DEBUGGING[09] = "'REMAINING_SECS = ',ITOA(REMAINING_SECS)"
-			TIME_DEBUGGING[10] = "'myRoom.SLOTS[',ITOA(myRoom.SLOT_CURRENT),'].SLOT_REMAIN_TEXT = ',myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT"
+			TIME_DEBUGGING[08] = "'fnFBTC: myRoom.SLOTS[',ITOA(myRoom.SLOT_CURRENT),'].SLOT_REMAIN_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS)"
+			TIME_DEBUGGING[09] = "'fnFBTC: REMAINING_SECS = ',ITOA(REMAINING_SECS)"
+			TIME_DEBUGGING[10] = "'fnFBTC: myRoom.SLOTS[',ITOA(myRoom.SLOT_CURRENT),'].SLOT_REMAIN_TEXT = ',myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT"
 
 			// Debugging
 			myRoom.CURRENT_SLOT              = myRoom.SLOTS[myRoom.SLOT_CURRENT]
@@ -629,8 +643,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_FB_TIME_CHECK]{
 	IF(SECS <= 5){
 		nCOUNT++
 		IF(nCOUNT == 1){
-			SEND_COMMAND tp,"'^ADBEEP'" // For G4 Panels
-			SEND_COMMAND tp,"'^ADB'"    // For G5 Panels
+			fnTripleBeep()
 			fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_FB_TIME_CHECK',"'time stamp ',TIME")
 			TIME_DEBUGGING[03] = "'TIME = ',TIME"
 			fnFeedbackTimeCheck()
@@ -639,6 +652,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_FB_TIME_CHECK]{
 	ELSE{
 		nCOUNT = 0
 	}
+	fnUpdateFeedback()
 	myRoom.DEBUG = DEBUG_LEVEL
 }
 /********************************************************************************************************************************************************************************************************************************************************
@@ -922,11 +936,10 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 						myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_DURATION_TEXT = fnSecondsToDurationTextLocal(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_DURATION_SECS,0,'Booking Duration')
 						myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT   = fnSecondsToDurationTextLocal(REMAINING_SECS,0,'Booking Remaining Text')
 						// Debugging
-						TIME_DEBUGGING[11] = "'myRoom.SLOTS[',ITOA(myRoom.SLOT_CURRENT),'].SLOT_REMAIN_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS)"
-						TIME_DEBUGGING[12] = "'REMAINING_SECS = ',ITOA(REMAINING_SECS)"
-						TIME_DEBUGGING[13] = "'myRoom.SLOTS[',ITOA(myRoom.SLOT_CURRENT),'].SLOT_REMAIN_TEXT = ',myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT"
-						send_command tp, "'ABEEP'" // G4
-						send_command tp, "'^ABP'"  // G5
+						TIME_DEBUGGING[11] = "'BOOKING: myRoom.SLOTS[',ITOA(myRoom.SLOT_CURRENT),'].SLOT_REMAIN_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS)"
+						TIME_DEBUGGING[12] = "'BOOKING: REMAINING_SECS = ',ITOA(REMAINING_SECS)"
+						TIME_DEBUGGING[13] = "'BOOKING: myRoom.SLOTS[',ITOA(myRoom.SLOT_CURRENT),'].SLOT_REMAIN_TEXT = ',myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT"
+						fnDoubleBeep()
 						debugSlots[2] = myRoom.SLOTS[myRoom.SLOT_CURRENT]
 						fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'.SLOT_START_REF = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_START_REF)")
 						fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'.SLOT_END_REF = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_END_REF)")
@@ -939,6 +952,7 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 						myRoom.SLOTS_LOADING = FALSE
 						// Re-load panels
 						fnSetupPanel(0,'DATA_EVENT[vdvRoom]::COMMAND::BOOKING')
+						fnUpdatePanel(0)
 					}
 				}
 			}
@@ -972,9 +986,15 @@ DEFINE_EVENT CHANNEL_EVENT[vdvRoom,chn_vdv_SlotBooked]{
 			}
 			// If this is a QuickBook Meeting then start the Quick Book cancellation standoff
 			ELSE{
+				fnSingleBeep()
 				// Set Timeout Timer to Threshold
 				myRoom.QUICKBOOK_TIMEOUT.COUNTER = myRoom.QUICKBOOK_TIMEOUT.INIT_VAL
-				SEND_COMMAND tp,"'^TXT-',ITOA(lvlQuickBookStandoffTimer),',2,',FORMAT('%02d',myRoom.QUICKBOOK_TIMEOUT.COUNTER),' min'"
+				IF(myRoom.QUICKBOOK_TIMEOUT.COUNTER == 1){
+					SEND_COMMAND tp,"'^TXT-',ITOA(lvlQuickBookStandoffTimer),',2,',FORMAT('%d',myRoom.QUICKBOOK_TIMEOUT.COUNTER),' min'"
+				}
+				ELSE{
+					SEND_COMMAND tp,"'^TXT-',ITOA(lvlQuickBookStandoffTimer),',2,',FORMAT('%d',myRoom.QUICKBOOK_TIMEOUT.COUNTER),' mins'"
+				}
 				// Start Timer
 				IF(TIMELINE_ACTIVE(TLID_TIMER_QUICKBOOK_TIMEOUT)){TIMELINE_KILL(TLID_TIMER_QUICKBOOK_TIMEOUT)}
 				TIMELINE_CREATE(TLID_TIMER_QUICKBOOK_TIMEOUT,TLT_ONE_MIN,LENGTH_ARRAY(TLT_ONE_MIN),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
@@ -1004,9 +1024,15 @@ DEFINE_EVENT CHANNEL_EVENT[vdvRoom,chn_vdv_SlotBooked]{
 				myRoom.AUTOBOOK_STANDOFF.COUNTER = myRoom.AUTOBOOK_STANDOFF.INIT_VAL
 				IF(TIMELINE_ACTIVE(TLID_TIMER_AUTOBOOK_STANDOFF)){TIMELINE_KILL(TLID_TIMER_AUTOBOOK_STANDOFF)}
 				TIMELINE_CREATE(TLID_TIMER_AUTOBOOK_STANDOFF,TLT_ONE_MIN,LENGTH_ARRAY(TLT_ONE_MIN),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
-				// Update Timer
-				SEND_COMMAND tp,"'^TXT-',ITOA(lvlAutoBookStandOffTimer),',2,',FORMAT('%02d',myRoom.AUTOBOOK_STANDOFF.COUNTER),' min'"
-			}ELSE{
+				// Update Timer Text
+				IF(myRoom.AUTOBOOK_STANDOFF.COUNTER == 1){
+					SEND_COMMAND tp,"'^TXT-',ITOA(lvlAutoBookStandOffTimer),',2,',FORMAT('%d',myRoom.AUTOBOOK_STANDOFF.COUNTER),' min'"
+				}
+				ELSE{
+					SEND_COMMAND tp,"'^TXT-',ITOA(lvlAutoBookStandOffTimer),',2,',FORMAT('%d',myRoom.AUTOBOOK_STANDOFF.COUNTER),' mins'"
+				}
+			}
+			ELSE{
 				myRoom.AUTOBOOK_STANDOFF.COUNTER = 0
 				IF(TIMELINE_ACTIVE(TLID_TIMER_AUTOBOOK_STANDOFF)){TIMELINE_KILL(TLID_TIMER_AUTOBOOK_STANDOFF)}
 				// Update Timer
@@ -1027,7 +1053,13 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_QUICKBOOK_TIMEOUT]{
 
 	// Knock a Min off the timer
 	myRoom.QUICKBOOK_TIMEOUT.COUNTER--
-	SEND_COMMAND tp,"'^TXT-',ITOA(lvlQuickBookStandoffTimer),',2,',FORMAT('%02d',myRoom.QUICKBOOK_TIMEOUT.COUNTER),' min'"
+	IF(myRoom.QUICKBOOK_TIMEOUT.COUNTER == 1){
+		SEND_COMMAND tp,"'^TXT-',ITOA(lvlQuickBookStandoffTimer),',2,',FORMAT('%d',myRoom.QUICKBOOK_TIMEOUT.COUNTER),' min'"
+	}
+	ELSE{
+		SEND_COMMAND tp,"'^TXT-',ITOA(lvlQuickBookStandoffTimer),',2,',FORMAT('%d',myRoom.QUICKBOOK_TIMEOUT.COUNTER),' mins'"
+	}
+	
 
 	// Act if Timer has run out
 	IF(myRoom.QUICKBOOK_TIMEOUT.COUNTER == 0){
@@ -1049,7 +1081,12 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_NOSHOW_TIMEOUT]{
 	myRoom.NOSHOW_TIMEOUT.COUNTER--
 
 	// Update Panels
-	SEND_COMMAND tp,"'^TXT-',ITOA(lvlNoShowTimer),',2,',FORMAT('%02d',myRoom.NOSHOW_TIMEOUT.COUNTER),' min'"
+	IF(myRoom.NOSHOW_TIMEOUT.COUNTER == 1){
+		SEND_COMMAND tp,"'^TXT-',ITOA(lvlNoShowTimer),',2,',FORMAT('%d',myRoom.NOSHOW_TIMEOUT.COUNTER),' min'"
+	}
+	ELSE{
+		SEND_COMMAND tp,"'^TXT-',ITOA(lvlNoShowTimer),',2,',FORMAT('%d',myRoom.NOSHOW_TIMEOUT.COUNTER),' mins'"
+	}
 	// Act if Timer has run out
 	IF(myRoom.NOSHOW_TIMEOUT.COUNTER == 0){
 		// Kill own timeline
@@ -1090,7 +1127,12 @@ DEFINE_EVENT CHANNEL_EVENT[vdvRoom,chn_vdv_SensorTriggered]{
 		IF(TIMELINE_ACTIVE(TLID_TIMER_OCCUPANCY_TIMEOUT)){TIMELINE_KILL(TLID_TIMER_OCCUPANCY_TIMEOUT)}
 
 		// Set Diagnostics Text
-		SEND_COMMAND tp,"'^TXT-',ITOA(lvlRoomOccupied),',2,',ITOA(myRoom.OCCUPANCY_TIMEOUT.COUNTER),' min'"
+		IF(myRoom.OCCUPANCY_TIMEOUT.COUNTER == 1){
+			SEND_COMMAND tp,"'^TXT-',ITOA(lvlRoomOccupied),',2,',ITOA(myRoom.OCCUPANCY_TIMEOUT.COUNTER),' min'"
+		}
+		ELSE{
+			SEND_COMMAND tp,"'^TXT-',ITOA(lvlRoomOccupied),',2,',ITOA(myRoom.OCCUPANCY_TIMEOUT.COUNTER),' mins'"
+		}
 		SEND_COMMAND tp,"'^TXT-',ITOA(btnDiagStateSensorTrigger),',2,Movement:|Chan[',ITOA(myRoom.OCCUPANCY_SENSOR_BOX),':',ITOA(myRoom.OCCUPANCY_SENSOR_CHAN),']'"
 
 		// Do an AutoBook Trigger Event
@@ -1109,7 +1151,12 @@ DEFINE_EVENT CHANNEL_EVENT[vdvRoom,chn_vdv_SensorTriggered]{
 		fnDebug(DEBUG_DEV,'CHANNEL_EVENT','chn_vdv_SensorTriggered','--> OFF')
 
 		// Set Diagnostics Text
-		SEND_COMMAND tp,"'^TXT-',ITOA(lvlRoomOccupied),',2,',ITOA(myRoom.OCCUPANCY_TIMEOUT.COUNTER),' min'"
+		IF(myRoom.OCCUPANCY_TIMEOUT.COUNTER == 1){
+			SEND_COMMAND tp,"'^TXT-',ITOA(lvlRoomOccupied),',2,',ITOA(myRoom.OCCUPANCY_TIMEOUT.COUNTER),' min'"
+		}
+		ELSE{
+			SEND_COMMAND tp,"'^TXT-',ITOA(lvlRoomOccupied),',2,',ITOA(myRoom.OCCUPANCY_TIMEOUT.COUNTER),' mins'"
+		}
 		SEND_COMMAND tp,"'^TXT-',ITOA(btnDiagStateSensorTrigger),',1,Last Trig:|Chan[',ITOA(myRoom.OCCUPANCY_SENSOR_BOX),':',ITOA(myRoom.OCCUPANCY_SENSOR_CHAN),']'"
 
 		// Create a new timeline
@@ -1127,7 +1174,12 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_OCCUPANCY_TIMEOUT]{
 	myRoom.OCCUPANCY_TIMEOUT.COUNTER--
 
 	// Set Diagnostics Text
-	SEND_COMMAND tp,"'^TXT-',ITOA(lvlRoomOccupied),',2,',ITOA(myRoom.OCCUPANCY_TIMEOUT.COUNTER),' min'"
+	IF(myRoom.OCCUPANCY_TIMEOUT.COUNTER == 1){
+		SEND_COMMAND tp,"'^TXT-',ITOA(lvlRoomOccupied),',2,',ITOA(myRoom.OCCUPANCY_TIMEOUT.COUNTER),' min'"
+	}
+	ELSE{
+		SEND_COMMAND tp,"'^TXT-',ITOA(lvlRoomOccupied),',2,',ITOA(myRoom.OCCUPANCY_TIMEOUT.COUNTER),' mins'"
+	}
 
 	// If Occupancy has run out, kill the Timeline
 	IF(myRoom.OCCUPANCY_TIMEOUT.COUNTER == 0){ TIMELINE_KILL(TLID_TIMER_OCCUPANCY_TIMEOUT) }
@@ -1237,11 +1289,16 @@ DEFINE_FUNCTION fnUpdateAutoBookFB(INTEGER pPanel){
 		RETURN
 	}
 	// Update Timer
-	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(lvlAutoBookActionTimer),',2,',FORMAT('%02d',myRoom.AUTOBOOK_ACTION.COUNTER),' min'"
-
+	IF(myRoom.AUTOBOOK_ACTION.COUNTER == 1){
+		SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(lvlAutoBookActionTimer),',2,',FORMAT('%d',myRoom.AUTOBOOK_ACTION.COUNTER),' min'"
+	}
+	ELSE{
+		SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(lvlAutoBookActionTimer),',2,',FORMAT('%d',myRoom.AUTOBOOK_ACTION.COUNTER),' mins'"
+	}
+	
 	// Update Events
 	IF(myRoom.AUTOBOOK_MODE == AUTOBOOK_MODE_EVENTS){
-		SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addDiagTimeAutoBookEvents),',2,',FORMAT('%02d',myRoom.AUTOBOOK_EVENTS_COUNT),' of ',FORMAT('%02d',myRoom.AUTOBOOK_EVENTS_THRESHOLD),' events'"
+		SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addDiagTimeAutoBookEvents),',2,',FORMAT('%d',myRoom.AUTOBOOK_EVENTS_COUNT),' of ',FORMAT('%d',myRoom.AUTOBOOK_EVENTS_THRESHOLD),' events'"
 	}
 
 	SEND_COMMAND tp[pPanel],txtCommand
@@ -1254,7 +1311,12 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_AUTOBOOK_STANDOFF]{
 	myRoom.AUTOBOOK_STANDOFF.COUNTER--
 
 	// Update Timer
-	SEND_COMMAND tp,"'^TXT-',ITOA(lvlAutoBookStandOffTimer),',2,',FORMAT('%02d',myRoom.AUTOBOOK_STANDOFF.COUNTER),' min'"
+	IF(myRoom.AUTOBOOK_STANDOFF.COUNTER == 1){
+		SEND_COMMAND tp,"'^TXT-',ITOA(lvlAutoBookStandOffTimer),',2,',FORMAT('%d',myRoom.AUTOBOOK_STANDOFF.COUNTER),' min'"
+	}
+	ELSE{
+		SEND_COMMAND tp,"'^TXT-',ITOA(lvlAutoBookStandOffTimer),',2,',FORMAT('%d',myRoom.AUTOBOOK_STANDOFF.COUNTER),' mins'"
+	}
 
 	// Check if the Timer has expired and act if so
 	IF(myRoom.AUTOBOOK_STANDOFF.COUNTER == 0){
@@ -1606,7 +1668,12 @@ DEFINE_FUNCTION fnInitPanel(INTEGER pPanel){
 
 	// Setup Occupancy Diagnostics Feedback
 	IF(myRoom.OCCUPANCY_TIMEOUT.INIT_VAL){
-		SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addDiagSettingsOccupancy),',0,',ITOA(myRoom.OCCUPANCY_TIMEOUT.INIT_VAL),' min'"
+		IF(myRoom.OCCUPANCY_TIMEOUT.INIT_VAL == 1){
+			SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addDiagSettingsOccupancy),',0,',ITOA(myRoom.OCCUPANCY_TIMEOUT.INIT_VAL),' min'"
+		}
+		ELSE{
+			SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addDiagSettingsOccupancy),',0,',ITOA(myRoom.OCCUPANCY_TIMEOUT.INIT_VAL),' mins'"
+		}
 		SEND_COMMAND tp[pPanel],"'^BMF-',ITOA(lvlRoomOccupied),',0,%GL0%GH',ITOA(myRoom.OCCUPANCY_TIMEOUT.INIT_VAL)"
 		SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addDiagTimeOccupancy),',0,',FORMAT('%02d',myRoom.OCCUPANCY_TIMEOUT.INIT_VAL)"
 	}
@@ -1676,11 +1743,26 @@ DEFINE_FUNCTION fnInitPanel(INTEGER pPanel){
 			DEFAULT:{
 				SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addDiagTimeAutoBookAction),',0,',FORMAT('%02d',myRoom.AUTOBOOK_ACTION.INIT_VAL)"
 				SEND_COMMAND tp[pPanel],"'^BMF-',ITOA(lvlAutoBookActionTimer),',0,%GL0%GH',ITOA(myRoom.AUTOBOOK_ACTION.INIT_VAL)"
-				SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(lvlAutoBookActionTimer),',2,',FORMAT('%02d',myRoom.AUTOBOOK_ACTION.COUNTER),' min'"
+				IF(myRoom.AUTOBOOK_ACTION.COUNTER == 1){
+					SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(lvlAutoBookActionTimer),',2,',FORMAT('%d',myRoom.AUTOBOOK_ACTION.COUNTER),' min'"
+				}
+				ELSE{
+					SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(lvlAutoBookActionTimer),',2,',FORMAT('%d',myRoom.AUTOBOOK_ACTION.COUNTER),' mins'"
+				}
 				SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addDiagTimeAutoBookStandoff),',0,',FORMAT('%02d',myRoom.AUTOBOOK_STANDOFF.INIT_VAL)"
 				SEND_COMMAND tp[pPanel],"'^BMF-',ITOA(lvlAutoBookStandOffTimer),',0,%GL0%GH',ITOA(myRoom.AUTOBOOK_STANDOFF.INIT_VAL)"
-				SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(lvlAutoBookStandOffTimer),',2,',FORMAT('%02d',myRoom.AUTOBOOK_STANDOFF.COUNTER),' min'"
-				SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(lvlNoShowTimer),',2,',FORMAT('%02d',myRoom.NOSHOW_TIMEOUT.COUNTER),' min'"
+				IF(myRoom.AUTOBOOK_STANDOFF.COUNTER == 1){
+					SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(lvlAutoBookStandOffTimer),',2,',FORMAT('%d',myRoom.AUTOBOOK_STANDOFF.COUNTER),' min'"
+				}
+				ELSE{
+					SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(lvlAutoBookStandOffTimer),',2,',FORMAT('%d',myRoom.AUTOBOOK_STANDOFF.COUNTER),' mins'"
+				}
+				IF(myRoom.NOSHOW_TIMEOUT.INIT_VAL == 1){
+					SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(lvlNoShowTimer),',2,',FORMAT('%d',myRoom.NOSHOW_TIMEOUT.INIT_VAL),' min'"
+				}
+				ELSE{
+					SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(lvlNoShowTimer),',2,',FORMAT('%d',myRoom.NOSHOW_TIMEOUT.INIT_VAL),' mins'"
+				}
 			}
 		}
 		SWITCH(myRoom.AUTOBOOK_MODE){
@@ -1920,7 +2002,7 @@ DEFINE_FUNCTION fnUpdatePanel(INTEGER pPanel){
 	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(lvlMeetingRemain),',0,',myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT"
 
 	IF(myRoom.SLOTS[myRoom.SLOT_CURRENT+1].SLOT_END_REF){
-		SEND_COMMAND tp[pPanel],"'^SHO-61.66,1'"
+		SEND_COMMAND tp[pPanel],"'^SHO-',ITOA(addNextSubject),'.',ITOA(addNextDuration),',1'"
 		// Populate Next Subject
 		SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNextSubject),  ',0,',WC_TP_ENCODE(myRoom.SLOTS[myRoom.SLOT_CURRENT+1].SUBJECT)"
 		SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNextOrganiser),',0,',WC_TP_ENCODE(myRoom.SLOTS[myRoom.SLOT_CURRENT+1].ORGANISER)"
@@ -1944,12 +2026,13 @@ DEFINE_FUNCTION fnUpdatePanel(INTEGER pPanel){
 		fnDebug(DEBUG_LOG,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'next .DURATIN_TEXT = ',myRoom.SLOTS[myRoom.SLOT_CURRENT+1].SLOT_DURATION_TEXT")
 	}
 	ELSE{
-		SEND_COMMAND tp[pPanel],"'^SHO-61.66,0'"
+		SEND_COMMAND tp[pPanel],"'^SHO-',ITOA(addNextSubject),'.',ITOA(addNextDuration),',0'"
 	}
 
 	// Populate Quick Book End Time
 	IF(myRMSPanel[pPanel].MODE == MODE_QUICKBOOK){
-		SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addQuickBookInstDur),',0,Until ',fnStripCharsRight(myRoom.QUICKBOOK_END_TIME_HHMMSS,3)"
+		SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addQuickBookInstDur),',0,Until ',myRoom.QUICKBOOK_END_TIME_HHMM"
+		//SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addQuickBookInstDur),',0,Until ',fnStripCharsRight(myRoom.QUICKBOOK_END_TIME_HHMMSS,3)"
 	}
 
 	// Populate the Cal Popup
@@ -2178,7 +2261,7 @@ DEFINE_FUNCTION fnSetPanelMode(INTEGER pPanel,CHAR pMODE[20]){
 /********************************************************************************************************************************************************************************************************************************************************
 	Feedback
 ********************************************************************************************************************************************************************************************************************************************************/
-DEFINE_PROGRAM{
+DEFINE_FUNCTION fnUpdateFeedback(){
 	// Virtual Device
 
 	// Occupancy Sensor Feedback
