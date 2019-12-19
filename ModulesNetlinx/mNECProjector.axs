@@ -241,6 +241,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 				IF(myNECProj.SOFTWARE != pDATA){
 					myNECProj.SOFTWARE = pDATA
 					SEND_STRING vdvControl, "'PROPERTY-META,SOFTWARE,',myNECProj.SOFTWARE"
+					SEND_STRING vdvControl, "'PROPERTY-META,FIRMWARE,',myNECProj.SOFTWARE"
 				}
 			}
 		}
