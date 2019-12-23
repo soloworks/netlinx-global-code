@@ -1,7 +1,10 @@
 MODULE_NAME='mExtronMatrix'(DEV vdvControl[], DEV dvDevice)
 INCLUDE 'CustomFunctions'
 /******************************************************************************
-	Basic Extron RS232 Module - RMS Enabled
+	Extron Matrix Module - RMS Enabled
+
+	For DSP enabled matrix under simple output gain control
+	uses virtual DSP channels 1+ as gain & mute point
 ******************************************************************************/
 DEFINE_TYPE STRUCTURE uAudio{
 	INTEGER MUTE
@@ -69,15 +72,16 @@ INTEGER IP_STATE_OFFLINE		= 0
 INTEGER IP_STATE_CONNECTING	= 1
 INTEGER IP_STATE_CONNECTED		= 2
 
-INTEGER MODEL_DXP44HD4K			= 1
-INTEGER MODEL_DXP84HD4K			= 2
-INTEGER MODEL_DXP88HD4K			= 3
-INTEGER MODEL_DXP168HD4K		= 4
-INTEGER MODEL_DXP1616HD4K		= 5
-INTEGER MODEL_DTPCrossPoint844K			= 6
-INTEGER MODEL_CROSSPOINT		= 7
-INTEGER MODEL_DTPCrossPoint1084K = 8
-INTEGER MODEL_DTPCrossPoint864K = 9
+INTEGER MODEL_DXP44HD4K			= 01
+INTEGER MODEL_DXP84HD4K			= 02
+INTEGER MODEL_DXP88HD4K			= 03
+INTEGER MODEL_DXP168HD4K		= 04
+INTEGER MODEL_DXP1616HD4K		= 05
+INTEGER MODEL_DTPCP844K			= 06
+INTEGER MODEL_CROSSPOINT		= 07
+INTEGER MODEL_DTPCP1084K    = 08
+INTEGER MODEL_DTPCP864K     = 09
+INTEGER MODEL_DTPCP824K     = 10
 
 DEFINE_VARIABLE
 LONG TLT_COMMS[] 	= { 90000 }
@@ -180,8 +184,15 @@ DEFINE_FUNCTION fnPoll(){
 		IF(myMatrix.HAS_AUDIO){
 			STACK_VAR INTEGER x
 			FOR(x = 1; x <= myMatrix.AUD_MTX_SIZE[2]; x++){
-				fnAddToQueue("ITOA(x),'V'")
-				fnAddToQueue("ITOA(x),'Z'")
+				SWITCH(myMatrix.MODEL_ID){
+					CASE MODEL_DTPCP824K:{
+						fnAddToQueue("$1B,'G',ITOA(50100+x-1),'AU',$0D")
+					}
+					DEFAULT:{
+						fnAddToQueue("ITOA(x),'V'")
+						fnAddToQueue("ITOA(x),'Z'")
+					}
+				}
 			}
 		}
 	}
@@ -278,21 +289,23 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 						CASE '60-1496-01':myMatrix.MODEL_ID = MODEL_DXP168HD4K
 						CASE '60-1497-01':myMatrix.MODEL_ID = MODEL_DXP1616HD4K
 						CASE '60-220-06': myMatrix.MODEL_ID = MODEL_CROSSPOINT
-						CASE '60-1515-01':myMatrix.MODEL_ID = MODEL_DTPCrossPoint844K
-						CASE '60-1381-01':myMatrix.MODEL_ID = MODEL_DTPCrossPoint1084K
-						CASE '60-1382-01':myMatrix.MODEL_ID = MODEL_DTPCrossPoint864K
+						CASE '60-1515-01':myMatrix.MODEL_ID = MODEL_DTPCP844K
+						CASE '60-1381-01':myMatrix.MODEL_ID = MODEL_DTPCP1084K
+						CASE '60-1382-01':myMatrix.MODEL_ID = MODEL_DTPCP864K
+						CASE '60-1583-01':myMatrix.MODEL_ID = MODEL_DTPCP824K
 					}
 					SWITCH(myMatrix.MODEL_ID){
-						CASE MODEL_DXP44HD4K:				myMatrix.META_MODEL = 'DXP44HD4K'
-						CASE MODEL_DXP84HD4k:				myMatrix.META_MODEL = 'DXP84HD4K'
-						CASE MODEL_DXP88HD4k:				myMatrix.META_MODEL = 'DXP88HD4K'
+						CASE MODEL_DXP44HD4K:				  myMatrix.META_MODEL = 'DXP44HD4K'
+						CASE MODEL_DXP84HD4k:				  myMatrix.META_MODEL = 'DXP84HD4K'
+						CASE MODEL_DXP88HD4k:				  myMatrix.META_MODEL = 'DXP88HD4K'
 						CASE MODEL_DXP168HD4K:				myMatrix.META_MODEL = 'DXP168HD4K'
 						CASE MODEL_DXP1616HD4K:				myMatrix.META_MODEL = 'DXP1616HD4K'
 						CASE MODEL_CROSSPOINT:				myMatrix.META_MODEL = 'CROSSPOINT'
-						CASE MODEL_DTPCrossPoint844K:		myMatrix.META_MODEL = 'DTPCrossPoint844K'
-						CASE MODEL_DTPCrossPoint1084K:	myMatrix.META_MODEL = 'DTPCrossPoint1084K'
-						CASE MODEL_DTPCrossPoint864K:		myMatrix.META_MODEL = 'DTPCrossPoint864K'
-						DEFAULT:									myMatrix.META_MODEL = 'NOT IMPLEMENTED'
+						CASE MODEL_DTPCrossPoint844K:	myMatrix.META_MODEL = 'DTPCP844K'
+						CASE MODEL_DTPCP1084K:	      myMatrix.META_MODEL = 'DTPCP1084K'
+						CASE MODEL_DTPCP864K:	        myMatrix.META_MODEL = 'DTPCP864K'
+						CASE MODEL_DTPCP824K:	        myMatrix.META_MODEL = 'DTPCP824K'
+						DEFAULT:									    myMatrix.META_MODEL = 'NOT IMPLEMENTED'
 					}
 					SWITCH(myMatrix.MODEL_ID){
 						CASE MODEL_DXP44HD4K:
@@ -300,10 +313,12 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 						CASE MODEL_DXP88HD4k:
 						CASE MODEL_DXP168HD4K:
 						CASE MODEL_DXP1616HD4K:
-						CASE MODEL_DTPCrossPoint844K:
-						CASE MODEL_DTPCrossPoint1084K:
-						CASE MODEL_DTPCrossPoint864K:	myMatrix.HAS_NETWORK = TRUE
-						DEFAULT:								myMatrix.HAS_NETWORK = FALSE
+						CASE MODEL_DTPCP844K:
+						CASE MODEL_DTPCP1084K:
+						CASE MODEL_DTPCP864K:
+						CASE MODEL_DTPCP824K:	myMatrix.HAS_NETWORK = TRUE
+						DEFAULT:				  		myMatrix.HAS_NETWORK = FALSE
+
 					}
 					SWITCH(myMatrix.MODEL_ID){
 						CASE MODEL_DXP44HD4K:
@@ -311,9 +326,15 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 						CASE MODEL_DXP88HD4k:
 						CASE MODEL_DXP168HD4K:
 						CASE MODEL_DXP1616HD4K:
-						CASE MODEL_DTPCrossPoint1084K:
-						CASE MODEL_DTPCrossPoint864K:	myMatrix.HAS_AUDIO = TRUE
-						DEFAULT:								myMatrix.HAS_AUDIO = FALSE
+						CASE MODEL_DTPCP1084K:
+						CASE MODEL_DTPCP864K:
+						CASE MODEL_DTPCP824K::
+						CASE MODEL_DTPCP854K:	myMatrix.HAS_AUDIO = TRUE
+						DEFAULT:						myMatrix.HAS_AUDIO = FALSE
+					}
+					SWITCH(myMatrix.MODEL_ID){
+						CASE MODEL_DTPCP824K:	SEND_STRING vdvControl, 'RANGE--100,12'
+						DEFAULT:						SEND_STRING vdvControl, 'RANGE-0,100'
 					}
 					SEND_STRING vdvControl,"'PROPERTY-META,MODEL,',myMatrix.META_MODEL"
 					IF(!myMatrix.HAS_NETWORK){
@@ -390,6 +411,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 					}
 				}
 				ACTIVE(1):{	// Referenced Notifications
+					SEND_COMMAND 0, "'ref==',DATA.TEXT"
 					SELECT{
 						ACTIVE(FIND_STRING(DATA.TEXT,'Vol',1)):{
 							STACK_VAR INTEGER OUTPUT
@@ -400,6 +422,24 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 						}
 						ACTIVE(LEFT_STRING(DATA.TEXT,3) == 'Amt'):{
 							GET_BUFFER_STRING(DATA.TEXT,3)
+							//myMatrix.MUTE = ATOI(DATA.TEXT)
+						}
+						ACTIVE(LEFT_STRING(DATA.TEXT,3) == 'DsG'):{
+							STACK_VAR INTEGER o
+							STACK_VAR CHAR v[10]
+							//DsG50100*-730$0D$0A
+							GET_BUFFER_STRING(DATA.TEXT,3)
+							SEND_STRING 0, "'fb==',DATA.TEXT"
+							o = ATOI(GET_BUFFER_STRING(DATA.TEXT,5))
+							GET_BUFFER_CHAR(DATA.TEXT)
+							v = DATA.TEXT
+							SEND_STRING 0, "'v==',v"
+							SET_LENGTH_ARRAY(v,LENGTH_ARRAY(v)-3)
+							SEND_STRING 0, "'v==',v"
+							SWITCH(o){
+								CASE 50100:myMatrix.AUDIO[1].GAIN = ATOI(v)
+								CASE 50200:myMatrix.AUDIO[2].GAIN = ATOI(v)
+							}
 							//myMatrix.MUTE = ATOI(DATA.TEXT)
 						}
 					}
@@ -438,7 +478,6 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_COMMS]{
 ******************************************************************************/
 DEFINE_EVENT DATA_EVENT[vdvControl]{
 	ONLINE:{
-		SEND_STRING DATA.DEVICE, 'RANGE-0,100'
 	}
 	COMMAND:{// Enable / Disable Module
 		SWITCH(DATA.TEXT){
@@ -469,9 +508,11 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 				CASE 'MATRIX':  fnAddToQueue("DATA.TEXT,'!'")
 				CASE 'INPUT':   fnAddToQueue("DATA.TEXT,'*',ITOA(GET_LAST(vdvControl)),'!'")
 				CASE 'VOLUME':{
+					// Get Output Number for ease
+					STACK_VAR INTEGER pOUTPUT
+					pOUTPUT = GET_LAST(vdvControl)
+					// Only process if audio is on this model
 					IF(myMatrix.HAS_AUDIO){
-						STACK_VAR INTEGER pOUTPUT
-						pOUTPUT = GET_LAST(vdvControl)
 						SWITCH(DATA.TEXT){
 							CASE 'INC':	fnAddToQueue("ITOA(pOUTPUT),'*+V'")
 							CASE 'DEC':	fnAddToQueue("ITOA(pOUTPUT),'*-V'")
@@ -481,7 +522,11 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 								//VOL = VOL + ATOI(DATA.TEXT)
 								VOL = ATOI(DATA.TEXT)
 								IF(!TIMELINE_ACTIVE(TLID_GAIN_00+pOUTPUT)){
-									fnAddToQueue("ITOA(pOUTPUT),'*',ITOA(VOL),'V'")
+									SWITCH(myMatrix.MODEL_ID){
+										CASE MODEL_DTPCP824K:   fnAddToQueue("$1B,'G',ITOA(50100+pOUTPUT-1),'*',ITOA(VOL),'0AU',$0D")
+										DEFAULT:						fnAddToQueue("ITOA(pOUTPUT),'*',ITOA(VOL),'V'")
+									}
+									
 									TIMELINE_CREATE(TLID_GAIN_00+pOUTPUT,TLT_GAIN,LENGTH_ARRAY(TLT_GAIN),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 								}
 								ELSE{
@@ -493,19 +538,35 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 					}
 				}
 				CASE 'MUTE':{
+					// Get Output Number for ease
 					STACK_VAR INTEGER pOUTPUT
 					pOUTPUT = GET_LAST(vdvControl)
-					SWITCH(DATA.TEXT){
-						CASE 'ON':		myMatrix.AUDIO[pOUTPUT].MUTE = 6
-						CASE 'OFF':		myMatrix.AUDIO[pOUTPUT].MUTE = 0
-						CASE 'TOGGLE':{
-							SWITCH(myMatrix.AUDIO[pOUTPUT].MUTE){
-								CASE 0:	myMatrix.AUDIO[pOUTPUT].MUTE = 6
-								DEFAULT:	myMatrix.AUDIO[pOUTPUT].MUTE = 0
+					// Only process if audio is on this model
+					IF(myMatrix.HAS_AUDIO){
+						// Set Mute State Value (6 was original used
+						SWITCH(DATA.TEXT){
+							CASE 'ON':		myMatrix.AUDIO[pOUTPUT].MUTE = 6
+							CASE 'OFF':		myMatrix.AUDIO[pOUTPUT].MUTE = 0
+							CASE 'TOGGLE':{
+								SWITCH(myMatrix.AUDIO[pOUTPUT].MUTE){
+									CASE 0:	myMatrix.AUDIO[pOUTPUT].MUTE = 6
+									DEFAULT:	myMatrix.AUDIO[pOUTPUT].MUTE = 0
+								}
 							}
 						}
+						// Correct Mute State Value for
+						SWITCH(myMatrix.MODEL_ID){
+							CASE MODEL_DTPCP824K:{
+								IF(myMatrix.AUDIO[pOUTPUT].MUTE == 6){
+									myMatrix.AUDIO[pOUTPUT].MUTE = 1
+								}
+							}
+						}
+						SWITCH(myMatrix.MODEL_ID){
+							CASE MODEL_DTPCP824K:	fnAddToQueue("$1B,'M',ITOA(50100+pOUTPUT-1),'*',ITOA(myMatrix.AUDIO[pOUTPUT].MUTE),'AU',$0D")
+							DEFAULT:						fnAddToQueue("ITOA(pOUTPUT),'*',ITOA(myMatrix.AUDIO[pOUTPUT].MUTE),'Z'")
+						}
 					}
-					fnAddToQueue("ITOA(pOUTPUT),'*',ITOA(myMatrix.AUDIO[pOUTPUT].MUTE),'Z'")
 				}
 				CASE 'RAW':{
 					fnAddToQueue(DATA.TEXT)
@@ -537,7 +598,10 @@ TIMELINE_EVENT[TLID_GAIN_16]{
 	STACK_VAR INTEGER pOUTPUT
 	pOUTPUT = TIMELINE.ID-TLID_GAIN_00
 	IF(myMatrix.AUDIO[pOUTPUT].GAIN_PEND){
-		fnAddToQueue("ITOA(pOUTPUT),'*',ITOA(myMatrix.AUDIO[pOUTPUT].LAST_GAIN),'V'")
+		SWITCH(myMatrix.MODEL_ID){
+			CASE MODEL_DTPCP824K:   fnAddToQueue("$1B,'G',ITOA(50100+pOUTPUT-1),'*',ITOA(myMatrix.AUDIO[pOUTPUT].LAST_GAIN),'0AU',$0D")
+			DEFAULT:						fnAddToQueue("ITOA(pOUTPUT),'*',ITOA(myMatrix.AUDIO[pOUTPUT].LAST_GAIN),'V'")
+		}
 		myMatrix.AUDIO[pOUTPUT].LAST_GAIN = 0
 		myMatrix.AUDIO[pOUTPUT].GAIN_PEND = FALSE
 		TIMELINE_CREATE(TLID_GAIN_00+pOUTPUT,TLT_GAIN,LENGTH_ARRAY(TLT_GAIN),TIMELINE_ABSOLUTE,TIMELINE_ONCE)

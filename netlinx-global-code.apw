@@ -544,6 +544,10 @@
 <FilePathName>ModulesNetlinx\mPlanarDisplay.axs</FilePathName>
 <Comments></Comments>
 </File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mPlanarVidWall</Identifier>
+<FilePathName>ModulesNetlinx\mPlanarVidWall.axs</FilePathName>
+<Comments></Comments>
+</File>
 <File CompileType="Netlinx" Type="Module"><Identifier>mPolycomVC</Identifier>
 <FilePathName>ModulesNetlinx\mPolycomVC.axs</FilePathName>
 <Comments></Comments>
