@@ -411,7 +411,6 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 					}
 				}
 				ACTIVE(1):{	// Referenced Notifications
-					SEND_COMMAND 0, "'ref==',DATA.TEXT"
 					SELECT{
 						ACTIVE(FIND_STRING(DATA.TEXT,'Vol',1)):{
 							STACK_VAR INTEGER OUTPUT
@@ -429,13 +428,10 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 							STACK_VAR CHAR v[10]
 							//DsG50100*-730$0D$0A
 							GET_BUFFER_STRING(DATA.TEXT,3)
-							SEND_STRING 0, "'fb==',DATA.TEXT"
 							o = ATOI(GET_BUFFER_STRING(DATA.TEXT,5))
 							GET_BUFFER_CHAR(DATA.TEXT)
 							v = DATA.TEXT
-							SEND_STRING 0, "'v==',v"
 							SET_LENGTH_ARRAY(v,LENGTH_ARRAY(v)-3)
-							SEND_STRING 0, "'v==',v"
 							SWITCH(o){
 								CASE 50100:myMatrix.AUDIO[1].GAIN = ATOI(v)
 								CASE 50200:myMatrix.AUDIO[2].GAIN = ATOI(v)
