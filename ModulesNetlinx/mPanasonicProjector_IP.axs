@@ -20,6 +20,7 @@ INCLUDE 'md5'
 //#DEFINE __TESTING__ 'TRUE'
 
 DEFINE_CONSTANT
+/*
 #IF_NOT_DEFINED __TESTING__
 	INTEGER ProjectorTimeWarm = 45 // Time in Seconds {Warmup}
 	INTEGER ProjectorTimeCool = 90 // Time in Seconds {Cooldown}
@@ -28,6 +29,7 @@ DEFINE_CONSTANT
 	INTEGER ProjectorTimeWarm = 5 // Time in Seconds {Warmup}
 	INTEGER ProjectorTimeCool = 10 // Time in Seconds {Cooldown}
 #END_IF
+*/
 	(** Timeline Constants **)
 INTEGER TLID_BUSY 	= 1;		// Warm / Cool Timeline
 INTEGER TLID_AUTOADJ = 2;		// AutoAdjust Timeline
@@ -47,10 +49,13 @@ INTEGER chnCOOL		= 254;
 INTEGER chnPOWER		= 255;
 	(** POLLING **)
 INTEGER pollPOWER		= 1
-INTEGER pollSOURCE	= 2
-INTEGER pollSHUTTER	= 3
-INTEGER pollFREEZE	= 4
-INTEGER pollASPECT	= 5
+INTEGER pollINPUT		= 2
+INTEGER pollMODEL		= 3
+INTEGER pollSERIAL	= 4
+INTEGER pollFW			= 5
+INTEGER pollSHUTTER	= 6
+INTEGER pollFREEZE	= 7
+INTEGER pollASPECT	= 8
 /******************************************************************************
 	Module Variables
 ******************************************************************************/
@@ -67,11 +72,15 @@ CHAR cHASH[255]
 CHAR cUSER[255] = 'admin1'
 CHAR cPASS[255] = 'panasonic'
 INTEGER lastPOLLED
+CHAR cMODEL[32] = 'Panasonic Projector'
+CHAR cSERIAL[255] = 'n/a'
+CHAR cFIRMWARE[32] = 'n/a'
 	(** Debug Active / Inactive **)
 INTEGER DEBUG 			= FALSE
 	(** Input Cycling Variables **)
 CHAR doINPUT[25]
 CHAR cCurSource[3]
+CHAR cInputName[25]
 	(** Projector State Variables **)
 INTEGER bPower		// Projector Power
 INTEGER bFreeze	// Image Freeze
@@ -79,6 +88,8 @@ INTEGER bMute		// Picture Mute
 INTEGER bWarming	// Projector Warming Up
 INTEGER bCooling	// Projector Cooling Down
 INTEGER iAspect	// Current Aspect as per Protocol
+PERSISTENT INTEGER ProjectorTimeWarm = 45 // Time in Seconds {Warmup}
+PERSISTENT INTEGER ProjectorTimeCool = 90 // Time in Seconds {Cooldown}
 	(** Timeline Times **)
 LONG TLT_SECOND[] 	= {1000};	// One second for timer use
 LONG TLT_AUTOADJ[]	= {3000};	// Autoadjust 3 seconds after input change
@@ -117,15 +128,47 @@ DEFINE_FUNCTION fnRestartPoll(){
 	TIMELINE_CREATE(TLID_REPOLL,TLT_REPOLL,LENGTH_ARRAY(TLT_REPOLL),TIMELINE_ABSOLUTE,TIMELINE_ONCE);
 }
 	(** Send Poll Command **)
-DEFINE_FUNCTION fnSendQuery(){
+DEFINE_FUNCTION fnSendPowerQuery(){
 	lastPOLLED = pollPOWER;
 	fnSendCommand('QPW','');
+}
+DEFINE_FUNCTION fnSendQuery(INTEGER pQUERY){
+	lastPOLLED = pQUERY
+	SWITCH(lastPOLLED){
+		CASE pollPOWER:	fnSendCommand('QPW','')
+		CASE pollINPUT:	fnSendCommand('QIN','')
+		CASE pollMODEL:	fnSendCommand('QID','')
+		CASE pollSERIAL:	fnSendCommand('QSN','')
+		CASE pollFW:		fnSendCommand('QVX','SVRS0')
+		CASE pollSHUTTER:	fnSendCommand('QSH','')
+		CASE pollFREEZE:	fnSendCommand('QFZ','')
+		CASE pollASPECT:	fnSendCommand('QSE','')
+	}
 }
 	(** Send Debug to terminal **)
 DEFINE_FUNCTION fnDebug(INTEGER pFORCE, CHAR Msg[], CHAR MsgData[]){
 	IF(DEBUG = 1 || pFORCE)	{
 		SEND_STRING 0:0:0, "ITOA(vdvControl.Number),':',Msg, ':', MsgData"
 	}
+}
+DEFINE_FUNCTION CHAR[20] fnGetInput(){
+	cInputName = 'UNKNOWN'
+	SWITCH(cCurSource){
+		CASE 'VID': cInputName = 'VIDEO'
+		CASE 'SVD': cInputName = 'SVIDEO'
+		CASE 'RG1': cInputName = 'VGA1'
+		CASE 'RG2': cInputName = 'VGA2'
+		CASE 'AUX': cInputName = 'AUX'
+		CASE 'DVI': cInputName = 'DVI1'
+		CASE 'HD1': cInputName = 'HDMI1'
+		CASE 'HD2': cInputName = 'HDMI2'
+		CASE 'NWP': cInputName = 'NETWORK / USB'
+		CASE 'PA1': cInputName = 'PANASONIC APP'
+		CASE 'MC1': cInputName = 'MIRACAST'
+		CASE 'MV1': cInputName = 'MEMORY VIEWER'
+		CASE 'DL1': cInputName = 'DIGITAL LINK'
+	}
+	RETURN cInputName
 }
 	(** Process Feedback from Projector **)
 DEFINE_FUNCTION fnProcessFeedback(CHAR pPacket[]){
@@ -136,41 +179,73 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pPacket[]){
 	TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 	(** Do Data **)
 	IF(LEFT_STRING(pPacket,9) == 'NTCONTROL'){
-		GET_BUFFER_STRING(pPacket,12);
-		fnDebug(FALSE,'CODE',pPacket)
-		cHASH = fnEncryptToMD5("cUSER,':',cPASS,':',pPacket");
+		STACK_VAR INTEGER pSTATUS
+		GET_BUFFER_STRING(pPacket,10)
+		pSTATUS = ATOI(GET_BUFFER_STRING(pPacket,2))
+		IF(pSTATUS){
+			fnDebug(FALSE,'CODE',pPacket)
+			cHASH = fnEncryptToMD5("cUSER,':',cPASS,':',pPacket");
+		}
+		ELSE{
+			cHASH = ''
+		}
 		bConnOpen = TRUE;
 	}
 	ELSE{
-		SWITCH(lastPOLLED){
-			CASE pollPOWER:{
-				bPower = ATOI(pPacket);
-				IF(bPower){
-					lastPOLLED = pollSOURCE;
-					fnSendCommand('QIN','');
+		SWITCH(LEFT_STRING(pPacket,2)){
+			CASE '00':{
+				GET_BUFFER_STRING(pPacket,2)
+				SWITCH(lastPOLLED){
+					CASE pollPOWER:{
+						bPower = ATOI(pPacket)
+						IF(bPower){
+							fnSendQuery(pollINPUT)
+						}
+						ELSE{
+							lastPOLLED = 0;
+						}
+					}
+					CASE pollINPUT:{
+						IF(cCurSource != pPacket){
+							cCurSource = RIGHT_STRING(pPacket,3)
+							SEND_STRING vdvControl,"'INPUT-',fnGetInput()"
+						}
+						fnSendQuery(pollMODEL)
+					}
+					CASE pollMODEL:{
+						IF(cMODEL != pPacket){
+							cMODEL = pPacket
+							SEND_STRING vdvControl,"'PROPERTY-META,MODEL,',cMODEL"
+						}
+						fnSendQuery(pollSERIAL)
+					}
+					CASE pollSERIAL:{
+						IF(cSERIAL != pPacket){
+							cSERIAL = pPacket
+							SEND_STRING vdvControl,"'PROPERTY-META,SERIALNO,',cSERIAL"
+						}
+						fnSendQuery(pollFW)
+					}
+					CASE pollFW:{
+						IF(cFIRMWARE != pPacket){
+							cFIRMWARE = pPacket
+							SEND_STRING vdvControl,"'PROPERTY-META,FIRMWARE,',cFIRMWARE"
+						}
+						fnSendQuery(pollSHUTTER)
+					}
+					CASE pollSHUTTER:{
+						bMute = ATOI(pPacket);
+						fnSendQuery(pollFREEZE)
+					}
+					CASE pollFREEZE:{
+						bFreeze = ATOI(pPacket)
+						fnSendQuery(pollASPECT)
+					}
+					CASE pollASPECT:{
+						iAspect = ATOI(pPacket)
+						lastPOLLED = 0
+					}
 				}
-				ELSE{
-					lastPOLLED = 0;
-				}
-			}
-			CASE pollSOURCE:{
-				cCurSource = RIGHT_STRING(pPacket,3);
-				lastPOLLED = pollSHUTTER;
-				fnSendCommand('QSH','');
-			}
-			CASE pollSHUTTER:{
-				bMute = ATOI(pPacket);
-				lastPOLLED = pollFREEZE;
-				fnSendCommand('QFZ','');
-			}
-			CASE pollFREEZE:{
-				bFreeze = ATOI(pPacket);
-				lastPOLLED = pollASPECT;
-				fnSendCommand('QSE','');
-			}
-			CASE pollASPECT:{
-				iAspect = ATOI(pPacket);
-				lastPOLLED = 0;
 			}
 		}
 	}
@@ -278,7 +353,41 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 						}
 						fnCloseConnection()
 					}
-					CASE 'DEBUG':{ DEBUG = ATOI(DATA.TEXT) }
+					CASE 'DEBUG':		{ DEBUG = ATOI(DATA.TEXT) }
+					CASE 'USERNAME':	{ cUSER = DATA.TEXT }
+					CASE 'PASSWORD':	{ cPASS = DATA.TEXT }
+					CASE 'TIMES':   {
+						ProjectorTimeWarm = ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,':',1),1))
+						ProjectorTimeCool = ATOI(DATA.TEXT)
+					}
+				}
+			}
+			CASE 'QUERY':{
+				SWITCH(DATA.TEXT){
+					CASE 'POWER':	fnSendQuery(pollPOWER)
+					CASE 'INPUT':	fnSendQuery(pollINPUT)
+					CASE 'MODEL':	fnSendQuery(pollMODEL)
+					CASE 'SERIAL':	fnSendQuery(pollSERIAL)
+					CASE 'FW':		fnSendQuery(pollFW)
+					CASE 'SHUTTER':fnSendQuery(pollSHUTTER)
+					CASE 'FREEZE':	fnSendQuery(pollFREEZE)
+					CASE 'ASPECT':	fnSendQuery(pollASPECT)
+				}
+			}
+			CASE 'POLL':{
+				SWITCH(DATA.TEXT){
+					CASE 'START':	fnStartPolling()
+					CASE 'RESTART':fnRestartPoll()
+					CASE 'KILL':{
+						IF(TIMELINE_ACTIVE(TLID_POLL))	{TIMELINE_KILL(TLID_POLL)}
+						IF(TIMELINE_ACTIVE(TLID_REPOLL))	{TIMELINE_KILL(TLID_REPOLL)}
+					}
+					CASE 'KILLALL':{
+						STACK_VAR INTEGER TLID
+						FOR(TLID = TLID_BUSY; TLID <= TLID_TIMEOUT; TLID++){
+							IF(TIMELINE_ACTIVE(TLID))		{TIMELINE_KILL(TLID)}
+						}
+					}
 				}
 			}
 			CASE 'CONNECT':{
@@ -347,7 +456,7 @@ DEFINE_PROGRAM{
 ******************************************************************************/
 	(** Activated on each Poll interval **)
 DEFINE_EVENT TIMELINE_EVENT[TLID_POLL]{
-	fnSendQuery();
+	fnSendQuery(pollPOWER);
 }
 	(** Close connection after X amount of inactivity **)
 DEFINE_EVENT TIMELINE_EVENT[TLID_TIMEOUT]{
@@ -357,7 +466,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMEOUT]{
 }
 	(** Boot Finished **)
 DEFINE_EVENT TIMELINE_EVENT[TLID_BOOT]{
-	fnSendQuery();
+	fnSendQuery(pollPOWER);
 	fnStartPolling();
 }
 	(** Re-Poll Delay Elapsed **)
@@ -410,13 +519,19 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_BUSY]{
 ******************************************************************************/
 DEFINE_FUNCTION fnSendInputCommand(){
 	SWITCH(doINPUT){
-		  CASE 'VIDEO':	fnSendCommand('IIS','VID');
-		  CASE 'SVIDEO':	fnSendCommand('IIS','SVD');
-		  CASE 'VGA1':		fnSendCommand('IIS','RG1');
-		  CASE 'VGA2':		fnSendCommand('IIS','RG2');
-		  CASE 'AUX':		fnSendCommand('IIS','AUX');
-		  CASE 'DVI1':		fnSendCommand('IIS','DVI');
-		  CASE 'HDMI1':	fnSendCommand('IIS','HD1');
+		CASE 'VIDEO':		fnSendCommand('IIS','VID')
+		CASE 'SVIDEO':		fnSendCommand('IIS','SVD')
+		CASE 'VGA1':		fnSendCommand('IIS','RG1')
+		CASE 'VGA2':		fnSendCommand('IIS','RG2')
+		CASE 'AUX':			fnSendCommand('IIS','AUX')
+		CASE 'DVI1':		fnSendCommand('IIS','DVI')
+		CASE 'HDMI1':		fnSendCommand('IIS','HD1')
+		CASE 'HDMI2':		fnSendCommand('IIS','HD2')
+		CASE 'NETWORK':	fnSendCommand('IIS','NWP')
+		CASE 'PANA-APP':	fnSendCommand('IIS','PA1')
+		CASE 'MIRACAST':	fnSendCommand('IIS','MC1')
+		CASE 'MEMORY':		fnSendCommand('IIS','MV1')
+		CASE 'DIGITAL':	fnSendCommand('IIS','DL1')
 	}
 	IF(TIMELINE_ACTIVE(TLID_AUTOADJ)){TIMELINE_KILL(TLID_AUTOADJ)}
 	SWITCH(doINPUT){
