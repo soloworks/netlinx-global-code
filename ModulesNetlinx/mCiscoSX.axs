@@ -1992,6 +1992,7 @@ DEFINE_FUNCTION fnInitPanel(INTEGER pPanel){
 	fnDrawSearchKB(pPanel)
 	fnSetupPresetButtons(pPanel)
 	fnDisplayRecentCalls(pPanel)
+	fnClearDirectory()
 
 	SEND_COMMAND tp[pPanel], "'^GLL-',ITOA(lvlDIR_ScrollBar),',1'"
 
