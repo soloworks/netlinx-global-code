@@ -27,15 +27,15 @@ LONG TLID_POLL				= 1
 LONG TLID_COMMS			= 2
 LONG TLID_RETRY 			= 3
 
+INTEGER CONN_STATE_OFFLINE		= 0
+INTEGER CONN_STATE_CONNECTING = 1
+INTEGER CONN_STATE_CONNECTED	= 2
+
 DEFINE_VARIABLE
 VOLATILE uChristieProj myChristieProj
 
 LONG TLT_POLL[] 		= {20000}	// Poll Time
 LONG TLT_COMMS[]		= {90000}	// Comms Timeout
-
-INTEGER CONN_STATE_OFFLINE		= 0
-INTEGER CONN_STATE_CONNECTING = 1
-INTEGER CONN_STATE_CONNECTED	= 2
 
 INTEGER chnFreeze		= 211		// Picture Freeze Feedback
 INTEGER chnVMUTE	   = 214		// Picture Mute Feedback
@@ -72,6 +72,7 @@ DEFINE_FUNCTION fnInitPoll(){
 }
 
 DEFINE_FUNCTION fnPoll(){
+	fnOpenConnection()
 	fnSendCommand("'PWR?'")
 }
 
@@ -109,7 +110,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 
 	// Process the feedback
 	REMOVE_STRING(pDATA,'(',1)	// Get rid of any leading data
-	
+
 	SWITCH(GET_BUFFER_STRING(pDATA,4)){
 		CASE 'PWR!':{
 			myChristieProj.Power   = ATOI(GET_BUFFER_STRING(pDATA,3))
@@ -181,8 +182,14 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{	// Control Events
 			CASE 'PROPERTY':{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
 					CASE 'IP':{
-						myChristieProj.IP_HOST 	= DATA.TEXT
-						myChristieProj.IP_PORT	= 33336
+						IF(FIND_STRING(DATA.TEXT,':',1)){
+							myChristieProj.IP_HOST = fnStripCharsRight(REMOVE_STRING(DATA.TEXT,':',1),1)
+							myChristieProj.IP_PORT = ATOI(DATA.TEXT)
+						}
+						ELSE{
+							myChristieProj.IP_HOST = DATA.TEXT
+							myChristieProj.IP_PORT = 33336
+						}
 						fnPoll()
 					}
 					CASE 'DEBUG':{
@@ -192,6 +199,14 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{	// Control Events
 			}
 
 			CASE 'RAW':SEND_STRING dvDevice, "'(',DATA.TEXT,')'"
+
+			CASE 'CONNECT':{
+				myChristieProj.CONN_STATE = 0
+				SWITCH(DATA.TEXT){
+					CASE 'OPEN':  { fnOpenConnection()  }
+					CASE 'CLOSE': { fnCloseConnection() }
+				}
+			}
 
 			CASE 'INPUT':{
 				myChristieProj.desInput = fnGetInputString(DATA.TEXT)
@@ -234,11 +249,6 @@ DEFINE_PROGRAM{
 	[vdvControl,chnFreeze] 	= ( myChristieProj.FREEZE )
 	[vdvControl,chnVMUTE]   = ( myChristieProj.VMUTE )
 }
-/******************************************************************************
-	EoF
-******************************************************************************/
-
-
 /******************************************************************************
 	EoF
 ******************************************************************************/
