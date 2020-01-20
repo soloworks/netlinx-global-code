@@ -90,7 +90,7 @@ DEFINE_FUNCTION CHAR[10000] fnRemoveWhiteSpace(CHAR pSTRING[10000]){
 }
 DEFINE_FUNCTION CHAR[10000] fnRemoveLeadingWhiteSpace(CHAR pSTRING[10000]){
 	STACK_VAR CHAR rs[10000]
-	 rs = pSTRING;
+	rs = pSTRING;
 	WHILE(LENGTH_ARRAY(rs)){
 		IF(rs[1] <=  $20 || rs[1] >= $7F ){
 			GET_BUFFER_CHAR(rs)
