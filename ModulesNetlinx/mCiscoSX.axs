@@ -183,6 +183,7 @@ DEFINE_TYPE STRUCTURE uSX{
 	// Directory
 	uDir		DIRECTORY
 	// Touch10
+	INTEGER      T10_CONTROLLED
 	uExtSource   ExtSources[8]
 	INTEGER      ExtSourceHide
 	uPeripherals PERIPHERALS
@@ -594,6 +595,12 @@ DEFINE_FUNCTION fnInitData(){
 	fnQueueTx('xFeedback register','/Status/Peripherals')
 
 	fnQueueTx('xConfiguration','Peripherals Profile Touchpanels: 0')
+
+	IF(mySX.T10_CONTROLLED){
+		fnQueueTx('xConfiguration','Peripherals Profile ControlSystems: 1')
+		fnQueueTx('xConfiguration','Peripherals Profile TouchPanels: Minimum1')
+		fnQueueTx('xConfiguration','Security Session InactivityTimeout: 1')
+	}
 
 	fnQueueTx('xStatus','Audio')
 	fnQueueTx('xStatus','Call')
@@ -1618,6 +1625,13 @@ DEFINE_EVENT DATA_EVENT[vdvControl[1]]{
 								CASE 'TRUE':mySX.DEBUG = DEBUG_BASIC
 								DEFAULT:    mySX.DEBUG = DEBUG_ERROR
 							}
+						}
+						CASE 'T10_CONTROL':{
+							SWITCH(DATA.TEXT){
+								CASE 'TRUE':	{mySX.T10_CONTROLLED = TRUE }
+								DEFAULT:    	{mySX.T10_CONTROLLED = FALSE}
+							}
+							fnInitData()
 						}
 						CASE 'LOGIN':{
 							mySX.Username = fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)
