@@ -95,7 +95,7 @@ INTEGER NOW_PANE_MODE_2		= 2
 INTEGER NOW_PANE_MODE_3		= 3
 
 // Timeout timeline for calendar page
-LONG TLID_FB_TIME_SET					= 01
+LONG TLID_FB								= 01
 LONG TLID_FB_TIME_CHECK					= 02
 LONG TLID_TIMEOUT_OVERLAYS				= 03
 LONG TLID_TIMER_NOSHOW_TIMEOUT		= 04
@@ -103,6 +103,7 @@ LONG TLID_TIMER_QUICKBOOK_TIMEOUT	= 05
 LONG TLID_TIMER_OCCUPANCY_TIMEOUT	= 06
 LONG TLID_TIMER_AUTOBOOK_ACTION		= 07
 LONG TLID_TIMER_AUTOBOOK_STANDOFF	= 08
+LONG TLID_FB_TIME_CHECK_2020			= 20
 /********************************************************************************************************************************************************************************************************************************************************
 	Data Structure - Internal Booking Slot
 ********************************************************************************************************************************************************************************************************************************************************/
@@ -339,8 +340,8 @@ PERSISTENT INTEGER  CORRECTION      // Correction for time remaining, if any
 LONG TLT_OLAY_TIMEOUT[]  = {  45000 }	// Timeout for any overlay on the GUI
 LONG TLT_ONE_MIN[]		 = {  60000 }	// One Min time array for Countdown Timelines
 //LONG TLT_FB_TIME_SET[]   = {	  500 }	// Repeating timer for Setting the Time
-LONG TLT_FB_TIME_CHECK[]   = {	  500 }	// Repeating timer for Setting the Time
-//LONG TLT_FB_TIME_CHECK[] = {	 2500 }	// Repeating timer for Feedback (Increased to 2500 to chill processor out)
+LONG TLT_FB[]            = {	  500 }	// Repeating timer for feeback
+LONG TLT_FB_TIME_CHECK[] = {	 2000 }	// Repeating timer for Feedback (Increased to 2000 to chill processor out)
 
 /********************************************************************************************************************************************************************************************************************************************************
 	Helper Functions - Debugging
@@ -512,7 +513,7 @@ DEFINE_FUNCTION fnInsertFreeSlot(INTEGER s){
 	freeSlot.SLOT_END_TIME_HHMMSS = "freeSlot.SLOT_END_TIME_HHMM,':00'"
 	// Insert Duration
 	freeSlot.SLOT_DURATION_SECS = freeSlot.SLOT_END_REF - freeSlot.SLOT_START_REF
-	freeSlot.SLOT_DURATION_MINS = fnSecsToMins(freeSlot.SLOT_DURATION_SECS,TRUE)
+	freeSlot.SLOT_DURATION_MINS = fnSecsToMins(freeSlot.SLOT_DURATION_SECS,FALSE)//TRUE)
 	// Insert it
 	myRoom.SLOTS[s] = freeSlot
 	fnDebug(DEBUG_LOG,'FUNCTION',"'fnInsertFreeSlot(',ITOA(s),')'",'--> Done')
@@ -559,7 +560,7 @@ DEFINE_FUNCTION INTEGER fnAddSlot(uSlot S){
 /********************************************************************************************************************************************************************************************************************************************************
 	Timeline instead of Feedback to determine Remaining Time
 ********************************************************************************************************************************************************************************************************************************************************/
-DEFINE_VARIABLE VOLATILE CHAR TIME_DEBUGGING[13][128]
+DEFINE_VARIABLE VOLATILE CHAR Debugging[20][128]
 DEFINE_FUNCTION																	fnSingleBeep(){
 	SEND_COMMAND tp,"'ABEEP'" // For G4 Panels
 }
@@ -570,12 +571,29 @@ DEFINE_FUNCTION																	fnTripleBeep(){
 	SEND_COMMAND tp,"'ABEEP'" // For G4 Panels
 	wait 1 SEND_COMMAND tp,"'ADBEEP'" // For G4 Panels
 }
+DEFINE_FUNCTION																	fnStartFeedback(){
+	// Create timeline for feedback
+	TIMELINE_CREATE(TLID_FB,TLT_FB,LENGTH_ARRAY(TLT_FB),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
+	fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_FB','<-- Created')
+	Debugging[03] = 'TIMELINE_EVENT TLID_FB <-- Created'
+}
 DEFINE_FUNCTION																	fnStartTimeCheck(){
 	// Create timeline to check for time ticking over to new Minute value
 	TIMELINE_CREATE(TLID_FB_TIME_CHECK,TLT_FB_TIME_CHECK,LENGTH_ARRAY(TLT_FB_TIME_CHECK),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
 	fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_FB_TIME_CHECK','<-- Created')
-	TIME_DEBUGGING[02] = 'TIMELINE_EVENT TLID_FB_TIME_CHECK <-- Created'
+	Debugging[05] = 'TIMELINE_EVENT TLID_FB_TIME_CHECK <-- Created'
 }
+/*DEFINE_FUNCTION																	fnStartTimeCheck(){
+	// Start timeline to check for time ticking over to new Minute value
+	LOCAL_VAR INTEGER nCOUNT
+
+	IF(!TIMELINE_ACTIVE(TLID_FB_TIME_CHECK)){
+		nCOUNT++
+		TIMELINE_CREATE(TLID_FB_TIME_CHECK,TLT_FB_TIME_CHECK,LENGTH_ARRAY(TLT_FB_TIME_CHECK),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
+		fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_FB_TIME_CHECK',"'<-- Restarted (',ITOA(nCOUNT),')'")
+		Debugging[05] = "'TIMELINE_EVENT TLID_FB_TIME_CHECK <-- Restarted (',ITOA(nCOUNT),')'"
+	}
+}*/
 DEFINE_FUNCTION																	fnFeedbackTimeCheck(){
 	STACK_VAR SINTEGER timeMM
 	STACK_VAR CHAR timeHH_MM[5]//Only 5 chars, so will drop the seconds
@@ -584,14 +602,14 @@ DEFINE_FUNCTION																	fnFeedbackTimeCheck(){
 	// Log for Debugging
 	fnDebug(DEBUG_DEV,'FUNCTION','fnFeedbackTimeCheck','<-- Called')
 	//Check to make sure timeline is in sync with local time
-	TIME_DEBUGGING[04] = "'FUNCTION::fnFeedbackTimeCheck::Time = ',TIME"
+	Debugging[07] = "'FUNCTION::fnFeedbackTimeCheck::Time = ',TIME"
 	fnDebug(DEBUG_LOG,'FUNCTION','fnFeedbackTimeCheck',"'Time = ',TIME")
 	// Check if a new Min is in progress
-	//IF(myRoom.LAST_TRIGGERED_MINUTE != timeMM){
-	IF(1){
+	IF(myRoom.LAST_TRIGGERED_MINUTE != timeMM){
+	//IF(1){
 		// Set Comparison Value to prevent reoccurance until next Min
 		myRoom.LAST_TRIGGERED_MINUTE = timeMM
-		TIME_DEBUGGING[05] = "'myRoom.LAST_TRIGGERED_MINUTE = ',ITOA(timeMM)"
+		Debugging[08] = "'myRoom.LAST_TRIGGERED_MINUTE = ',ITOA(timeMM)"
 		// If this room has any data to even bother with this
 		IF(myRoom.SLOT_CURRENT != fnGetCurrentSlot() && fnGetCurrentSlot() != 0){
 			fnDebug(DEBUG_DEV,'FUNCTION','fnFeedbackTimeCheck','IF(myRoom.SLOT_CURRENT != fnGetCurrentSlot() && fnGetCurrentSlot() != 0)')
@@ -608,9 +626,9 @@ DEFINE_FUNCTION																	fnFeedbackTimeCheck(){
 			REMAINING_SECS = myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS + CORRECTION
 			myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_MINS = fnSecsToMins(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS,FALSE)
 			myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT = fnSecondsToDurationTextLocal(REMAINING_SECS,0,'Remaining Seconds Text')
-			TIME_DEBUGGING[08] = "'fnFBTC: myRoom.SLOTS[',ITOA(myRoom.SLOT_CURRENT),'].SLOT_REMAIN_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS)"
-			TIME_DEBUGGING[09] = "'fnFBTC: REMAINING_SECS = ',ITOA(REMAINING_SECS)"
-			TIME_DEBUGGING[10] = "'fnFBTC: myRoom.SLOTS[',ITOA(myRoom.SLOT_CURRENT),'].SLOT_REMAIN_TEXT = ',myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT"
+			Debugging[09] = "'fnFBTC2020: myRoom.SLOTS[',ITOA(myRoom.SLOT_CURRENT),'].SLOT_REMAIN_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS)"
+			Debugging[10] = "'fnFBTC2020: REMAINING_SECS = ',ITOA(REMAINING_SECS)"
+			Debugging[11] = "'fnFBTC2020: myRoom.SLOTS[',ITOA(myRoom.SLOT_CURRENT),'].SLOT_REMAIN_TEXT = ',myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT"
 
 			// Debugging
 			myRoom.CURRENT_SLOT              = myRoom.SLOTS[myRoom.SLOT_CURRENT]
@@ -621,39 +639,75 @@ DEFINE_FUNCTION																	fnFeedbackTimeCheck(){
 			debugSlots[3].SLOT_DURATION_TEXT = myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_DURATION_TEXT
 			debugSlots[3].SLOT_REMAIN_TEXT   = myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT
 
-			fnDebug(DEBUG_LOG,'FUNCTION','fnFeedbackTimeCheck',"'.SLOT_END_REF = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_END_REF)")
-			fnDebug(DEBUG_LOG,'FUNCTION','fnFeedbackTimeCheck',"'fnTimeToSeconds(TIME) = ',ITOA(fnTimeToSeconds(TIME))")
-			fnDebug(DEBUG_LOG,'FUNCTION','fnFeedbackTimeCheck',"'.SLOT_REMAIN_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS)")
+			//fnDebug(DEBUG_LOG,'FUNCTION','fnFeedbackTimeCheck',"'.SLOT_END_REF = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_END_REF)")
+			//fnDebug(DEBUG_LOG,'FUNCTION','fnFeedbackTimeCheck',"'fnTimeToSeconds(TIME) = ',ITOA(fnTimeToSeconds(TIME))")
+			//fnDebug(DEBUG_LOG,'FUNCTION','fnFeedbackTimeCheck',"'.SLOT_REMAIN_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS)")
 			fnDebug(DEBUG_LOG,'FUNCTION','fnFeedbackTimeCheck',"'.SLOT_REMAIN_TEXT = ',(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT)")
 		}
 	}
 	fnUpdatePanel(0)
-	//fnSetupOverlay(0)
 	fnDebug(DEBUG_LOG,'FUNCTION','fnFeedbackTimeCheck','--> Done')
 }
 DEFINE_START{
-	TIME_DEBUGGING[01] = "'START TIME = ',TIME"
+	Debugging[01] = "'COMPILE TIME = ',
+	ITOA(DATE_TO_YEAR(__LDATE__)),'.',
+	FORMAT('%02d',DATE_TO_MONTH(__LDATE__)),'.',
+	FORMAT('%02d',DATE_TO_DAY(__LDATE__)),' ',
+	FORMAT('%02d',TIME_TO_HOUR(__TIME__)),':',
+	FORMAT('%02d',TIME_TO_MINUTE(__TIME__))"
+	Debugging[02] = "'START TIME = ',DATE,', ',TIME"
+	fnStartFeedback()
 	fnStartTimeCheck()
 }
-DEFINE_EVENT TIMELINE_EVENT[TLID_FB_TIME_CHECK]{
-	//Check to make sure timeline is in sync with local time
+DEFINE_EVENT TIMELINE_EVENT[TLID_FB]{
+	//Feedback timeline
 	LOCAL_VAR INTEGER nCOUNT
+	LOCAL_VAR INTEGER LAST_SEC
 	STACK_VAR INTEGER SECS
 	SECS = ATOI(RIGHT_STRING(TIME,2))
-	IF(SECS <= 5){
+	IF(LAST_SEC <> SECS){
 		nCOUNT++
 		IF(nCOUNT == 1){
-			fnTripleBeep()
-			fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_FB_TIME_CHECK',"'time stamp ',TIME")
-			TIME_DEBUGGING[03] = "'TIME = ',TIME"
-			fnFeedbackTimeCheck()
+			LAST_SEC = SECS
+			fnSingleBeep()
+			fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_FB',"'time stamp ',TIME")
+			Debugging[04] = "'TIME = ',TIME,', LAST_SEC = ',ITOA(LAST_SEC)"
+			fnUpdateFeedback()
 		}
 	}
 	ELSE{
 		nCOUNT = 0
 	}
-	fnUpdateFeedback()
 	myRoom.DEBUG = DEBUG_LEVEL
+		Debugging[20] = "'myRoom.DEBUG = ',ITOA(myRoom.DEBUG)"
+	IF(myRoom.DEBUG == DEBUG_LOG){
+		IF(DEBUG_LOG_FILENAME = ''){
+			fnInitateLogFile()
+		}
+	}
+	ELSE{
+		DEBUG_LOG_FILENAME = ''
+	}
+}
+DEFINE_EVENT TIMELINE_EVENT[TLID_FB_TIME_CHECK]{
+	//Feedback time check timeline
+//	LOCAL_VAR INTEGER nCOUNT
+//	LOCAL_VAR INTEGER LAST_SEC
+//	STACK_VAR INTEGER SECS
+//	SECS = ATOI(RIGHT_STRING(TIME,2))
+//	IF(LAST_SEC <> SECS){
+//		nCOUNT++
+//		IF(nCOUNT == 1){
+//			LAST_SEC = SECS
+			fnDoubleBeep()
+			fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_FB_TIME_CHECK',"'time stamp ',TIME")
+			Debugging[06] = "'TIME = ',TIME"//,', LAST_SEC = ',ITOA(LAST_SEC)"
+			fnFeedbackTimeCheck()
+//		}
+//	}
+//	ELSE{
+//		nCOUNT = 0
+//	}
 }
 /********************************************************************************************************************************************************************************************************************************************************
 	Virtual Device Data Events
@@ -677,7 +731,9 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 							CASE 'DEV':		DEBUG_LEVEL = DEBUG_DEV
 							CASE 'LOG':		DEBUG_LEVEL = DEBUG_LOG
 						}
-						IF(DEBUG_LEVEL == DEBUG_LOG){
+						myRoom.DEBUG = DEBUG_LEVEL
+						Debugging[20] = "'myRoom.DEBUG = ',ITOA(myRoom.DEBUG)"
+						IF(myRoom.DEBUG == DEBUG_LOG){
 							fnInitateLogFile()
 						}
 					}
@@ -852,7 +908,7 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 
 					// Populate additional fields
 					thisSlot.SLOT_DURATION_SECS = thisSlot.SLOT_END_REF - thisSlot.SLOT_START_REF
-					thisSlot.SLOT_DURATION_MINS = fnSecsToMins(thisSlot.SLOT_DURATION_SECS,TRUE)
+					thisSlot.SLOT_DURATION_MINS = fnSecsToMins(thisSlot.SLOT_DURATION_SECS,FALSE)//TRUE)
 					thisSlot.SLOT_DURATION_TEXT = fnSecondsToDurationTextLocal(thisSlot.SLOT_DURATION_SECS,0,'This Slot Duration')
 					pStartTime = fnSecondsToTime(thisSlot.SLOT_START_REF)
 					pEndTime   = fnSecondsToTime(thisSlot.SLOT_END_REF)
@@ -930,23 +986,26 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 						STACK_VAR CHAR timeHH_MM[5]//Only 5 chars, so will drop the seconds
 						timeHH_MM = TIME
 						// Update meeting variables as required
-						myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS   = myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_END_REF - fnTimeToSeconds("timeHH_MM,':00'")
-						REMAINING_SECS = myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS + CORRECTION
-						myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_MINS   = fnSecsToMins(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS,FALSE)
-						myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_DURATION_TEXT = fnSecondsToDurationTextLocal(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_DURATION_SECS,0,'Booking Duration')
+						REMAINING_SECS   = ( myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_END_REF - fnTimeToSeconds("timeHH_MM,':00'") ) + CORRECTION
+						myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS = REMAINING_SECS
+						myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_MINS = fnSecsToMins(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS,FALSE)
+						//myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS   = myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_END_REF - fnTimeToSeconds(TIME)
+						//REMAINING_SECS = myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS + CORRECTION
+						//myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_MINS   = fnSecsToMins(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS,FALSE)
+						myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_DURATION_TEXT = fnSecondsToDurationTextLocal(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_DURATION_SECS,0,'Booking Duration Text')
 						myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT   = fnSecondsToDurationTextLocal(REMAINING_SECS,0,'Booking Remaining Text')
 						// Debugging
-						TIME_DEBUGGING[11] = "'BOOKING: myRoom.SLOTS[',ITOA(myRoom.SLOT_CURRENT),'].SLOT_REMAIN_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS)"
-						TIME_DEBUGGING[12] = "'BOOKING: REMAINING_SECS = ',ITOA(REMAINING_SECS)"
-						TIME_DEBUGGING[13] = "'BOOKING: myRoom.SLOTS[',ITOA(myRoom.SLOT_CURRENT),'].SLOT_REMAIN_TEXT = ',myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT"
-						fnDoubleBeep()
+						Debugging[12] = "'BOOKING: myRoom.SLOTS[',ITOA(myRoom.SLOT_CURRENT),'].SLOT_REMAIN_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS)"
+						Debugging[13] = "'BOOKING: REMAINING_SECS = ',ITOA(REMAINING_SECS)"
+						Debugging[14] = "'BOOKING: myRoom.SLOTS[',ITOA(myRoom.SLOT_CURRENT),'].SLOT_REMAIN_TEXT = ',myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT"
+						fnTripleBeep()
 						debugSlots[2] = myRoom.SLOTS[myRoom.SLOT_CURRENT]
-						fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'.SLOT_START_REF = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_START_REF)")
-						fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'.SLOT_END_REF = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_END_REF)")
-						fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'.SLOT_DURATION_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_DURATION_SECS)")
-						fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'.SLOT_DURATION_TEXT = ',(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_DURATION_TEXT)")
-						fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'fnTimeToSeconds(TIME) = ',ITOA(fnTimeToSeconds(TIME))")
-						fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'.SLOT_REMAIN_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS)")
+						//fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'.SLOT_START_REF = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_START_REF)")
+						//fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'.SLOT_END_REF = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_END_REF)")
+						//fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'.SLOT_DURATION_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_DURATION_SECS)")
+						//fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'.SLOT_DURATION_TEXT = ',(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_DURATION_TEXT)")
+						//fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'fnTimeToSeconds(TIME) = ',ITOA(fnTimeToSeconds(TIME))")
+						//fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'.SLOT_REMAIN_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS)")
 						fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'.SLOT_REMAIN_TEXT = ',(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT)")
 						// This is the last slot, so we are now loaded
 						myRoom.SLOTS_LOADING = FALSE
@@ -986,7 +1045,7 @@ DEFINE_EVENT CHANNEL_EVENT[vdvRoom,chn_vdv_SlotBooked]{
 			}
 			// If this is a QuickBook Meeting then start the Quick Book cancellation standoff
 			ELSE{
-				fnSingleBeep()
+				fnTripleBeep()
 				// Set Timeout Timer to Threshold
 				myRoom.QUICKBOOK_TIMEOUT.COUNTER = myRoom.QUICKBOOK_TIMEOUT.INIT_VAL
 				IF(myRoom.QUICKBOOK_TIMEOUT.COUNTER == 1){
@@ -1059,7 +1118,7 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_QUICKBOOK_TIMEOUT]{
 	ELSE{
 		SEND_COMMAND tp,"'^TXT-',ITOA(lvlQuickBookStandoffTimer),',2,',FORMAT('%d',myRoom.QUICKBOOK_TIMEOUT.COUNTER),' mins'"
 	}
-	
+
 
 	// Act if Timer has run out
 	IF(myRoom.QUICKBOOK_TIMEOUT.COUNTER == 0){
@@ -1295,7 +1354,7 @@ DEFINE_FUNCTION fnUpdateAutoBookFB(INTEGER pPanel){
 	ELSE{
 		SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(lvlAutoBookActionTimer),',2,',FORMAT('%d',myRoom.AUTOBOOK_ACTION.COUNTER),' mins'"
 	}
-	
+
 	// Update Events
 	IF(myRoom.AUTOBOOK_MODE == AUTOBOOK_MODE_EVENTS){
 		SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addDiagTimeAutoBookEvents),',2,',FORMAT('%d',myRoom.AUTOBOOK_EVENTS_COUNT),' of ',FORMAT('%d',myRoom.AUTOBOOK_EVENTS_THRESHOLD),' events'"
@@ -1581,7 +1640,7 @@ DEFINE_EVENT BUTTON_EVENT[tp,btnQuickBookInstant]{//instance booking button on t
 		fnDebug(DEBUG_DEV,'BUTTON_EVENT','btnQuickBookInstant','PUSH')
 		myRoom.QUICKBOOK_START_TIME_HHMM = TIME
 		myRoom.QUICKBOOK_START_TIME_HHMMSS = "myRoom.QUICKBOOK_START_TIME_HHMM,':00'"
-		TIME_DEBUGGING[06] = "'BUTTON::PUSH::btnQuickBookInstant::myRoom.QUICKBOOK_START_TIME_HHMM = ',myRoom.QUICKBOOK_START_TIME_HHMM"
+		Debugging[15] = "'BUTTON::PUSH::btnQuickBookInstant::myRoom.QUICKBOOK_START_TIME_HHMM = ',myRoom.QUICKBOOK_START_TIME_HHMM"
 		pMSG = "'ACTION-CREATE'"	// Booking Index
 		pMSG = "pMSG,',',myRoom.QUICKBOOK_SUBJECT"
 		pMSG = "pMSG,',',myRoom.QUICKBOOK_START_TIME_HHMMSS"
@@ -1911,7 +1970,7 @@ DEFINE_FUNCTION fnBuildDiaryDetailOnPanel(INTEGER pPanel){
 					// Set Start Time as well
 					myRoom.QUICKBOOK_START_TIME_HHMM    = TIME//fnSecondsToTime(fnTimeToSeconds(TIME)-(fnTimeToSeconds(FUZZYTIME.HHMMSS)%60))
 					myRoom.QUICKBOOK_START_TIME_HHMMSS = "myRoom.QUICKBOOK_START_TIME_HHMM,':00'"
-					TIME_DEBUGGING[07] = "'FUNCTION::fnBuildDiaryDetailOnPanel::myRoom.QUICKBOOK_START_TIME_HHMM = ',TIME"
+					Debugging[16] = "'FUNCTION::fnBuildDiaryDetailOnPanel::myRoom.QUICKBOOK_START_TIME_HHMM = ',TIME"
 
 					fnDebug(DEBUG_DEV,'FUNCTION',"'fnBuildDiaryDetailOnPanel(','pPanel=',ITOA(pPanel),')'","'myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_END_REF = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_END_REF)")
 					fnDebug(DEBUG_DEV,'FUNCTION',"'fnBuildDiaryDetailOnPanel(','pPanel=',ITOA(pPanel),')'","'myRoom.QUICKBOOK_START_TIME_HHMMSS = ',ITOA(myRoom.QUICKBOOK_START_TIME_HHMMSS)")
@@ -1967,10 +2026,10 @@ DEFINE_FUNCTION fnUpdatePanel(INTEGER pPanel){
 	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNowEnd),  ',0,',pEndTime"
 	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNowDuration),  ',0,',myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_DURATION_TEXT"
 	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNowRemaining), ',0,',myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT"
-	fnDebug(DEBUG_LOG,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'now pStartTime = ',    pStartTime")
-	fnDebug(DEBUG_LOG,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'now pEndTime = ',      pEndTime")
-	fnDebug(DEBUG_LOG,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'now .SLOT_DURATION_TEXT = ', myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_DURATION_TEXT")
-	fnDebug(DEBUG_LOG,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'now .REMAINING_TEXT = ',myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT")
+	//fnDebug(DEBUG_LOG,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'now pStartTime = ',    pStartTime")
+	//fnDebug(DEBUG_LOG,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'now pEndTime = ',      pEndTime")
+	//fnDebug(DEBUG_LOG,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'now .SLOT_DURATION_TEXT = ', myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_DURATION_TEXT")
+	//fnDebug(DEBUG_LOG,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'now .REMAINING_TEXT = ',myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT")
 
 	// Populate Now Organiser
 	SWITCH(myRoom.NOW_PANE_MODE){
@@ -2261,7 +2320,8 @@ DEFINE_FUNCTION fnSetPanelMode(INTEGER pPanel,CHAR pMODE[20]){
 /********************************************************************************************************************************************************************************************************************************************************
 	Feedback
 ********************************************************************************************************************************************************************************************************************************************************/
-DEFINE_FUNCTION fnUpdateFeedback(){
+DEFINE_FUNCTION fnUpdateFeedback(){}
+DEFINE_PROGRAM{
 	// Virtual Device
 
 	// Occupancy Sensor Feedback
