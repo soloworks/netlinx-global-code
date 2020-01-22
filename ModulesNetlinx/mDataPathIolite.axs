@@ -447,9 +447,9 @@ DEFINE_EVENT DATA_EVENT[vdvWall]{
 			CASE 'MATRIX':{
 				// Setup New CLI Command
 				STACK_VAR uCli c
-				STACK_VAR INTEGER Inp
+				STACK_VAR CHAR Inp[30]
 				c.WallID = myVidWall.Wall[w].ID
-				inp = ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'*',1),1))
+				inp = fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'*',1),1)
 				// Set Window ID
 				c.Arg[1].Key = 'id'
 				c.Arg[1].Val = DATA.TEXT
@@ -458,7 +458,7 @@ DEFINE_EVENT DATA_EVENT[vdvWall]{
 				c.Arg[2].Val = 'Capture'
 				// Set Input
 				c.Arg[3].Key = 'input'
-				c.Arg[3].Val = "'Input ',ITOA(inp)"
+				c.Arg[3].Val = inp
 				c.Arg[3].QuoteValue = TRUE
 				// Send Command
 				fnSendCLI(c)
