@@ -81,15 +81,13 @@ DEFINE_START{
 DEFINE_EVENT DATA_EVENT[dvDevice]{
 	ONLINE:{
 		IF(!mySonyDisplay.DISABLED){
-			IF(mySonyDisplay.isIP){
-				mySonyDisplay.IP_STATE = IP_STATE_CONNECTED
-				fnSendFromQueue()
-			}
-			ELSE{
+			IF(!mySonyDisplay.isIP){
 				SEND_COMMAND dvDevice, 'SET MODE DATA'
 				SEND_COMMAND dvDevice, 'SET BAUD 9600 N 8 1 485 DISABLE'
 				fnPoll()
 			}
+			mySonyDisplay.IP_STATE = IP_STATE_CONNECTED
+			fnSendFromQueue()
 		}
 	}
 	OFFLINE:{
