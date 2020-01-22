@@ -227,6 +227,8 @@ INTEGER btnSelfViewPos[]= {203,204}
 (**   Toggle Tracking Mode          **)
 INTEGER btnSpeakerTrack      = 205
 INTEGER btnPresenterTrack   = 206
+(**   Merge Calls                   **)
+INTEGER btnMergeCalls      = 208
 (**   SelfView Toggle               **)
 INTEGER btnSelfViewToggle  = 209
 (**   Hang Up Calls                 **)
@@ -2300,6 +2302,11 @@ DEFINE_EVENT BUTTON_EVENT[tp,btnReject]{
 				}
 			}
 		}
+	}
+}
+DEFINE_EVENT BUTTON_EVENT[tp,btnMergeCalls]{
+	PUSH:{
+		fnQueueTx('xCommand',"'Call Join'")
 	}
 }
 /******************************************************************************
