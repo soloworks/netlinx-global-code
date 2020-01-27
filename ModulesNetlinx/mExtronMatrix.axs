@@ -7,9 +7,9 @@ INCLUDE 'CustomFunctions'
 	uses virtual DSP channels 1+ as gain & mute point
 ******************************************************************************/
 DEFINE_TYPE STRUCTURE uAudio{
-	INTEGER MUTE
-	INTEGER GAIN
-	INTEGER GAIN_PEND
+	INTEGER  MUTE
+	INTEGER  GAIN
+	INTEGER  GAIN_PEND
 	SINTEGER LAST_GAIN
 }
 DEFINE_TYPE STRUCTURE uMatrix{
@@ -21,26 +21,28 @@ DEFINE_TYPE STRUCTURE uMatrix{
 	INTEGER	isIP
 	CHAR     PASSWORD[20]
 
-	INTEGER DEBUG					// Debuging ON/OFF
-	INTEGER DISABLED				// Disable Module
-	CHAR	  Tx[1000]				// Transmission Buffer
-	CHAR	  LAST_SENT[100]		// Last sent message for feedback handling
-	INTEGER MODEL_ID				// Internal Model Constant
-	INTEGER VID_MTX_SIZE[2]		// INPUT.OUTPUT count of video matrix
-	INTEGER AUD_MTX_SIZE[2]		// INPUT.OUTPUT count of Audio matrix
+	INTEGER  DEBUG					// Debuging ON/OFF
+	INTEGER  DISABLED				// Disable Module
+	CHAR	   Tx[1000]				// Transmission Buffer
+	CHAR	   LAST_SENT[100]		// Last sent message for feedback handling
+	INTEGER  MODEL_ID				// Internal Model Constant
+	INTEGER  VID_MTX_SIZE[2]		// INPUT.OUTPUT count of video matrix
+	INTEGER  AUD_MTX_SIZE[2]		// INPUT.OUTPUT count of Audio matrix
 	// MetaData
-	CHAR META_FIRMWARE[20]		// Firmware Shorthand
-	CHAR META_FIRMWARE_FULL[20]// Firmware Longhand
-	CHAR META_PART_NUMBER[20]	// Part Number
-	CHAR META_MODEL[20]			// Extron Model (Programatically Set based on PN)
-	CHAR META_MAC[20]				// MAC Address (If Applicable)
-	CHAR META_IP[20]				// IP Address (If Applicable)
-	INTEGER HAS_NETWORK			// Does this switch have a network interface
-	INTEGER HAS_AUDIO				// Does this switch have audio
+	CHAR     META_FIRMWARE[20]		// Firmware Shorthand
+	CHAR     META_FIRMWARE_FULL[20]// Firmware Longhand
+	CHAR     META_PART_NUMBER[20]	// Part Number
+	CHAR     META_MODEL[20]			// Extron Model (Programatically Set based on PN)
+	CHAR     META_MAC[20]				// MAC Address (If Applicable)
+	CHAR     META_IP[20]				// IP Address (If Applicable)
+	INTEGER  HAS_NETWORK			// Does this switch have a network interface
+	INTEGER  HAS_AUDIO				// Does this switch have audio
 	// State
-	CHAR DIAG_INT_TEMP[20]		// Internal Temperature
+	CHAR     DIAG_INT_TEMP[20]		// Internal Temperature
 	uAudio	AUDIO[32]
-	INTEGER SIGNAL_PRESENT[32]		// Is a signal present on the input
+	INTEGER  SIGNAL_PRESENT[32] // Is a signal present on the input
+	INTEGER  ROUTED_VI[32]      // Which Video Input is routed to each Output
+	INTEGER  ROUTED_AI[32]      // Which Video Input is routed to each Output
 }
 
 DEFINE_CONSTANT
@@ -257,6 +259,52 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 			SELECT{
 				ACTIVE(DATA.TEXT == "$0D,$0A,'Password:'"):{
 					SEND_STRING dvDevice,"myMatrix.PASSWORD,$0D"
+				}
+				ACTIVE(RIGHT_STRING(myMatrix.LAST_SENT,1) == '%'):{
+					STACK_VAR INTEGER VIN
+					STACK_VAR INTEGER VOUT
+					IF(FIND_STRING(UPPER_STRING(DATA.TEXT),'VID',1)){
+						STACK_VAR CHAR pPARSE[16]
+						pPARSE = UPPER_STRING(REMOVE_STRING(DATA.TEXT,' ',1))
+						SWITCH(LEFT_STRING(pPARSE,2)){
+							CASE 'OU': VOUT = ATOI(pPARSE)
+							CASE 'IN': VIN  = ATOI(pPARSE)
+						}
+						pPARSE = UPPER_STRING(REMOVE_STRING(DATA.TEXT,' ',1))
+						SWITCH(LEFT_STRING(pPARSE,2)){
+							CASE 'OU': VOUT = ATOI(pPARSE)
+							CASE 'IN': VIN  = ATOI(pPARSE)
+						}
+					}
+					ELSE{
+						VOUT = ATOI(fnStripCharsRight(myMatrix.LAST_SENT,1))
+						VIN  = ATOI(fnStripCharsRight(DATA.TEXT,2))
+					}
+					myMatrix.ROUTED_VI[VOUT] = VIN
+					SEND_STRING vdvControl[1],"'FB: VIDEO IN [',ITOA(VIN),'] TO VIDEO OUT [',ITOA(VOUT),']'"
+				}
+				ACTIVE(RIGHT_STRING(myMatrix.LAST_SENT,1) == '$'):{
+					STACK_VAR INTEGER AIN
+					STACK_VAR INTEGER AOUT
+					IF(FIND_STRING(UPPER_STRING(DATA.TEXT),'AUD',1)){
+						STACK_VAR CHAR pPARSE[16]
+						pPARSE = UPPER_STRING(REMOVE_STRING(DATA.TEXT,' ',1))
+						SWITCH(LEFT_STRING(pPARSE,2)){
+							CASE 'OU': AOUT = ATOI(pPARSE)
+							CASE 'IN': AIN  = ATOI(pPARSE)
+						}
+						pPARSE = UPPER_STRING(REMOVE_STRING(DATA.TEXT,' ',1))
+						SWITCH(LEFT_STRING(pPARSE,2)){
+							CASE 'OU': AOUT = ATOI(pPARSE)
+							CASE 'IN': AIN  = ATOI(pPARSE)
+						}
+					}
+					ELSE{
+						AOUT = ATOI(fnStripCharsRight(myMatrix.LAST_SENT,1))
+						AIN  = ATOI(fnStripCharsRight(DATA.TEXT,2))
+					}
+					myMatrix.ROUTED_AI[AOUT] = AIN
+					SEND_STRING vdvControl[1],"'FB: AUDIO IN [',ITOA(AIN),'] TO AUDIO OUT [',ITOA(AOUT),']'"
 				}
 				ACTIVE(myMatrix.LAST_SENT == '0LS'):{
 					STACK_VAR INTEGER x
