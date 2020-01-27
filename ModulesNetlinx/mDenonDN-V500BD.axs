@@ -24,7 +24,7 @@ DEFINE_TYPE STRUCTURE uDenonBR{
 	// State
 	INTEGER  POWER
 	CHAR     desCOMMAND
-	
+
 	// Feedback
 	CHAR     ANSWER_CODE[16]
 	CHAR     DISC_TYPE[16]
@@ -160,7 +160,9 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMEOUT]{
 DEFINE_EVENT TIMELINE_EVENT[TLID_BOOT]{
 	IF(!myDenonBR.COMMS.DISABLED){
 		IF(!myDenonBR.COMMS.isIP){
-			myDenonBR.COMMS.BAUD_RATE = '9600 E 8 1 485 DISABLE'
+			IF(myDenonBR.COMMS.BAUD_RATE = ''){
+				myDenonBR.COMMS.BAUD_RATE = '9600 E 8 1 485 DISABLE'
+			}
 			SEND_COMMAND dvDevice, 'SET MODE DATA'
 			SEND_COMMAND dvDevice,"'SET BAUD ',myDenonBR.COMMS.BAUD_RATE"
 			SEND_COMMAND dvDevice, 'GET BAUD'
@@ -267,7 +269,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 		}
 	}
 	STRING:{
-		fnDebug(FALSE,'RAW->',DATA.TEXT)
+		fnDebug(DEBUG_STD,'RAW->',DATA.TEXT)
 		// Strip any Garbage (ACK/NACKs)
 		IF(DATA.TEXT == 'ack'){
 			REMOVE_STRING(DATA.TEXT,'ack',1)
@@ -426,11 +428,11 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 			SWITCH(pPOWER){
 				CASE P_ON:{
 					TLT_POLL[1] = 5000
-					TIMELINE_RELOAD(TLID_POLL,TLT_POLL,LENGTH_ARRAY(TLT_COMMS))		
+					TIMELINE_RELOAD(TLID_POLL,TLT_POLL,LENGTH_ARRAY(TLT_COMMS))
 				}
 				DEFAULT:{
 					TLT_POLL[1] = 25000
-					TIMELINE_RELOAD(TLID_POLL,TLT_POLL,LENGTH_ARRAY(TLT_COMMS))		
+					TIMELINE_RELOAD(TLID_POLL,TLT_POLL,LENGTH_ARRAY(TLT_COMMS))
 				}
 			}
 			myDenonBR.POWER = pPOWER
@@ -507,8 +509,8 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 					CASE 'PAUSE'		:fnAddToQueue('B',"$00")
 					CASE 'SKIP+'		:fnAddToQueue('C','+')
 					CASE 'SKIP-'		:fnAddToQueue('C','-')
-					CASE 'FFWD'			:fnAddToQueue('D','+')
-					CASE 'RWND'			:fnAddToQueue('D','-')
+					CASE 'FASTFORWARD':fnAddToQueue('D','+')
+					CASE 'REWIND'		:fnAddToQueue('D','-')
 					CASE 'LEFT'			:fnAddToQueue('M','1')
 					CASE 'RIGHT'		:fnAddToQueue('M','3')
 					CASE 'UP'			:fnAddToQueue('M','2')
@@ -527,7 +529,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 					CASE 'DISPLAY'		:fnAddToQueue('h',"$00")
 				}
 				fnPoll()
-			}          
+			}
 		}
 	}
 }
