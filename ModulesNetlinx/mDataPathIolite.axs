@@ -169,7 +169,7 @@ DEFINE_FUNCTION fnSendCLI(uCli c){
 		STACK_VAR CHAR toSend[255]
 		STACK_VAR uCli blankCli
 		STACK_VAR INTEGER i
-		
+
 		// Create new send string
 		toSend = 'wcmd '
 		toSend = "toSend,' '"
@@ -206,13 +206,13 @@ DEFINE_FUNCTION fnSendCLI(uCli c){
 		fnDebug(myVidWall.Conn.Debug,DEBUG_STD,"'->DP::',toSend")
 		SEND_STRING ipServer, toSend
 		//myVidWall.Conn.RTS = FALSE
-	
+
 	fnInitPoll()
 }
 DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 	// Local Variables
 	LOCAL_VAR uCli c
-	
+
 	IF(LEFT_STRING(pDATA,6) == ' =wcmd'){
 		STACK_VAR INTEGER i
 		// Is Echo of Command, body to follow, so Store
@@ -256,14 +256,14 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 				LOCAL_VAR CHAR WallID[50]
 				STACK_VAR CHAR Key[30]
 				STACK_VAR CHAR Val[100]
-				
+
 				// Get Data
 				Key = fnRemoveWhiteSpace(fnStripCharsRight(REMOVE_STRING(pDATA,':',1),1))
 				Val = fnRemoveWhiteSpace(pDATA)
-				
+
 				// Debug Out
 				//fnDebug(myVidWall.Conn.Debug,DEBUG_DEV,"'WallStateKP::',Key,'::',Val")
-				
+
 				SWITCH(Key){
 					CASE 'Wall Id': 	WallID = Val
 					CASE 'Wall Name': myVidWall.Wall[fnGetWallByID(WallID)].Name = Val
@@ -447,9 +447,9 @@ DEFINE_EVENT DATA_EVENT[vdvWall]{
 			CASE 'MATRIX':{
 				// Setup New CLI Command
 				STACK_VAR uCli c
-				STACK_VAR INTEGER Inp
+				STACK_VAR CHAR Inp[30]
 				c.WallID = myVidWall.Wall[w].ID
-				inp = ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'*',1),1))
+				inp = fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'*',1),1)
 				// Set Window ID
 				c.Arg[1].Key = 'id'
 				c.Arg[1].Val = DATA.TEXT
@@ -458,7 +458,7 @@ DEFINE_EVENT DATA_EVENT[vdvWall]{
 				c.Arg[2].Val = 'Capture'
 				// Set Input
 				c.Arg[3].Key = 'input'
-				c.Arg[3].Val = "'Input ',ITOA(inp)"
+				c.Arg[3].Val = inp
 				c.Arg[3].QuoteValue = TRUE
 				// Send Command
 				fnSendCLI(c)

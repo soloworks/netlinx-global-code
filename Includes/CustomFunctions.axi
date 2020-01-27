@@ -174,8 +174,8 @@ DEFINE_FUNCTION CHAR[200] fnJSONEncode(CHAR pString[]){
 	RETURN pReturn
 }
 
-DEFINE_FUNCTION INTEGER fnComparePrefix(CHAR pString[], CHAR pSuffix[]){
-	RETURN (LEFT_STRING(pString,LENGTH_ARRAY(pSuffix)) == pSuffix)
+DEFINE_FUNCTION INTEGER fnComparePrefix(CHAR pString[], CHAR pPrefix[]){
+	RETURN (LEFT_STRING(pString,LENGTH_ARRAY(pPrefix)) == pPrefix)
 }
 /******************************************************************************
 Functions for Logic Handling

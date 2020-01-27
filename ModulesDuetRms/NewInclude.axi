@@ -1,1 +1,0 @@
-PROGRAM_NAME='NewInclude'
