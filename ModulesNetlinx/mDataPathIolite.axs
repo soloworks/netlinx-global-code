@@ -22,6 +22,7 @@ DEFINE_TYPE STRUCTURE uArg{
 // CLI Command Structure
 DEFINE_TYPE STRUCTURE uCli{
 	CHAR    WallID[50]
+	CHAR    WallName[50]
 	uArg    Arg[MAX_ARGS]
 }
 // Window Structure
@@ -177,6 +178,11 @@ DEFINE_FUNCTION fnSendCLI(uCli c){
 		// If Wall is set then direct this to that port
 		IF(c.WallID != ''){
 			toSend = "toSend,'-machine=localhost:',ITOA(myVidWall.Wall[fnGetWallByID(c.WallID)].CliPort)"
+			toSend = "toSend,' '"
+		}
+		// If Wall is set then direct this to that port
+		IF(c.WallName != ''){
+			toSend = "toSend,'-wall="',c.WallName,'"'"
 			toSend = "toSend,' '"
 		}
 
@@ -418,7 +424,10 @@ DEFINE_EVENT DATA_EVENT[vdvServer]{
 				}
 			}
 			CASE 'RAW':{
-				//fn(DATA.TEXT,'')
+				STACK_VAR CHAR toSend[200]
+				toSend = "'wcmd ',DATA.TEXT,$0D,$0A"
+				fnDebug(myVidWall.Conn.Debug,DEBUG_ERR,"'->DP::',toSend")
+				SEND_STRING ipServer,toSend
 			}
 		}
 	}
@@ -427,8 +436,8 @@ DEFINE_EVENT DATA_EVENT[vdvServer]{
 (** Delay for IP based control to allow system to boot **)
 DEFINE_EVENT DATA_EVENT[vdvWall]{
 	COMMAND:{
-		STACK_VAR INTEGER w
-		w = fnGetWallByName(myVidWall.WallNameRefs[GET_LAST(vdvWall)])
+		STACK_VAR CHAR w[50]
+		w = myVidWall.WallNameRefs[GET_LAST(vdvWall)]
 		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
 			CASE 'PROPERTY':{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
@@ -437,7 +446,7 @@ DEFINE_EVENT DATA_EVENT[vdvWall]{
 			}
 			CASE 'LAYOUT':{
 				STACK_VAR uCli c
-				c.WallID = myVidWall.Wall[w].ID
+				c.WallName = w
 				c.Arg[1].Key = 'layout'
 				c.Arg[1].Val = DATA.TEXT
 				c.Arg[1].QuoteValue = TRUE
@@ -448,7 +457,7 @@ DEFINE_EVENT DATA_EVENT[vdvWall]{
 				// Setup New CLI Command
 				STACK_VAR uCli c
 				STACK_VAR CHAR Inp[30]
-				c.WallID = myVidWall.Wall[w].ID
+				c.WallName = w
 				inp = fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'*',1),1)
 				// Set Window ID
 				c.Arg[1].Key = 'id'
