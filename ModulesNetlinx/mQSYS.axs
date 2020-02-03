@@ -3,6 +3,9 @@ INCLUDE 'CustomFunctions'
 /******************************************************************************
 	Q-SYS Module
 	By Solo Control Ltd (www.solocontrol.co.uk)
+	
+	Camera object looks for Named Controls in format:
+	"~ID~[PanLeft|PanRight|TiltUp|TiltDown|ZoomIn|ZoomOut]"
 ******************************************************************************/
 #WARN 'Use CSP instead of CSV for levels, as that is 0.000 to 1.000 of actual level range'
 /******************************************************************************
@@ -12,6 +15,8 @@ DEFINE_CONSTANT
 INTEGER _MAX_OBJECTS          = 50
 // Object Types
 INTEGER OBJ_TYPE_LEVEL			= 1
+INTEGER OBJ_TYPE_BUTTON       = 2
+INTEGER OBJ_TYPE_CAMERA       = 3
 // IP States
 INTEGER IP_STATE_OFFLINE		= 0
 INTEGER IP_STATE_CONNECTING	= 1
@@ -375,6 +380,15 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 			CASE 'PRESET':{
 				fnSendCommand('ct',DATA.TEXT,'')
 			}
+			CASE 'SNAPSHOT':{
+				STACK_VAR CHAR bankName[50]
+				STACK_VAR INTEGER bankNo
+				STACK_VAR FLOAT rampTime
+				bankName = fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)
+				bankNo = ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1))
+				rampTime = ATOF(DATA.TEXT)
+				fnSendCommand('ssl',"'"',bankName,'" ',ITOA(bankNo)",FTOA(rampTime))
+			}
 			CASE 'RAW':{
 				STACK_VAR CHAR toSend[255]
 				toSend = "DATA.TEXT,$0A"
@@ -401,6 +415,8 @@ DEFINE_EVENT DATA_EVENT[vdvObjects]{
 						// Get Type
 						SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
 							CASE 'LEVEL':	myQSYS.OBJECTS[o].TYPE = OBJ_TYPE_LEVEL
+							CASE 'BUTTON': myQSYS.OBJECTS[o].TYPE = OBJ_TYPE_BUTTON
+							CASE 'CAMERA': myQSYS.OBJECTS[o].TYPE = OBJ_TYPE_CAMERA
 						}
 						// Get ID_1 & ID_2
 						IF(FIND_STRING(DATA.TEXT,',',1)){
@@ -411,6 +427,17 @@ DEFINE_EVENT DATA_EVENT[vdvObjects]{
 							myQSYS.OBJECTS[o].ID_1 	= DATA.TEXT
 							myQSYS.OBJECTS[o].ID_2 	= ''
 						}
+					}
+				}
+			}
+			CASE 'BUTTON':{
+				SWITCH(myQSYS.OBJECTS[o].TYPE){
+					CASE OBJ_TYPE_BUTTON:{
+						SWITCH(DATA.TEXT){
+							CASE 'PUSH': 		myQSYS.OBJECTS[o].VALUE_MUTE = TRUE
+							CASE 'RELEASE':	myQSYS.OBJECTS[o].VALUE_MUTE = FALSE
+						}
+						fnSendCommand('csv',myQSYS.OBJECTS[o].ID_2,ITOA(myQSYS.OBJECTS[o].VALUE_MUTE))
 					}
 				}
 			}
@@ -536,6 +563,41 @@ DEFINE_PROGRAM{
 	}
 	[vdvControl,251] = (TIMELINE_ACTIVE(TLID_COMMS_00))
 	[vdvControl,252] = (TIMELINE_ACTIVE(TLID_COMMS_00))
+}
+/******************************************************************************
+	Camera Control
+******************************************************************************/
+DEFINE_CONSTANT
+INTEGER chnPTZ[] = {132,133,134,135,158,159}
+DEFINE_EVENT CHANNEL_EVENT[vdvObjects,chnPTZ]{
+	ON:{
+		STACK_VAR INTEGER o
+		o = GET_LAST(vdvObjects)
+		IF(myQSYS.OBJECTS[o].TYPE == OBJ_TYPE_CAMERA){
+			SWITCH(CHANNEL.CHANNEL){
+				CASE 132:fnSendCommand('csv',"myQSYS.OBJECTS[o].ID_1,'TiltUp'",ITOA(1))
+				CASE 133:fnSendCommand('csv',"myQSYS.OBJECTS[o].ID_1,'TiltDown'",ITOA(1))
+				CASE 134:fnSendCommand('csv',"myQSYS.OBJECTS[o].ID_1,'PanLeft'",ITOA(1))
+				CASE 135:fnSendCommand('csv',"myQSYS.OBJECTS[o].ID_1,'PanRight'",ITOA(1))
+				CASE 158:fnSendCommand('csv',"myQSYS.OBJECTS[o].ID_1,'ZoomIn'",ITOA(1))
+				CASE 159:fnSendCommand('csv',"myQSYS.OBJECTS[o].ID_1,'ZoomOut'",ITOA(1))
+			}
+		}
+	}
+	OFF:{
+		STACK_VAR INTEGER o
+		o = GET_LAST(vdvObjects)
+		IF(myQSYS.OBJECTS[o].TYPE == OBJ_TYPE_CAMERA){
+			SWITCH(CHANNEL.CHANNEL){
+				CASE 132:fnSendCommand('csv',"myQSYS.OBJECTS[o].ID_1,'TiltUp'",ITOA(0))
+				CASE 133:fnSendCommand('csv',"myQSYS.OBJECTS[o].ID_1,'TiltDown'",ITOA(0))
+				CASE 134:fnSendCommand('csv',"myQSYS.OBJECTS[o].ID_1,'PanLeft'",ITOA(0))
+				CASE 135:fnSendCommand('csv',"myQSYS.OBJECTS[o].ID_1,'PanRight'",ITOA(0))
+				CASE 158:fnSendCommand('csv',"myQSYS.OBJECTS[o].ID_1,'ZoomIn'",ITOA(0))
+				CASE 159:fnSendCommand('csv',"myQSYS.OBJECTS[o].ID_1,'ZoomOut'",ITOA(0))
+			}
+		}
+	}
 }
 /******************************************************************************
 	Channel Feedback
