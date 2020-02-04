@@ -3,7 +3,7 @@ INCLUDE 'CustomFunctions'
 /******************************************************************************
 	Q-SYS Module
 	By Solo Control Ltd (www.solocontrol.co.uk)
-	
+
 	Camera object looks for Named Controls in format:
 	"~ID~[PanLeft|PanRight|TiltUp|TiltDown|ZoomIn|ZoomOut]"
 ******************************************************************************/
@@ -579,8 +579,8 @@ DEFINE_EVENT CHANNEL_EVENT[vdvObjects,chnPTZ]{
 				CASE 133:fnSendCommand('csv',"myQSYS.OBJECTS[o].ID_1,'TiltDown'",ITOA(1))
 				CASE 134:fnSendCommand('csv',"myQSYS.OBJECTS[o].ID_1,'PanLeft'",ITOA(1))
 				CASE 135:fnSendCommand('csv',"myQSYS.OBJECTS[o].ID_1,'PanRight'",ITOA(1))
-				CASE 158:fnSendCommand('csv',"myQSYS.OBJECTS[o].ID_1,'ZoomIn'",ITOA(1))
-				CASE 159:fnSendCommand('csv',"myQSYS.OBJECTS[o].ID_1,'ZoomOut'",ITOA(1))
+				CASE 158:fnSendCommand('csv',"myQSYS.OBJECTS[o].ID_1,'ZoomOut'",ITOA(1))
+				CASE 159:fnSendCommand('csv',"myQSYS.OBJECTS[o].ID_1,'ZoomIn'",ITOA(1))
 			}
 		}
 	}
@@ -593,8 +593,8 @@ DEFINE_EVENT CHANNEL_EVENT[vdvObjects,chnPTZ]{
 				CASE 133:fnSendCommand('csv',"myQSYS.OBJECTS[o].ID_1,'TiltDown'",ITOA(0))
 				CASE 134:fnSendCommand('csv',"myQSYS.OBJECTS[o].ID_1,'PanLeft'",ITOA(0))
 				CASE 135:fnSendCommand('csv',"myQSYS.OBJECTS[o].ID_1,'PanRight'",ITOA(0))
-				CASE 158:fnSendCommand('csv',"myQSYS.OBJECTS[o].ID_1,'ZoomIn'",ITOA(0))
-				CASE 159:fnSendCommand('csv',"myQSYS.OBJECTS[o].ID_1,'ZoomOut'",ITOA(0))
+				CASE 158:fnSendCommand('csv',"myQSYS.OBJECTS[o].ID_1,'ZoomOut'",ITOA(0))
+				CASE 159:fnSendCommand('csv',"myQSYS.OBJECTS[o].ID_1,'ZoomIn'",ITOA(0))
 			}
 		}
 	}
