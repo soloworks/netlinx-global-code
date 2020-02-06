@@ -22,8 +22,8 @@ INCLUDE 'UnicodeLib'
 ********************************************************************************************************************************************************************************************************************************************************/
 DEFINE_CONSTANT
 // Module Maximums
-INTEGER _MAX_SLOTS	 	= 99			// Max slots for bookings and free time
-INTEGER _MAX_PANELS	 	= 2			// Max number of panels supported
+INTEGER _MAX_SLOTS	 	= 99		// Max slots for bookings and free time
+INTEGER _MAX_PANELS	 	= 2		// Max number of panels supported
 
 // Language
 INTEGER LANG_EN  = 1
@@ -570,8 +570,8 @@ PERSISTENT INTEGER  TIME_CORRECTION       // CORRECTION for time remaining, if a
 PERSISTENT INTEGER  QB_MIN_CORRECTION = 2 // CORRECTION, if any, to prevent minimum QuickBook meeting timeout overlap with a succeeding diary booking
 #IF_DEFINED _DEV_MODE
 #WARN 'WARNING - DEV MODE ENABLED'
-PERSISTENT INTEGER  NO_SHOW_MIN				// Minimum time (in minutes) to wait before checking Occ State and cancelling (0 = Never) 
-PERSISTENT INTEGER  NO_SHOW_MAX				// Maximum length (in minutes) for a meeting to be cancelled for a no show
+PERSISTENT INTEGER  NOSHOW_MIN				// Minimum time (in minutes) to wait before checking Occ State and cancelling (0 = Never)
+PERSISTENT INTEGER  NOSHOW_MAX				// Maximum length (in minutes) for a meeting to be cancelled for a no show
 #END_IF
 
 DEFINE_FUNCTION																	fnSingleBeep(){
@@ -629,6 +629,7 @@ DEFINE_FUNCTION																	fnFeedbackTimeCheck(){
 			// Force the channel down, ensuring a trigger if a new meeting is in place
 			OFF[vdvRoom,chn_vdv_SlotBooked]
 			// Update the panel
+			Debugging[09] = "'TIME TRIGGER 1 COUNT = ',ITOA(myRoom.LAST_TRIGGERED_MINUTE)"
 		}
 		IF(myRoom.SLOT_CURRENT){
 			STACK_VAR SLONG REMAINING_SECS
@@ -637,13 +638,13 @@ DEFINE_FUNCTION																	fnFeedbackTimeCheck(){
 			REMAINING_SECS = myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS + myRoom.TIME_CORRECTION
 			myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_MINS = fnSecsToMins(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS,FALSE)
 			myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT = fnSecondsToDurationTextLocal(REMAINING_SECS,0,'Remaining Seconds Text')
-
+			Debugging[10] = "'TIME TRIGGER 2 COUNT = ',ITOA(myRoom.LAST_TRIGGERED_MINUTE)"
 			// Debugging
 			#IF_DEFINED _DEV_MODE
-			Debugging[09] = "'fnFBTC2020: myRoom.SLOTS[',ITOA(myRoom.SLOT_CURRENT),'].SLOT_REMAIN_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS)"
-			Debugging[10] = "'fnFBTC2020: REMAINING_SECS = ',ITOA(REMAINING_SECS)"
-			Debugging[11] = "'fnFBTC2020: myRoom.SLOTS[',ITOA(myRoom.SLOT_CURRENT),'].SLOT_REMAIN_TEXT = ',myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT"
-			
+			//Debugging[09] = "'fnFBTC2020: myRoom.SLOTS[',ITOA(myRoom.SLOT_CURRENT),'].SLOT_REMAIN_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS)"
+			//Debugging[10] = "'fnFBTC2020: REMAINING_SECS = ',ITOA(REMAINING_SECS)"
+			//Debugging[11] = "'fnFBTC2020: myRoom.SLOTS[',ITOA(myRoom.SLOT_CURRENT),'].SLOT_REMAIN_TEXT = ',myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT"
+
 			myRoom.CURRENT_SLOT              = myRoom.SLOTS[myRoom.SLOT_CURRENT]
 			debugSlots[3].SLOT_START_REF     = myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_START_REF
 			debugSlots[3].SLOT_END_REF       = myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_END_REF
@@ -705,8 +706,8 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_FB]{
 		DEBUG_LOG_FILENAME = ''
 	}
 	#IF_DEFINED _DEV_MODE
-		myRoom.NOSHOW_TIMEOUT.INIT_VAL = NO_SHOW_MIN
-		myRoom.NOSHOW_MAXIMUM          = NO_SHOW_MAX-1
+		myRoom.NOSHOW_TIMEOUT.INIT_VAL = NOSHOW_MIN
+		myRoom.NOSHOW_MAXIMUM          = NOSHOW_MAX-1
 		Debugging[20] = "'myRoom.QUICKBOOK_MINIMUM_REAL = ',ITOA(myRoom.QUICKBOOK_MINIMUM_REAL)"
 		Debugging[20] = "'myRoom.DEBUG = ',ITOA(myRoom.DEBUG)"
 	#END_IF
@@ -813,8 +814,8 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 					// Room Settings
 					CASE 'NOSHOW':{
 						#IF_DEFINED _DEV_MODE
-							NO_SHOW_MIN = ATOI(fnGetCSV(DATA.TEXT,1))
-							NO_SHOW_MAX = ATOI(fnGetCSV(DATA.TEXT,2))
+							NOSHOW_MIN = ATOI(fnGetCSV(DATA.TEXT,1))
+							NOSHOW_MAX = ATOI(fnGetCSV(DATA.TEXT,2))
 						#ELSE
 							myRoom.NOSHOW_TIMEOUT.INIT_VAL = ATOI(fnGetCSV(DATA.TEXT,1))
 							myRoom.NOSHOW_MAXIMUM = ATOI(fnGetCSV(DATA.TEXT,2))-1
@@ -1028,12 +1029,6 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 							Debugging[13] = "'BOOKING: REMAINING_SECS = ',ITOA(REMAINING_SECS)"
 							Debugging[14] = "'BOOKING: myRoom.SLOTS[',ITOA(myRoom.SLOT_CURRENT),'].SLOT_REMAIN_TEXT = ',myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT"
 							debugSlots[2] = myRoom.SLOTS[myRoom.SLOT_CURRENT]
-							//fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'.SLOT_START_REF = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_START_REF)")
-							//fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'.SLOT_END_REF = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_END_REF)")
-							//fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'.SLOT_DURATION_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_DURATION_SECS)")
-							//fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'.SLOT_DURATION_TEXT = ',(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_DURATION_TEXT)")
-							//fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'fnTimeToSeconds(TIME) = ',ITOA(fnTimeToSeconds(TIME))")
-							//fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'.SLOT_REMAIN_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS)")
 						#END_IF
 						fnDebug(DEBUG_LOG,'DATA_EVENT [COMMAND]','vdvRoom',"'.SLOT_REMAIN_TEXT = ',(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT)")
 						// This is the last slot, so we are now loaded
@@ -1247,9 +1242,16 @@ DEFINE_EVENT CHANNEL_EVENT[vdvRoom,chn_vdv_SensorTriggered]{
 		}
 		SEND_COMMAND tp,"'^TXT-',ITOA(btnDiagStateSensorTrigger),',1,Last Trig:|Chan[',ITOA(myRoom.OCCUPANCY_SENSOR_BOX),':',ITOA(myRoom.OCCUPANCY_SENSOR_CHAN),']'"
 
-		// Create a new timeline
-		TIMELINE_CREATE(TLID_TIMER_OCCUPANCY_TIMEOUT,TLT_ONE_MIN,LENGTH_ARRAY(TLT_ONE_MIN),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
-
+		IF(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_END_REF == myRoom.SLOTS[myRoom.SLOT_CURRENT+1].SLOT_START_REF){// If there is a booking immediately following this one
+			IF(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_END_REF - fnTimeToSeconds(myRoom.QUICKBOOK_START_TIME_HHMMSS) >= myRoom.QUICKBOOK_MINIMUM_REAL*60){
+				// Create a new timeline
+				TIMELINE_CREATE(TLID_TIMER_OCCUPANCY_TIMEOUT,TLT_ONE_MIN,LENGTH_ARRAY(TLT_ONE_MIN),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
+			}
+		}
+		ELSE{
+			// Create a new timeline
+			TIMELINE_CREATE(TLID_TIMER_OCCUPANCY_TIMEOUT,TLT_ONE_MIN,LENGTH_ARRAY(TLT_ONE_MIN),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
+		}
 		// Debug Out
 		fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_TIMER_OCCUPANCY_TIMEOUT',"'<-- Created'")
 	}
