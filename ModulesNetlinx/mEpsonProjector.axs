@@ -121,7 +121,8 @@ DEFINE_FUNCTION fnSendFromQueue(){
 			myEpsonProj.PEND = TRUE;
 			IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){ TIMELINE_KILL(TLID_TIMEOUT) }
 			TIMELINE_CREATE(TLID_TIMEOUT,TLT_TIMEOUT,LENGTH_ARRAY(TLT_TIMEOUT),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
-			fnInitPoll()
+			//fnInitPoll()
+			fnShortPoll()
 		}
 		ELSE IF(myEpsonProj.isIP && myEpsonProj.CONN_STATE == CONN_STATE_OFFLINE){
 			fnOpenConnection()
@@ -370,7 +371,7 @@ DEFINE_EVENT
 TIMELINE_EVENT[TLID_SHORTPOLL]{
 	IF(!myEpsonProj.DISABLED){
 		fnPoll();
-		fnInitPoll();
+		//fnInitPoll();
 	}
 }
 	(** Comms Timeout **)
