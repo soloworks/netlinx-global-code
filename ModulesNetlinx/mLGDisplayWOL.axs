@@ -24,6 +24,7 @@ DEFINE_TYPE STRUCTURE uLGDisplayWOL{
 	INTEGER	LAST_VOL			// Value for a pending Volume
 	INTEGER	AUDMUTE			// Current Audio Mute State
 	INTEGER	VIDMUTE			// Current Video Mute State
+	LONG     POWER_OFF_TIMER// Time in minutes to not poll when the display is powered off
 	// Meta
 	CHAR		META_SN[20]		// Serial Number of Unit
 }
@@ -42,7 +43,6 @@ LONG TLT_TIMEOUT[]     = { 2500}
 LONG TLT_COMMS[]       = {90000}
 LONG TLT_VOL[]         = {  250}
 LONG TLT_BOOT[]        = { 5000}
-LONG TLT_POWERED_OFF[] = { 86400000 }	// 1 Day
 
 INTEGER CONN_STATE_OFFLINE		= 0
 INTEGER CONN_STATE_TRYING		= 1
@@ -53,6 +53,7 @@ INTEGER DEBUG_STD = 1
 INTEGER DEBUG_DEV = 2
 
 DEFINE_VARIABLE
+PERSISTENT LONG TLT_POWERED_OFF[] = { 43200000 }	// 12 Hours
 VOLATILE uLGDisplayWOL myLGDisplayWOL
 
 /******************************************************************************
@@ -127,6 +128,7 @@ DEFINE_FUNCTION fnSetPoweredOff(INTEGER pSTATE){
 }
 DEFINE_EVENT TIMELINE_EVENT[TLID_BOOT]{
 	IF(!myLGDisplayWOL.DISABLED){
+		SEND_STRING vdvControl,'PROPERTY-META,NAME,Display'
 		SEND_STRING vdvControl,'PROPERTY-META,TYPE,Display'
 		SEND_STRING vdvControl,'PROPERTY-META,MAKE,LG'
 		SEND_STRING vdvControl,'PROPERTY-META,MODEL,Unknown'
@@ -282,6 +284,9 @@ DEFINE_EVENT DATA_EVENT[ipDevice]{
 ******************************************************************************/
 DEFINE_EVENT DATA_EVENT[vdvControl]{
 
+	ONLINE:{
+		myLGDisplayWOL.POWER_OFF_TIMER = TLT_POWERED_OFF[1]/1000
+	}
 	COMMAND:{
 		STACK_VAR CHAR DATA_COPY[255]
 		DATA_COPY = DATA.TEXT
@@ -293,6 +298,16 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 							CASE 'LG_WOL':
 							CASE 'TRUE':myLGDisplayWOL.DISABLED = FALSE
 							DEFAULT:		myLGDisplayWOL.DISABLED = TRUE
+						}
+						SWITCH(myLGDisplayWOL.DISABLED){
+							CASE TRUE:{
+								STACK_VAR INTEGER x
+								FOR(x=1; x<=TLID_POWERED_OFF;x++){
+									IF(TIMELINE_ACTIVE(x)){TIMELINE_KILL(x)}
+								}
+							}
+							CASE FALSE:{
+							}
 						}
 					}
 				}
@@ -319,12 +334,17 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 						}
 						CASE 'DEBUG': {
 							SWITCH(DATA.TEXT){
-								CASE 'TRUE':	myLGDisplayWOL.DEBUG = DEBUG_STD
-								CASE 'DEV':		myLGDisplayWOL.DEBUG = DEBUG_DEV
-								DEFAULT:			myLGDisplayWOL.DEBUG = DEBUG_ERR
+								CASE 'TRUE':		myLGDisplayWOL.DEBUG = DEBUG_STD
+								CASE 'DEV':			myLGDisplayWOL.DEBUG = DEBUG_DEV
+								DEFAULT:				myLGDisplayWOL.DEBUG = DEBUG_ERR
 							}
 						}
-						CASE 'ID':		myLGDisplayWOL.ID = ATOI(DATA.TEXT)
+						CASE 'ID':					myLGDisplayWOL.ID = ATOI(DATA.TEXT)
+						CASE 'POWER_OFF_TIMER':{
+							myLGDisplayWOL.POWER_OFF_TIMER = ATOI(DATA.TEXT)
+							TLT_POWERED_OFF[1] = myLGDisplayWOL.POWER_OFF_TIMER*1000
+							TIMELINE_RELOAD(TLID_POWERED_OFF,TLT_POWERED_OFF,LENGTH_ARRAY(TLT_POWERED_OFF))
+						}
 					}
 				}
 				CASE 'POWER':{
