@@ -105,7 +105,31 @@ LONG TLID_TIMER_QUICKBOOK_TIMEOUT	= 05
 LONG TLID_TIMER_OCCUPANCY_TIMEOUT	= 06
 LONG TLID_TIMER_AUTOBOOK_ACTION		= 07
 LONG TLID_TIMER_AUTOBOOK_STANDOFF	= 08
-LONG TLID_FB_TIME_CHECK_2020			= 20
+LONG TLID_BOOT_TP00						= 10
+LONG TLID_BOOT_TP01						= 11
+LONG TLID_BOOT_TP02						= 12
+LONG TLID_BOOT_TP03						= 13
+LONG TLID_BOOT_TP04						= 14
+LONG TLID_BOOT_TP05						= 15
+LONG TLID_BOOT_TP06						= 16
+LONG TLID_BOOT_TP07						= 17
+LONG TLID_BOOT_TP08						= 18
+LONG TLID_BOOT_TP09						= 19
+LONG TLID_BOOT_TP10						= 20
+LONG TLID_BOOT_TP11						= 21
+LONG TLID_BOOT_TP12						= 22
+LONG TLID_BOOT_TP13						= 23
+LONG TLID_BOOT_TP14						= 24
+LONG TLID_BOOT_TP15						= 25
+LONG TLID_BOOT_TP16						= 26
+LONG TLID_BOOT_TP17						= 27
+LONG TLID_BOOT_TP18						= 28
+LONG TLID_BOOT_TP19						= 29
+LONG TLID_BOOT_TP20						= 30
+LONG TLID_BOOT_TP21						= 31
+LONG TLID_BOOT_TP22						= 32
+LONG TLID_BOOT_TP23						= 33
+LONG TLID_BOOT_TP24						= 34
 /********************************************************************************************************************************************************************************************************************************************************
 	Data Structure - Internal Booking Slot
 ********************************************************************************************************************************************************************************************************************************************************/
@@ -247,58 +271,67 @@ INTEGER lvlLangNowNext				   = 22
 INTEGER lvlLangSlots					   = 23
 
 // Addresses
-INTEGER addRoomName				= 50
+INTEGER addRoomState						= 01
+INTEGER addRoomOccupied					= 02
+INTEGER addMeetingRemain				= 03
+INTEGER addNoShowTimer  				= 04
+INTEGER addQuickBookStandoffTimer  	= 05
+INTEGER addAutoBookActionTimer  	 	= 06
+INTEGER addAutoBookTickCount			= 07
+INTEGER addAutoBookStandOffTimer		= 08
 
-INTEGER addNowSubject 			= 51
-INTEGER addNowOrganiser			= 52
-INTEGER addNowStart				= 53
-INTEGER addNowEnd					= 54
-INTEGER btnNowBooked				= 55
-INTEGER addNowDuration			= 56
-INTEGER addNowRemaining			= 57
+INTEGER addRoomName				      = 50
 
-INTEGER addNextSubject 			= 61
-INTEGER addNextOrganiser		= 62
-INTEGER addNextStart				= 63
-INTEGER addNextEnd				= 64
-INTEGER btnNextBooked			= 65
-INTEGER addNextDuration			= 66
+INTEGER addNowSubject 			      = 51
+INTEGER addNowOrganiser			      = 52
+INTEGER addNowStart				      = 53
+INTEGER addNowEnd					      = 54
+INTEGER btnNowBooked				      = 55
+INTEGER addNowDuration			      = 56
+INTEGER addNowRemaining			      = 57
 
-INTEGER addQuickBookSubject 	= 80
-INTEGER addQuickBookDuration	= 81
-INTEGER addExtendDuration		= 82
-INTEGER addQuickBookInstDur	= 83
+INTEGER addNextSubject 			      = 61
+INTEGER addNextOrganiser		      = 62
+INTEGER addNextStart				      = 63
+INTEGER addNextEnd				      = 64
+INTEGER btnNextBooked			      = 65
+INTEGER addNextDuration			      = 66
 
-INTEGER addMessage				= 90
-INTEGER addMessageDetail		= 91
-INTEGER addConnectionMsg		= 92
+INTEGER addQuickBookSubject 	      = 80
+INTEGER addQuickBookDuration	      = 81
+INTEGER addExtendDuration		      = 82
+INTEGER addQuickBookInstDur	      = 83
 
-INTEGER addSlot					= 100
-INTEGER addSlotName				= 200
-INTEGER addSlotSubject			= 300
-INTEGER addSlotStart				= 400
-INTEGER addSlotEnd				= 500
+INTEGER addMessage				      = 90
+INTEGER addMessageDetail		      = 91
+INTEGER addConnectionMsg		      = 92
+
+INTEGER addSlot					      = 100
+INTEGER addSlotName				      = 200
+INTEGER addSlotSubject			      = 300
+INTEGER addSlotStart				      = 400
+INTEGER addSlotEnd				      = 500
 
 // Buttons
-INTEGER btnQuickBookInstant		= 701
-INTEGER btnQuickbookDuration[]	= {711,712} //+15,-15
-INTEGER btnQuickbook 				=  720
-INTEGER btnExtendDuration[]		= {731,732} //+15,-15
-INTEGER btnExtend						=  733
+INTEGER btnQuickBookInstant		   =  701
+INTEGER btnQuickbookDuration[]	   = {711,712} //+15,-15
+INTEGER btnQuickbook 				   =  720
+INTEGER btnExtendDuration[]		   = {731,732} //+15,-15
+INTEGER btnExtend						   =  733
 
 // KEYBOARD
 INTEGER btnKeyboard[]	= {
-801,802,803,804,805,806,807,808,809,810,
-811,812,813,814,815,816,817,818,819,
-820,821,822,823,824,825,826
+	801,802,803,804,805,806,807,808,809,810,
+	811,812,813,814,815,816,817,818,819,
+	820,821,822,823,824,825,826
 }
 INTEGER btnKeyboardSpecial[] = {
-827, //SPACE
-828, //SHIFT
-829 //DELETE
+	827, //SPACE
+	828, //SHIFT
+	829  //DELETE
 }
-INTEGER btnOverlayHide				= 1000
-INTEGER btnOverlayShow[]			= {1001,1002,1003,1004,1005}
+INTEGER btnOverlayHide				   =  1000
+INTEGER btnOverlayShow[]			   = {1001,1002,1003,1004,1005}
 
 INTEGER btnDiagStateSensorOnline		= 3001
 INTEGER btnDiagStateSensorTrigger	= 3002
@@ -339,13 +372,14 @@ CHAR keyboard[][] = {
 DEFINE_VARIABLE
 VOLATILE   uRoom 	  myRoom				// RMS Room Booking data for this room
 VOLATILE   uPanel   myRMSPanel[5]	// Allowance for multiple touch panels on one room
-VOLATILE   uSlot    debugSlots[3]   // For debugging
-
+#IF_DEFINED _DEV_MODE
+	VOLATILE uSlot   debugSlots[3]   // For debugging
+#END_IF
 LONG TLT_OLAY_TIMEOUT[]  = {  45000 }	// Timeout for any overlay on the GUI
 LONG TLT_ONE_MIN[]		 = {  60000 }	// One Min time array for Countdown Timelines
 LONG TLT_FB[]            = {	  500 }	// Repeating timer for feeback
 LONG TLT_FB_TIME_CHECK[] = {	 2000 }	// Repeating timer for Feedback (Increased to 2000 to chill processor out)
-
+LONG TLT_BOOT_DELAY[]       = {  10000 }	// 10 Seconds for delaying teh initialising of teh touchpanels when they come online.
 /********************************************************************************************************************************************************************************************************************************************************
 	Helper Functions - Debugging
 ********************************************************************************************************************************************************************************************************************************************************/
@@ -466,7 +500,6 @@ DEFINE_FUNCTION INTEGER fnGetCurrentSlot(){
 	STACK_VAR INTEGER s
 	FOR(s = 1; s <= _MAX_SLOTS; s++){
 		IF(myRoom.SLOTS[s].SLOT_START_REF <= fnTimeToSeconds(TIME) && myRoom.SLOTS[s].SLOT_END_REF >= fnTimeToSeconds(TIME)){
-		//IF(myRoom.SLOTS[s].SLOT_START_REF <= fnTimeToSeconds(FUZZYTIME.HHMMSS) && myRoom.SLOTS[s].SLOT_END_REF >= fnTimeToSeconds(FUZZYTIME.HHMMSS)){
 			RETURN s
 		}
 	}
@@ -614,14 +647,21 @@ DEFINE_FUNCTION																	fnFeedbackTimeCheck(){
 	// Log for Debugging
 	fnDebug(DEBUG_DEV,'FUNCTION','fnFeedbackTimeCheck','<-- Called')
 	//Check to make sure timeline is in sync with local time
+	#IF_DEFINED _DEV_MODE
 	Debugging[07] = "'FUNCTION::fnFeedbackTimeCheck::Time = ',TIME"
 	fnDebug(DEBUG_LOG,'FUNCTION','fnFeedbackTimeCheck',"'Time = ',TIME")
+	#END_IF
 	// Check if a new Min is in progress
 	IF(myRoom.LAST_TRIGGERED_MINUTE != timeMM){
 		// Set Comparison Value to prevent reoccurance until next Min
 		myRoom.LAST_TRIGGERED_MINUTE = timeMM
+		#IF_DEFINED _DEV_MODE
 		Debugging[08] = "'myRoom.LAST_TRIGGERED_MINUTE = ',ITOA(timeMM)"
+		#END_IF
 		// If this room has any data to even bother with this
+		fnDebug(DEBUG_ERR,'FUNCTION','fnFeedbackTimeCheck','IF(myRoom.SLOT_CURRENT != fnGetCurrentSlot() && fnGetCurrentSlot() != 0)')
+		fnDebug(DEBUG_ERR,'FUNCTION','fnFeedbackTimeCheck',"'myRoom.SLOT_CURRENT = ',ITOA(myRoom.SLOT_CURRENT),'@',timeHH_MM")
+		fnDebug(DEBUG_ERR,'FUNCTION','fnFeedbackTimeCheck',"'fnGetCurrentSlot() = ',ITOA(fnGetCurrentSlot()),'@',timeHH_MM")
 		IF(myRoom.SLOT_CURRENT != fnGetCurrentSlot() && fnGetCurrentSlot() != 0){
 			fnDebug(DEBUG_DEV,'FUNCTION','fnFeedbackTimeCheck','IF(myRoom.SLOT_CURRENT != fnGetCurrentSlot() && fnGetCurrentSlot() != 0)')
 			// Set Current Slot to new slot
@@ -629,7 +669,9 @@ DEFINE_FUNCTION																	fnFeedbackTimeCheck(){
 			// Force the channel down, ensuring a trigger if a new meeting is in place
 			OFF[vdvRoom,chn_vdv_SlotBooked]
 			// Update the panel
+			#IF_DEFINED _DEV_MODE
 			Debugging[09] = "'TIME TRIGGER 1 COUNT = ',ITOA(myRoom.LAST_TRIGGERED_MINUTE)"
+			#END_IF
 		}
 		IF(myRoom.SLOT_CURRENT){
 			STACK_VAR SLONG REMAINING_SECS
@@ -638,24 +680,18 @@ DEFINE_FUNCTION																	fnFeedbackTimeCheck(){
 			REMAINING_SECS = myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS + myRoom.TIME_CORRECTION
 			myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_MINS = fnSecsToMins(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS,FALSE)
 			myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT = fnSecondsToDurationTextLocal(REMAINING_SECS,0,'Remaining Seconds Text')
-			Debugging[10] = "'TIME TRIGGER 2 COUNT = ',ITOA(myRoom.LAST_TRIGGERED_MINUTE)"
+			myRoom.CURRENT_SLOT              = myRoom.SLOTS[myRoom.SLOT_CURRENT]
 			// Debugging
 			#IF_DEFINED _DEV_MODE
-			//Debugging[09] = "'fnFBTC2020: myRoom.SLOTS[',ITOA(myRoom.SLOT_CURRENT),'].SLOT_REMAIN_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS)"
-			//Debugging[10] = "'fnFBTC2020: REMAINING_SECS = ',ITOA(REMAINING_SECS)"
-			//Debugging[11] = "'fnFBTC2020: myRoom.SLOTS[',ITOA(myRoom.SLOT_CURRENT),'].SLOT_REMAIN_TEXT = ',myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT"
+			Debugging[10] = "'TIME TRIGGER 2 COUNT = ',ITOA(myRoom.LAST_TRIGGERED_MINUTE)"
 
-			myRoom.CURRENT_SLOT              = myRoom.SLOTS[myRoom.SLOT_CURRENT]
-			debugSlots[3].SLOT_START_REF     = myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_START_REF
-			debugSlots[3].SLOT_END_REF       = myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_END_REF
-			debugSlots[3].SLOT_REMAIN_SECS   = myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS
-			debugSlots[3].SLOT_REMAIN_MINS   = myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_MINS
-			debugSlots[3].SLOT_DURATION_TEXT = myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_DURATION_TEXT
-			debugSlots[3].SLOT_REMAIN_TEXT   = myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT
+			debugSlots[3].SLOT_START_REF     = myRoom.CURRENT_SLOT.SLOT_START_REF
+			debugSlots[3].SLOT_END_REF       = myRoom.CURRENT_SLOT.SLOT_END_REF
+			debugSlots[3].SLOT_REMAIN_SECS   = myRoom.CURRENT_SLOT.SLOT_REMAIN_SECS
+			debugSlots[3].SLOT_REMAIN_MINS   = myRoom.CURRENT_SLOT.SLOT_REMAIN_MINS
+			debugSlots[3].SLOT_DURATION_TEXT = myRoom.CURRENT_SLOT.SLOT_DURATION_TEXT
+			debugSlots[3].SLOT_REMAIN_TEXT   = myRoom.CURRENT_SLOT.SLOT_REMAIN_TEXT
 			#END_IF
-			//fnDebug(DEBUG_LOG,'FUNCTION','fnFeedbackTimeCheck',"'.SLOT_END_REF = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_END_REF)")
-			//fnDebug(DEBUG_LOG,'FUNCTION','fnFeedbackTimeCheck',"'fnTimeToSeconds(TIME) = ',ITOA(fnTimeToSeconds(TIME))")
-			//fnDebug(DEBUG_LOG,'FUNCTION','fnFeedbackTimeCheck',"'.SLOT_REMAIN_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS)")
 			fnDebug(DEBUG_LOG,'FUNCTION','fnFeedbackTimeCheck',"'.SLOT_REMAIN_TEXT = ',(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT)")
 		}
 	}
@@ -726,7 +762,6 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_FB_TIME_CHECK]{
 ********************************************************************************************************************************************************************************************************************************************************/
 DEFINE_EVENT DATA_EVENT[vdvRoom]{
 	COMMAND:{
-		//fnDebug(DEBUG_DEV,'DATA_EVENT [COMMAND] Called','vdvRoom',DATA.TEXT)
 		fnDebug(DEBUG_DEV,'DATA_EVENT [COMMAND]','vdvRoom','<-- Called')
 		fnDebug(DEBUG_DEV,'DATA_EVENT [COMMAND]','vdvRoom',DATA.TEXT)
 		SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,'-',1),1)){
@@ -1025,8 +1060,7 @@ DEFINE_EVENT DATA_EVENT[vdvRoom]{
 						// Debugging
 						#IF_DEFINED _DEV_MODE
 							fnDoubleBeep()
-							Debugging[12] = "'BOOKING: myRoom.SLOTS[',ITOA(myRoom.SLOT_CURRENT),'].SLOT_REMAIN_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS)"
-							Debugging[13] = "'BOOKING: REMAINING_SECS = ',ITOA(REMAINING_SECS)"
+							Debugging[13] = "'BOOKING: myRoom.SLOTS[',ITOA(myRoom.SLOT_CURRENT),'].SLOT_REMAIN_SECS = ',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS)"
 							Debugging[14] = "'BOOKING: myRoom.SLOTS[',ITOA(myRoom.SLOT_CURRENT),'].SLOT_REMAIN_TEXT = ',myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT"
 							debugSlots[2] = myRoom.SLOTS[myRoom.SLOT_CURRENT]
 						#END_IF
@@ -1061,29 +1095,47 @@ DEFINE_EVENT CHANNEL_EVENT[vdvRoom,chn_vdv_SlotBooked]{
 					IF(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_DURATION_MINS < myRoom.NOSHOW_MAXIMUM){
 						// Set Timeout Timer to Threshold
 						myRoom.NOSHOW_TIMEOUT.COUNTER = myRoom.NOSHOW_TIMEOUT.INIT_VAL
-						// Start Timer
+						IF(myRoom.NOSHOW_TIMEOUT.COUNTER == 1){
+							SEND_COMMAND tp,"'^TXT-',ITOA(addNoShowTimer),',2,',FORMAT('%d',myRoom.NOSHOW_TIMEOUT.COUNTER),' min'"
+						}
+						ELSE{
+							SEND_COMMAND tp,"'^TXT-',ITOA(addNoShowTimer),',2,',FORMAT('%d',myRoom.NOSHOW_TIMEOUT.COUNTER),' mins'"
+						}
+						// Stop Timer, if active:
 						IF(TIMELINE_ACTIVE(TLID_TIMER_NOSHOW_TIMEOUT)){TIMELINE_KILL(TLID_TIMER_NOSHOW_TIMEOUT)}
-						TIMELINE_CREATE(TLID_TIMER_NOSHOW_TIMEOUT,TLT_ONE_MIN,LENGTH_ARRAY(TLT_ONE_MIN),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
+						// If this is not an AutoBooked Meeting Start NOSHOW Timeout
+						IF(!myRoom.SLOTS[myRoom.SLOT_CURRENT].isAUTOBOOK){
+							TIMELINE_CREATE(TLID_TIMER_NOSHOW_TIMEOUT,TLT_ONE_MIN,LENGTH_ARRAY(TLT_ONE_MIN),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
+						}
 					}
 				}
 			}
 			// If this is a QuickBook Meeting then start the Quick Book cancellation standoff
 			ELSE{
 				fnTripleBeep()
+				/*
+				//If this is an Auto Book Meeting
+				IF(myRoom.SLOTS[myRoom.SLOT_CURRENT].isQUICKBOOK){
+					ON[tp,btnNoShowTimerBlank]
+				}
+				IF(myRoom.SLOTS[myRoom.SLOT_CURRENT].isAUTOBOOK){
+					ON[tp,btnNoShowTimerBlank]
+				}
+				*/
 				// Set Timeout Timer to Threshold
 				myRoom.QUICKBOOK_TIMEOUT.COUNTER = myRoom.QUICKBOOK_TIMEOUT.INIT_VAL
 				IF(myRoom.QUICKBOOK_TIMEOUT.COUNTER == 1){
-					SEND_COMMAND tp,"'^TXT-',ITOA(lvlQuickBookStandoffTimer),',2,',FORMAT('%d',myRoom.QUICKBOOK_TIMEOUT.COUNTER),' min'"
+					SEND_COMMAND tp,"'^TXT-',ITOA(addQuickBookStandoffTimer),',2,',FORMAT('%d',myRoom.QUICKBOOK_TIMEOUT.COUNTER),' min'"
 				}
 				ELSE{
-					SEND_COMMAND tp,"'^TXT-',ITOA(lvlQuickBookStandoffTimer),',2,',FORMAT('%d',myRoom.QUICKBOOK_TIMEOUT.COUNTER),' mins'"
+					SEND_COMMAND tp,"'^TXT-',ITOA(addQuickBookStandoffTimer),',2,',FORMAT('%d',myRoom.QUICKBOOK_TIMEOUT.COUNTER),' mins'"
 				}
 				// Start Timer
 				IF(TIMELINE_ACTIVE(TLID_TIMER_QUICKBOOK_TIMEOUT)){TIMELINE_KILL(TLID_TIMER_QUICKBOOK_TIMEOUT)}
 				TIMELINE_CREATE(TLID_TIMER_QUICKBOOK_TIMEOUT,TLT_ONE_MIN,LENGTH_ARRAY(TLT_ONE_MIN),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
 			}
 
-			// Start AutoBook Standoff Timer
+			// Stop AutoBook Standoff Timer
 			IF(TIMELINE_ACTIVE(TLID_TIMER_AUTOBOOK_STANDOFF)){
 				myRoom.AUTOBOOK_STANDOFF.COUNTER = myRoom.AUTOBOOK_STANDOFF.INIT_VAL
 				TIMELINE_KILL(TLID_TIMER_AUTOBOOK_STANDOFF)
@@ -1109,21 +1161,23 @@ DEFINE_EVENT CHANNEL_EVENT[vdvRoom,chn_vdv_SlotBooked]{
 				TIMELINE_CREATE(TLID_TIMER_AUTOBOOK_STANDOFF,TLT_ONE_MIN,LENGTH_ARRAY(TLT_ONE_MIN),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
 				// Update Timer Text
 				IF(myRoom.AUTOBOOK_STANDOFF.COUNTER == 1){
-					SEND_COMMAND tp,"'^TXT-',ITOA(lvlAutoBookStandOffTimer),',2,',FORMAT('%d',myRoom.AUTOBOOK_STANDOFF.COUNTER),' min'"
+					SEND_COMMAND tp,"'^TXT-',ITOA(addAutoBookStandOffTimer),',2,',FORMAT('%d',myRoom.AUTOBOOK_STANDOFF.COUNTER),' min'"
 				}
 				ELSE{
-					SEND_COMMAND tp,"'^TXT-',ITOA(lvlAutoBookStandOffTimer),',2,',FORMAT('%d',myRoom.AUTOBOOK_STANDOFF.COUNTER),' mins'"
+					SEND_COMMAND tp,"'^TXT-',ITOA(addAutoBookStandOffTimer),',2,',FORMAT('%d',myRoom.AUTOBOOK_STANDOFF.COUNTER),' mins'"
 				}
 			}
 			ELSE{
 				myRoom.AUTOBOOK_STANDOFF.COUNTER = 0
 				IF(TIMELINE_ACTIVE(TLID_TIMER_AUTOBOOK_STANDOFF)){TIMELINE_KILL(TLID_TIMER_AUTOBOOK_STANDOFF)}
 				// Update Timer
-				SEND_COMMAND tp,"'^TXT-',ITOA(lvlAutoBookStandOffTimer),',2,','disabled'"
+				SEND_COMMAND tp,"'^TXT-',ITOA(addAutoBookStandOffTimer),',2,','disabled'"
 			}
 		}
 		// Update Panels
 		fnUpdatePanel(0)
+		//OFF[TP,btnOccupancyTimerBlank]
+		//OFF[TP,btnNoShowTimerBlank]
 
 		SEND_STRING vdvRoom,'ACTION-MEETING,ENDED'
 	}
@@ -1137,10 +1191,10 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_QUICKBOOK_TIMEOUT]{
 	// Knock a Min off the timer
 	myRoom.QUICKBOOK_TIMEOUT.COUNTER--
 	IF(myRoom.QUICKBOOK_TIMEOUT.COUNTER == 1){
-		SEND_COMMAND tp,"'^TXT-',ITOA(lvlQuickBookStandoffTimer),',2,',FORMAT('%d',myRoom.QUICKBOOK_TIMEOUT.COUNTER),' min'"
+		SEND_COMMAND tp,"'^TXT-',ITOA(addQuickBookStandoffTimer),',2,',FORMAT('%d',myRoom.QUICKBOOK_TIMEOUT.COUNTER),' min'"
 	}
 	ELSE{
-		SEND_COMMAND tp,"'^TXT-',ITOA(lvlQuickBookStandoffTimer),',2,',FORMAT('%d',myRoom.QUICKBOOK_TIMEOUT.COUNTER),' mins'"
+		SEND_COMMAND tp,"'^TXT-',ITOA(addQuickBookStandoffTimer),',2,',FORMAT('%d',myRoom.QUICKBOOK_TIMEOUT.COUNTER),' mins'"
 	}
 
 
@@ -1165,10 +1219,10 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_NOSHOW_TIMEOUT]{
 
 	// Update Panels
 	IF(myRoom.NOSHOW_TIMEOUT.COUNTER == 1){
-		SEND_COMMAND tp,"'^TXT-',ITOA(lvlNoShowTimer),',2,',FORMAT('%d',myRoom.NOSHOW_TIMEOUT.COUNTER),' min'"
+		SEND_COMMAND tp,"'^TXT-',ITOA(addNoShowTimer),',2,',FORMAT('%d',myRoom.NOSHOW_TIMEOUT.COUNTER),' min'"
 	}
 	ELSE{
-		SEND_COMMAND tp,"'^TXT-',ITOA(lvlNoShowTimer),',2,',FORMAT('%d',myRoom.NOSHOW_TIMEOUT.COUNTER),' mins'"
+		SEND_COMMAND tp,"'^TXT-',ITOA(addNoShowTimer),',2,',FORMAT('%d',myRoom.NOSHOW_TIMEOUT.COUNTER),' mins'"
 	}
 	// Act if Timer has run out
 	IF(myRoom.NOSHOW_TIMEOUT.COUNTER == 0){
@@ -1199,34 +1253,87 @@ DEFINE_EVENT CHANNEL_EVENT[vdvRoom,chn_vdv_RoomOccupied]{
 	}
 }
 
+DEFINE_FUNCTION fnCreateOccupancyTimer(){
+
+	// Set Diagnostics Text
+	IF(myRoom.OCCUPANCY_TIMEOUT.COUNTER == 1){
+		SEND_COMMAND tp,"'^TXT-',ITOA(addRoomOccupied),',2,',ITOA(myRoom.OCCUPANCY_TIMEOUT.COUNTER),' min'"
+	}
+	ELSE{
+		SEND_COMMAND tp,"'^TXT-',ITOA(addRoomOccupied),',2,',ITOA(myRoom.OCCUPANCY_TIMEOUT.COUNTER),' mins'"
+	}
+	// If timeline is running, kill it for now
+	IF(TIMELINE_ACTIVE(TLID_TIMER_OCCUPANCY_TIMEOUT)){TIMELINE_KILL(TLID_TIMER_OCCUPANCY_TIMEOUT)}
+	// Create a new timeline
+	TIMELINE_CREATE(TLID_TIMER_OCCUPANCY_TIMEOUT,TLT_ONE_MIN,LENGTH_ARRAY(TLT_ONE_MIN),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
+	// Debug Out
+	fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_TIMER_OCCUPANCY_TIMEOUT',"'<-- Created'")
+}
 DEFINE_EVENT CHANNEL_EVENT[vdvRoom,chn_vdv_SensorTriggered]{
 	ON:{
 		fnDebug(DEBUG_DEV,'CHANNEL_EVENT','chn_vdv_SensorTriggered','<-- ON')
 
-		// Reset the Occupancy Timer Value
-		myRoom.OCCUPANCY_TIMEOUT.COUNTER = myRoom.OCCUPANCY_TIMEOUT.INIT_VAL
-
-		// If timeline is running, kill it for now
-		IF(TIMELINE_ACTIVE(TLID_TIMER_OCCUPANCY_TIMEOUT)){TIMELINE_KILL(TLID_TIMER_OCCUPANCY_TIMEOUT)}
-
 		// Set Diagnostics Text
-		IF(myRoom.OCCUPANCY_TIMEOUT.COUNTER == 1){
-			SEND_COMMAND tp,"'^TXT-',ITOA(lvlRoomOccupied),',2,',ITOA(myRoom.OCCUPANCY_TIMEOUT.COUNTER),' min'"
-		}
-		ELSE{
-			SEND_COMMAND tp,"'^TXT-',ITOA(lvlRoomOccupied),',2,',ITOA(myRoom.OCCUPANCY_TIMEOUT.COUNTER),' mins'"
-		}
 		SEND_COMMAND tp,"'^TXT-',ITOA(btnDiagStateSensorTrigger),',2,Movement:|Chan[',ITOA(myRoom.OCCUPANCY_SENSOR_BOX),':',ITOA(myRoom.OCCUPANCY_SENSOR_CHAN),']'"
 
-		// Do an AutoBook Trigger Event
-		SWITCH(myRoom.AUTOBOOK_MODE){
-			CASE AUTOBOOK_MODE_EVENTS:{
-				fnAutoBookEvent()
+		IF(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_END_REF == myRoom.SLOTS[myRoom.SLOT_CURRENT+1].SLOT_START_REF){// If there is a booking immediately following this one
+			IF(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_END_REF - fnTimeToSeconds(myRoom.QUICKBOOK_START_TIME_HHMMSS) > myRoom.QUICKBOOK_MINIMUM_REAL*60){// and there is more time than the QB Min Real
+
+				// Reset the Occupancy Timer Value
+				myRoom.OCCUPANCY_TIMEOUT.COUNTER = myRoom.OCCUPANCY_TIMEOUT.INIT_VAL
+
+				// If timeline is running, kill it for now
+				IF(TIMELINE_ACTIVE(TLID_TIMER_OCCUPANCY_TIMEOUT)){TIMELINE_KILL(TLID_TIMER_OCCUPANCY_TIMEOUT)}
+
+				// Set Diagnostics Text
+				IF(myRoom.OCCUPANCY_TIMEOUT.COUNTER == 1){
+					SEND_COMMAND tp,"'^TXT-',ITOA(addRoomOccupied),',2,',ITOA(myRoom.OCCUPANCY_TIMEOUT.COUNTER),' min'"
+				}
+				ELSE{
+					SEND_COMMAND tp,"'^TXT-',ITOA(addRoomOccupied),',2,',ITOA(myRoom.OCCUPANCY_TIMEOUT.COUNTER),' mins'"
+				}
+
+				// Do an AutoBook Trigger Event
+				SWITCH(myRoom.AUTOBOOK_MODE){
+					CASE AUTOBOOK_MODE_EVENTS:{
+						fnAutoBookEvent()
+					}
+					CASE AUTOBOOK_MODE_LATCHED:{
+						myRoom.AUTOBOOK_ACTION.COUNTER = 0
+						IF(TIMELINE_ACTIVE(TLID_TIMER_AUTOBOOK_ACTION)){TIMELINE_KILL(TLID_TIMER_AUTOBOOK_ACTION)}
+						TIMELINE_CREATE(TLID_TIMER_AUTOBOOK_ACTION,TLT_ONE_MIN,1,TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
+					}
+				}
 			}
-			CASE AUTOBOOK_MODE_LATCHED:{
-				myRoom.AUTOBOOK_ACTION.COUNTER = 0
-				IF(TIMELINE_ACTIVE(TLID_TIMER_AUTOBOOK_ACTION)){TIMELINE_KILL(TLID_TIMER_AUTOBOOK_ACTION)}
-				TIMELINE_CREATE(TLID_TIMER_AUTOBOOK_ACTION,TLT_ONE_MIN,1,TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
+			ELSE{
+				//ON[tp,btnOccupancyTimerBlank]
+			}
+		}
+		ELSE{
+			// Reset the Occupancy Timer Value
+			myRoom.OCCUPANCY_TIMEOUT.COUNTER = myRoom.OCCUPANCY_TIMEOUT.INIT_VAL
+
+			// If timeline is running, kill it for now
+			IF(TIMELINE_ACTIVE(TLID_TIMER_OCCUPANCY_TIMEOUT)){TIMELINE_KILL(TLID_TIMER_OCCUPANCY_TIMEOUT)}
+
+			// Set Diagnostics Text
+			IF(myRoom.OCCUPANCY_TIMEOUT.COUNTER == 1){
+				SEND_COMMAND tp,"'^TXT-',ITOA(addRoomOccupied),',2,',ITOA(myRoom.OCCUPANCY_TIMEOUT.COUNTER),' min'"
+			}
+			ELSE{
+				SEND_COMMAND tp,"'^TXT-',ITOA(addRoomOccupied),',2,',ITOA(myRoom.OCCUPANCY_TIMEOUT.COUNTER),' mins'"
+			}
+
+			// Do an AutoBook Trigger Event
+			SWITCH(myRoom.AUTOBOOK_MODE){
+				CASE AUTOBOOK_MODE_EVENTS:{
+					fnAutoBookEvent()
+				}
+				CASE AUTOBOOK_MODE_LATCHED:{
+					myRoom.AUTOBOOK_ACTION.COUNTER = 0
+					IF(TIMELINE_ACTIVE(TLID_TIMER_AUTOBOOK_ACTION)){TIMELINE_KILL(TLID_TIMER_AUTOBOOK_ACTION)}
+					TIMELINE_CREATE(TLID_TIMER_AUTOBOOK_ACTION,TLT_ONE_MIN,1,TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
+				}
 			}
 		}
 	}
@@ -1234,26 +1341,22 @@ DEFINE_EVENT CHANNEL_EVENT[vdvRoom,chn_vdv_SensorTriggered]{
 		fnDebug(DEBUG_DEV,'CHANNEL_EVENT','chn_vdv_SensorTriggered','--> OFF')
 
 		// Set Diagnostics Text
-		IF(myRoom.OCCUPANCY_TIMEOUT.COUNTER == 1){
-			SEND_COMMAND tp,"'^TXT-',ITOA(lvlRoomOccupied),',2,',ITOA(myRoom.OCCUPANCY_TIMEOUT.COUNTER),' min'"
-		}
-		ELSE{
-			SEND_COMMAND tp,"'^TXT-',ITOA(lvlRoomOccupied),',2,',ITOA(myRoom.OCCUPANCY_TIMEOUT.COUNTER),' mins'"
-		}
 		SEND_COMMAND tp,"'^TXT-',ITOA(btnDiagStateSensorTrigger),',1,Last Trig:|Chan[',ITOA(myRoom.OCCUPANCY_SENSOR_BOX),':',ITOA(myRoom.OCCUPANCY_SENSOR_CHAN),']'"
 
 		IF(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_END_REF == myRoom.SLOTS[myRoom.SLOT_CURRENT+1].SLOT_START_REF){// If there is a booking immediately following this one
-			IF(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_END_REF - fnTimeToSeconds(myRoom.QUICKBOOK_START_TIME_HHMMSS) >= myRoom.QUICKBOOK_MINIMUM_REAL*60){
+			IF(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_END_REF - fnTimeToSeconds(myRoom.QUICKBOOK_START_TIME_HHMMSS) > myRoom.QUICKBOOK_MINIMUM_REAL*60){// and there is more time than the QB Min Real
+
 				// Create a new timeline
-				TIMELINE_CREATE(TLID_TIMER_OCCUPANCY_TIMEOUT,TLT_ONE_MIN,LENGTH_ARRAY(TLT_ONE_MIN),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
+				fnCreateOccupancyTimer()
+			}
+			ELSE{
+				//ON[tp,btnOccupancyTimerBlank]
 			}
 		}
 		ELSE{
 			// Create a new timeline
-			TIMELINE_CREATE(TLID_TIMER_OCCUPANCY_TIMEOUT,TLT_ONE_MIN,LENGTH_ARRAY(TLT_ONE_MIN),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
+			fnCreateOccupancyTimer()
 		}
-		// Debug Out
-		fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_TIMER_OCCUPANCY_TIMEOUT',"'<-- Created'")
 	}
 }
 
@@ -1265,14 +1368,18 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_OCCUPANCY_TIMEOUT]{
 
 	// Set Diagnostics Text
 	IF(myRoom.OCCUPANCY_TIMEOUT.COUNTER == 1){
-		SEND_COMMAND tp,"'^TXT-',ITOA(lvlRoomOccupied),',2,',ITOA(myRoom.OCCUPANCY_TIMEOUT.COUNTER),' min'"
+		SEND_COMMAND tp,"'^TXT-',ITOA(addRoomOccupied),',2,',ITOA(myRoom.OCCUPANCY_TIMEOUT.COUNTER),' min'"
 	}
 	ELSE{
-		SEND_COMMAND tp,"'^TXT-',ITOA(lvlRoomOccupied),',2,',ITOA(myRoom.OCCUPANCY_TIMEOUT.COUNTER),' mins'"
+		SEND_COMMAND tp,"'^TXT-',ITOA(addRoomOccupied),',2,',ITOA(myRoom.OCCUPANCY_TIMEOUT.COUNTER),' mins'"
 	}
 
 	// If Occupancy has run out, kill the Timeline
-	IF(myRoom.OCCUPANCY_TIMEOUT.COUNTER == 0){ TIMELINE_KILL(TLID_TIMER_OCCUPANCY_TIMEOUT) }
+	IF(myRoom.OCCUPANCY_TIMEOUT.COUNTER == 0){
+		TIMELINE_KILL(TLID_TIMER_OCCUPANCY_TIMEOUT)
+		//OFF[tp,btnOccupancyTimerBlank]
+		//OFF[tp,btnNoShowTimerBlank]
+	}
 
 	// Debug Out
 	fnDebug(DEBUG_DEV,'TIMELINE_EVENT','TLID_TIMER_OCCUPANCY_TIMEOUT','--> Done')//"'Exit'")
@@ -1363,6 +1470,7 @@ DEFINE_FUNCTION fnDoAutoBook(){
 			SEND_COMMAND vdvRoom,pMSG
 			SEND_STRING vdvRoom, 'MEETING-AUTOBOOK'
 			fnDisplayStatusMessage('Auto Booking Meeting...','Automatic Booking.')
+			//ON[tp,btnNoShowTimerBlank]
 		}
 	}
 }
@@ -1402,10 +1510,10 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMER_AUTOBOOK_STANDOFF]{
 
 	// Update Timer
 	IF(myRoom.AUTOBOOK_STANDOFF.COUNTER == 1){
-		SEND_COMMAND tp,"'^TXT-',ITOA(lvlAutoBookStandOffTimer),',2,',FORMAT('%d',myRoom.AUTOBOOK_STANDOFF.COUNTER),' min'"
+		SEND_COMMAND tp,"'^TXT-',ITOA(addAutoBookStandOffTimer),',2,',FORMAT('%d',myRoom.AUTOBOOK_STANDOFF.COUNTER),' min'"
 	}
 	ELSE{
-		SEND_COMMAND tp,"'^TXT-',ITOA(lvlAutoBookStandOffTimer),',2,',FORMAT('%d',myRoom.AUTOBOOK_STANDOFF.COUNTER),' mins'"
+		SEND_COMMAND tp,"'^TXT-',ITOA(addAutoBookStandOffTimer),',2,',FORMAT('%d',myRoom.AUTOBOOK_STANDOFF.COUNTER),' mins'"
 	}
 
 	// Check if the Timer has expired and act if so
@@ -1447,12 +1555,38 @@ DEFINE_EVENT DATA_EVENT[tp]{
 				myRMSPanel[GET_LAST(tp)].CAL_SLOT_STATE[x] = FALSE
 			}
 		}
-		fnInitPanel(GET_LAST(tp))
+		TIMELINE_CREATE(TLID_BOOT_TP00+GET_LAST(tp),TLT_BOOT_DELAY,LENGTH_ARRAY(TLT_BOOT_DELAY),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 	}
 	OFFLINE:{
 		fnDebug(DEBUG_DEV,'DATA_EVENT',"'Panel[',ITOA(DATA.DEVICE.NUMBER),']'",'<-- Offline')
 		myRMSPanel[GET_LAST(tp)].OVERLAY = OVERLAY_NONE
 	}
+}
+TIMELINE_EVENT[TLID_BOOT_TP01]
+TIMELINE_EVENT[TLID_BOOT_TP02]
+TIMELINE_EVENT[TLID_BOOT_TP03]
+TIMELINE_EVENT[TLID_BOOT_TP04]
+TIMELINE_EVENT[TLID_BOOT_TP05]
+TIMELINE_EVENT[TLID_BOOT_TP06]
+TIMELINE_EVENT[TLID_BOOT_TP07]
+TIMELINE_EVENT[TLID_BOOT_TP08]
+TIMELINE_EVENT[TLID_BOOT_TP09]
+TIMELINE_EVENT[TLID_BOOT_TP10]
+TIMELINE_EVENT[TLID_BOOT_TP11]
+TIMELINE_EVENT[TLID_BOOT_TP12]
+TIMELINE_EVENT[TLID_BOOT_TP13]
+TIMELINE_EVENT[TLID_BOOT_TP14]
+TIMELINE_EVENT[TLID_BOOT_TP15]
+TIMELINE_EVENT[TLID_BOOT_TP16]
+TIMELINE_EVENT[TLID_BOOT_TP17]
+TIMELINE_EVENT[TLID_BOOT_TP18]
+TIMELINE_EVENT[TLID_BOOT_TP19]
+TIMELINE_EVENT[TLID_BOOT_TP20]
+TIMELINE_EVENT[TLID_BOOT_TP21]
+TIMELINE_EVENT[TLID_BOOT_TP22]
+TIMELINE_EVENT[TLID_BOOT_TP23]
+TIMELINE_EVENT[TLID_BOOT_TP24]{
+	fnInitPanel(TIMELINE.ID-TLID_BOOT_TP00)
 }
 /********************************************************************************************************************************************************************************************************************************************************
 	Interface Button Events
@@ -2135,7 +2269,8 @@ DEFINE_FUNCTION fnUpdatePanel(INTEGER pPanel){
 			}
 			SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addQuickBookInstDur  ),',0,Available until ',myRoom.QUICKBOOK_END_TIME_HHMM"
 		#ELSE
-			SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addQuickBookInstDur),',0,Until ',myRoom.QUICKBOOK_END_TIME_HHMM"
+			SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addQuickBookInstDur-1),',0,Not in Dev Mode'"
+			SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addQuickBookInstDur),  ',0,Until ',myRoom.QUICKBOOK_END_TIME_HHMM"
 		#END_IF
 	}
 
@@ -2374,7 +2509,7 @@ DEFINE_PROGRAM{
 	[vdvRoom,chn_vdv_RoomOccupied] = myRoom.OCCUPANCY_TIMEOUT.COUNTER	// Occupied Flag
 
 	// Room Release Feedback
-	SEND_LEVEL vdvRoom,lvl_vdv_Timer_NoShow,myRoom.NOSHOW_TIMEOUT.COUNTER						// Release Countdown Value
+	SEND_LEVEL vdvRoom,lvl_vdv_Timer_NoShow,myRoom.NOSHOW_TIMEOUT.COUNTER			// Release Countdown Value
 
 
 	// Online Feedback for Virtual Device
@@ -2395,7 +2530,12 @@ DEFINE_PROGRAM{
 
 	// Send Levels to Panel
 	SEND_LEVEL tp,lvlRoomOccupied,myRoom.OCCUPANCY_TIMEOUT.COUNTER
-	SEND_LEVEL tp,lvlNoShowTimer,myRoom.NOSHOW_TIMEOUT.COUNTER
+	IF(myRoom.SLOTS[myRoom.SLOT_CURRENT].isAUTOBOOK){// Set lvlNoShowTimer to zero
+		SEND_LEVEL tp,lvlNoShowTimer,0
+	}
+	ELSE{
+		SEND_LEVEL tp,lvlNoShowTimer,myRoom.NOSHOW_TIMEOUT.COUNTER
+	}
 	SEND_LEVEL tp,lvlQuickBookStandoffTimer,myRoom.QUICKBOOK_TIMEOUT.COUNTER
 	SEND_LEVEL tp,lvlAutoBookActionTimer,myRoom.AUTOBOOK_ACTION.COUNTER
 	SEND_LEVEL tp,lvlAutoBookStandOffTimer,myRoom.AUTOBOOK_STANDOFF.COUNTER
