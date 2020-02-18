@@ -72,6 +72,7 @@ CHAR cHASH[255]
 CHAR cUSER[255] = 'admin1'
 CHAR cPASS[255] = 'panasonic'
 INTEGER lastPOLLED
+CHAR cMAKE[32]  = 'Panasonic'
 CHAR cMODEL[32] = 'Panasonic Projector'
 CHAR cSERIAL[255] = 'n/a'
 CHAR cFIRMWARE[32] = 'n/a'
@@ -192,64 +193,69 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pPacket[]){
 		bConnOpen = TRUE;
 	}
 	ELSE{
-		SWITCH(LEFT_STRING(pPacket,2)){
-			CASE '00':{
-				GET_BUFFER_STRING(pPacket,2)
-				SWITCH(lastPOLLED){
-					CASE pollPOWER:{
-						bPower = ATOI(pPacket)
-						IF(bPower){
-							fnSendQuery(pollINPUT)
-						}
-						ELSE{
-							lastPOLLED = 0;
-						}
-					}
-					CASE pollINPUT:{
-						IF(cCurSource != pPacket){
-							cCurSource = RIGHT_STRING(pPacket,3)
-							SEND_STRING vdvControl,"'INPUT-',fnGetInput()"
-						}
-						fnSendQuery(pollMODEL)
-					}
-					CASE pollMODEL:{
-						IF(cMODEL != pPacket){
-							cMODEL = pPacket
-							SEND_STRING vdvControl,"'PROPERTY-META,MODEL,',cMODEL"
-						}
-						fnSendQuery(pollSERIAL)
-					}
-					CASE pollSERIAL:{
-						IF(cSERIAL != pPacket){
-							cSERIAL = pPacket
-							SEND_STRING vdvControl,"'PROPERTY-META,SERIALNO,',cSERIAL"
-						}
-						fnSendQuery(pollFW)
-					}
-					CASE pollFW:{
-						IF(cFIRMWARE != pPacket){
-							cFIRMWARE = pPacket
-							SEND_STRING vdvControl,"'PROPERTY-META,FIRMWARE,',cFIRMWARE"
-						}
-						fnSendQuery(pollSHUTTER)
-					}
-					CASE pollSHUTTER:{
-						bMute = ATOI(pPacket);
-						fnSendQuery(pollFREEZE)
-					}
-					CASE pollFREEZE:{
-						bFreeze = ATOI(pPacket)
-						fnSendQuery(pollASPECT)
-					}
-					CASE pollASPECT:{
-						iAspect = ATOI(pPacket)
-						lastPOLLED = 0
-					}
+	    IF (LEFT_STRING(pPacket,2)=='00'){
+		GET_BUFFER_STRING(pPacket,2)
+	    }
+		SWITCH(lastPOLLED){
+			CASE pollPOWER:{
+				bPower = ATOI(pPacket)
+				IF(bPower){
+					fnSendQuery(pollINPUT)
+				}
+				ELSE{
+					lastPOLLED = 0;
 				}
 			}
+			CASE pollINPUT:{				
+				IF(cCurSource != pPacket){
+					cCurSource = RIGHT_STRING(pPacket,3)
+					SEND_STRING vdvControl,"'INPUT-',fnGetInput()"
+				}
+				fnSendQuery(pollMODEL)
+			}
+			CASE pollMODEL:{
+				IF(cMODEL != pPacket){
+					cMODEL = pPacket
+					SEND_STRING vdvControl,"'PROPERTY-META,MODEL,',cMODEL"
+				}
+				fnSendQuery(pollSERIAL)
+			}
+			CASE pollSERIAL:{
+				IF(cSERIAL != pPacket){
+					cSERIAL = pPacket
+					SEND_STRING vdvControl,"'PROPERTY-META,SERIALNO,',cSERIAL"
+				}
+				fnSendQuery(pollFW)
+			}
+			CASE pollFW:{
+				IF(cFIRMWARE != pPacket){
+					cFIRMWARE = pPacket
+					SEND_STRING vdvControl,"'PROPERTY-META,FIRMWARE,',cFIRMWARE"
+				}
+				fnSendQuery(pollSHUTTER)
+			}
+			CASE pollSHUTTER:{
+				bMute = ATOI(pPacket);
+				fnSendQuery(pollFREEZE)
+			}
+			CASE pollFREEZE:{
+				bFreeze = ATOI(pPacket)
+				fnSendQuery(pollASPECT)
+			}
+			CASE pollASPECT:{
+				iAspect = ATOI(pPacket)
+				lastPOLLED = 0
+			}
 		}
+			    // The next few lines are for debugging / development - to be removed once working above in the poll response
+			    //SEND_STRING vdvControl,"'INPUT-',fnGetInput()"
+//				SEND_STRING vdvControl,"'PROPERTY-META,MODEL,',cMODEL"
+//				SEND_STRING vdvControl,"'PROPERTY-META,SERIALNO,',cSERIAL"
+//				SEND_STRING vdvControl,"'PROPERTY-META,FIRMWARE,',cFIRMWARE"
 	}
 }
+	
+
 DEFINE_FUNCTION fnSendCommand(CHAR ThisCommand[], CHAR Param[]){
 	STACK_VAR CHAR _ToSend[255];
 	_ToSend = "'00','ADZZ;',ThisCommand";
@@ -269,7 +275,8 @@ DEFINE_FUNCTION fnSendCommand_INT(){
 	STACK_VAR CHAR _ToSend[255]
 	_ToSend = "cHASH,REMOVE_STRING(cTxBuffer,"$0D",1)"
 	fnDebug(FALSE,'AMX->Pana Proj',"_ToSend")
-	SEND_STRING ipDevice, _ToSend;
+	fnOpenConnection()
+	SEND_STRING ipDevice, "_ToSend,$0D";
 	bResponsePending = TRUE;
 	IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){ TIMELINE_KILL(TLID_TIMEOUT) }
 	TIMELINE_CREATE(TLID_TIMEOUT,TLT_TIMEOUT,LENGTH_ARRAY(TLT_TIMEOUT),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
@@ -445,6 +452,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 
 DEFINE_PROGRAM{
 	[vdvControl,chnCOMMS] 	= ( TIMELINE_ACTIVE(TLID_COMMS) );
+	[vdvControl,chnCOMMS+1] = ( TIMELINE_ACTIVE(TLID_COMMS) );
 	[vdvControl,chnPOWER] 	= ( bPOWER );
 	[vdvControl,chnCOOL]  	= ( bCooling );
 	[vdvControl,chnWARM]  	= ( bWarming );
@@ -466,6 +474,10 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMEOUT]{
 }
 	(** Boot Finished **)
 DEFINE_EVENT TIMELINE_EVENT[TLID_BOOT]{
+    	SEND_STRING vdvControl, 'PROPERTY-META,NAME,PROJECTOR'
+	SEND_STRING vdvControl, 'PROPERTY-META,TYPE,VideoProjector'
+	SEND_STRING vdvControl,"'PROPERTY-META,MAKE,',cMAKE"
+	SEND_STRING vdvControl, 'PROPERTY-META,INPUTS,HDMI1|HDMI2|DVI1|VGA1|VGA2'
 	fnSendQuery(pollPOWER);
 	fnStartPolling();
 }
