@@ -55,7 +55,7 @@ DEFINE_FUNCTION RegisterAsset(RmsAsset asset)
   asset.clientKey         = RmsDevToString(vdvDevice);
 
   // These are recommended
-  IF(MONITOR_ASSET_NAME = ''){MONITOR_ASSET_NAME = 'NoName'}
+  IF(MONITOR_ASSET_NAME = ''){MONITOR_ASSET_NAME = 'Display'}
   asset.name              = MONITOR_ASSET_NAME;
   asset.assetType         = myAsset.TYPE;
 
