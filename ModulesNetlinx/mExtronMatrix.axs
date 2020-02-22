@@ -252,200 +252,205 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 	STRING:{
 		IF(!myMatrix.DISABLED){
 			fnDebug(FALSE,'Extron->AMX', DATA.TEXT);
-			SELECT{
-				ACTIVE(DATA.TEXT == "$0D,$0A,'Password:'"):{
-					SEND_STRING dvDevice,"myMatrix.PASSWORD,$0D"
-				}
-				ACTIVE(myMatrix.LAST_SENT == '0LS'):{
-					STACK_VAR INTEGER x
-					STACK_VAR CHAR States[16]
-					States = fnStripCharsRight(DATA.TEXT,2)
-					IF(!myMatrix.VID_MTX_SIZE[1]){
-						fnAddToQueue('I')
-					}
-					ELSE{
-						FOR(x = 1; x <= myMatrix.VID_MTX_SIZE[1]; x++){
-							myMatrix.SIGNAL_PRESENT[x] = ATOI("States[x]")
-							[vdvControl[1],x] = (myMatrix.SIGNAL_PRESENT[x])
-							fnDebug(FALSE,'ACTIVE SOURCE FEEDBACK: ', "'[vdvControl[1],',ITOA(x),'] = (',ITOA(myMatrix.SIGNAL_PRESENT[x]),')'")
-						}
-					}
-				}
-				ACTIVE(myMatrix.LAST_SENT == 'N'):{
-					myMatrix.META_PART_NUMBER = fnStripCharsRight(DATA.TEXT,2)
-					IF(LEFT_STRING(myMatrix.META_PART_NUMBER,3) == 'Pno'){
-						GET_BUFFER_STRING(myMatrix.META_PART_NUMBER,3)
-					}
-					IF(LEFT_STRING(myMatrix.META_PART_NUMBER,1) == 'N'){
-						GET_BUFFER_STRING(myMatrix.META_PART_NUMBER,1)
-					}
-					SEND_STRING vdvControl,"'PROPERTY-META,TYPE,VideoMatrix'"
-					SEND_STRING vdvControl,"'PROPERTY-META,MAKE,Extron'"
-					SEND_STRING vdvControl,"'PROPERTY-META,PART,',myMatrix.META_PART_NUMBER"
-					SWITCH(myMatrix.META_PART_NUMBER){
-						CASE '60-1493-01':myMatrix.MODEL_ID = MODEL_DXP44HD4K
-						CASE '60-1494-01':myMatrix.MODEL_ID = MODEL_DXP84HD4k
-						CASE '60-1495-01':myMatrix.MODEL_ID = MODEL_DXP88HD4k
-						CASE '60-1496-01':myMatrix.MODEL_ID = MODEL_DXP168HD4K
-						CASE '60-1497-01':myMatrix.MODEL_ID = MODEL_DXP1616HD4K
-						CASE '60-220-06': myMatrix.MODEL_ID = MODEL_CROSSPOINT
-						CASE '60-1515-01':myMatrix.MODEL_ID = MODEL_DTPCP844K
-						CASE '60-1381-01':myMatrix.MODEL_ID = MODEL_DTPCP1084K
-						CASE '60-1382-01':myMatrix.MODEL_ID = MODEL_DTPCP864K
-						CASE '60-1583-01':myMatrix.MODEL_ID = MODEL_DTPCP824K
-					}
-					SWITCH(myMatrix.MODEL_ID){
-						CASE MODEL_DXP44HD4K:	myMatrix.META_MODEL = 'DXP44HD4K'
-						CASE MODEL_DXP84HD4k:	myMatrix.META_MODEL = 'DXP84HD4K'
-						CASE MODEL_DXP88HD4k:	myMatrix.META_MODEL = 'DXP88HD4K'
-						CASE MODEL_DXP168HD4K:	myMatrix.META_MODEL = 'DXP168HD4K'
-						CASE MODEL_DXP1616HD4K:	myMatrix.META_MODEL = 'DXP1616HD4K'
-						CASE MODEL_CROSSPOINT:	myMatrix.META_MODEL = 'CROSSPOINT'
-						CASE MODEL_DTPCP844K:	myMatrix.META_MODEL = 'DTPCP844K'
-						CASE MODEL_DTPCP1084K:	myMatrix.META_MODEL = 'DTPCP1084K'
-						CASE MODEL_DTPCP864K:	myMatrix.META_MODEL = 'DTPCP864K'
-						CASE MODEL_DTPCP824K:	myMatrix.META_MODEL = 'DTPCP824K'
-						DEFAULT:						myMatrix.META_MODEL = 'NOT IMPLEMENTED'
-					}
-					SWITCH(myMatrix.MODEL_ID){
-						CASE MODEL_DXP44HD4K:
-						CASE MODEL_DXP84HD4k:
-						CASE MODEL_DXP88HD4k:
-						CASE MODEL_DXP168HD4K:
-						CASE MODEL_DXP1616HD4K:
-						CASE MODEL_DTPCP844K:
-						CASE MODEL_DTPCP1084K:
-						CASE MODEL_DTPCP864K:
-						CASE MODEL_DTPCP824K:	myMatrix.HAS_NETWORK = TRUE
-						DEFAULT:				  		myMatrix.HAS_NETWORK = FALSE
-
-					}
-					SWITCH(myMatrix.MODEL_ID){
-						CASE MODEL_DXP44HD4K:
-						CASE MODEL_DXP84HD4k:
-						CASE MODEL_DXP88HD4k:
-						CASE MODEL_DXP168HD4K:
-						CASE MODEL_DXP1616HD4K:
-						CASE MODEL_DTPCP1084K:
-						CASE MODEL_DTPCP864K:
-						CASE MODEL_DTPCP824K:
-						CASE MODEL_DTPCP844K:	myMatrix.HAS_AUDIO = TRUE
-						DEFAULT:						myMatrix.HAS_AUDIO = FALSE
-					}
-					SWITCH(myMatrix.MODEL_ID){
-						CASE MODEL_DTPCP824K:	SEND_STRING vdvControl, 'RANGE--100,12'
-						DEFAULT:						SEND_STRING vdvControl, 'RANGE-0,100'
-					}
-					SEND_STRING vdvControl,"'PROPERTY-META,MODEL,',myMatrix.META_MODEL"
-					IF(!myMatrix.HAS_NETWORK){
-						SEND_STRING vdvControl,"'PROPERTY-META,NET_MAC,N/A'"
-						SEND_STRING vdvControl,"'PROPERTY-STATE,NET_IP,N/A'"
-					}
-					fnPoll()
-				}
-				ACTIVE(myMatrix.LAST_SENT == 'Q'):{
-					myMatrix.META_FIRMWARE = fnStripCharsRight(DATA.TEXT,2)
-					IF(LEFT_STRING(myMatrix.META_FIRMWARE,3) == 'Ver'){
-						GET_BUFFER_STRING(myMatrix.META_FIRMWARE,3)
-					}
-					SEND_STRING vdvControl,"'PROPERTY-META,FW1,',myMatrix.META_FIRMWARE"
-				}
-				ACTIVE(myMatrix.LAST_SENT == 'I'):{
-					IF(FIND_STRING(DATA.TEXT,'DTPCP',1)){
-						REMOVE_STRING(DATA.TEXT,'DTPCP',1)
-						SWITCH(fnStripCharsRight(DATA.TEXT,2)){
-							CASE '108':{
-								myMatrix.VID_MTX_SIZE[1] = 10
-								myMatrix.VID_MTX_SIZE[2] = 8
-								myMatrix.AUD_MTX_SIZE[1] = 10
-								myMatrix.AUD_MTX_SIZE[2] = 8
-							}
-							CASE '86':{
-								myMatrix.VID_MTX_SIZE[1] = 8
-								myMatrix.VID_MTX_SIZE[2] = 6
-								myMatrix.AUD_MTX_SIZE[1] = 8
-								myMatrix.AUD_MTX_SIZE[2] = 6
-							}
-						}
-					}
-					ELSE{
-						GET_BUFFER_CHAR(DATA.TEXT)	// REMOVE 'V'
-						myMatrix.VID_MTX_SIZE[1] = ATOI(GET_BUFFER_STRING(DATA.TEXT,2))
-						GET_BUFFER_CHAR(DATA.TEXT)	// REMOVE 'X'
-						myMatrix.VID_MTX_SIZE[2] = ATOI(GET_BUFFER_STRING(DATA.TEXT,2))
-						GET_BUFFER_CHAR(DATA.TEXT)	// REMOVE ' '
-						GET_BUFFER_CHAR(DATA.TEXT)	// REMOVE 'A'
-						myMatrix.AUD_MTX_SIZE[1] = ATOI(GET_BUFFER_STRING(DATA.TEXT,2))
-						GET_BUFFER_CHAR(DATA.TEXT)	// REMOVE 'X'
-						myMatrix.AUD_MTX_SIZE[2] = ATOI(GET_BUFFER_STRING(DATA.TEXT,2))
-					}
-				}
-				ACTIVE(myMatrix.LAST_SENT == 'S'):{
-					// System Status Poll
-				}
-				ACTIVE(myMatrix.LAST_SENT[2] == 'V'):{
-					myMatrix.AUDIO[ATOI("myMatrix.LAST_SENT[1]")].GAIN = ATOI(DATA.TEXT)
-				}
-				ACTIVE(myMatrix.LAST_SENT[2] == 'Z'):{
-					myMatrix.AUDIO[ATOI("myMatrix.LAST_SENT[1]")].MUTE = ATOI("DATA.TEXT[1]")
-				}
-				ACTIVE(myMatrix.LAST_SENT == '*Q'):{
-					myMatrix.META_FIRMWARE_FULL = fnStripCharsRight(DATA.TEXT,2)
-					IF(LEFT_STRING(myMatrix.META_FIRMWARE_FULL,3) == 'Bld'){
-						GET_BUFFER_STRING(myMatrix.META_FIRMWARE_FULL,3)
-					}
-					IF(LEFT_STRING(myMatrix.META_FIRMWARE_FULL,6) == 'Ver*0 '){
-						GET_BUFFER_STRING(myMatrix.META_FIRMWARE_FULL,6)
-					}
-					SEND_STRING vdvControl,"'PROPERTY-META,FW2,',myMatrix.META_FIRMWARE_FULL"
-				}
-				ACTIVE(myMatrix.LAST_SENT == "$1B,'CH',$0D"):{
-					myMatrix.META_MAC = fnStripCharsRight(DATA.TEXT,2)
-					SEND_STRING vdvControl,"'PROPERTY-META,NET_MAC,',myMatrix.META_MAC"
-					fnPoll()
-				}
-				ACTIVE(myMatrix.LAST_SENT == "$1B,'CI',$0D"):{
-					IF(myMatrix.META_IP != fnStripCharsRight(DATA.TEXT,2)){
-						myMatrix.META_IP = fnStripCharsRight(DATA.TEXT,2)
-						SEND_STRING vdvControl,"'PROPERTY-STATE,NET_IP,',myMatrix.META_IP"
-					}
-				}
-				ACTIVE(1):{	// Referenced Notifications
-					SELECT{
-						ACTIVE(FIND_STRING(DATA.TEXT,'Vol',1)):{
-							STACK_VAR INTEGER OUTPUT
-							GET_BUFFER_STRING(DATA.TEXT,3)	// Remove 'Out'
-							OUTPUT = ATOI(REMOVE_STRING(DATA.TEXT,' ',1))
-							GET_BUFFER_STRING(DATA.TEXT,3)	// Remove 'Vol'
-							myMatrix.AUDIO[OUTPUT].GAIN = ATOI(DATA.TEXT)
-						}
-						ACTIVE(LEFT_STRING(DATA.TEXT,3) == 'Amt'):{
-							GET_BUFFER_STRING(DATA.TEXT,3)
-							//myMatrix.MUTE = ATOI(DATA.TEXT)
-						}
-						ACTIVE(LEFT_STRING(DATA.TEXT,3) == 'DsG'):{
-							STACK_VAR INTEGER o
-							STACK_VAR CHAR v[10]
-							//DsG50100*-730$0D$0A
-							GET_BUFFER_STRING(DATA.TEXT,3)
-							o = ATOI(GET_BUFFER_STRING(DATA.TEXT,5))
-							GET_BUFFER_CHAR(DATA.TEXT)
-							v = DATA.TEXT
-							SET_LENGTH_ARRAY(v,LENGTH_ARRAY(v)-3)
-							SWITCH(o){
-								CASE 50100:myMatrix.AUDIO[1].GAIN = ATOI(v)
-								CASE 50200:myMatrix.AUDIO[2].GAIN = ATOI(v)
-							}
-							//myMatrix.MUTE = ATOI(DATA.TEXT)
-						}
-					}
-				}
+			IF(DATA.TEXT == "$0D,$0A,'Password:'"){
+				// Reset comms until password sent properly
+				IF(TIMELINE_ACTIVE(TLID_COMMS)){ TIMELINE_KILL(TLID_COMMS) }
+				fnDebug(FALSE,'AMX->EXTRON',"myMatrix.PASSWORD,$0D")
+				SEND_STRING dvDevice,"myMatrix.PASSWORD,$0D"
 			}
-			myMatrix.LAST_SENT = ''
-			IF(TIMELINE_ACTIVE(TLID_SEND)){TIMELINE_KILL(TLID_SEND)}
-			fnSendFromQueue()
-			IF(TIMELINE_ACTIVE(TLID_COMMS)){ TIMELINE_KILL(TLID_COMMS) }
-			TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
+			ELSE{
+				SELECT{
+					ACTIVE(myMatrix.LAST_SENT == '0LS'):{
+						STACK_VAR INTEGER x
+						STACK_VAR CHAR States[16]
+						States = fnStripCharsRight(DATA.TEXT,2)
+						IF(!myMatrix.VID_MTX_SIZE[1]){
+							fnAddToQueue('I')
+						}
+						ELSE{
+							FOR(x = 1; x <= myMatrix.VID_MTX_SIZE[1]; x++){
+								myMatrix.SIGNAL_PRESENT[x] = ATOI("States[x]")
+								[vdvControl[1],x] = (myMatrix.SIGNAL_PRESENT[x])
+								//fnDebug(FALSE,'ACTIVE SOURCE FEEDBACK: ', "'[vdvControl[1],',ITOA(x),'] = (',ITOA(myMatrix.SIGNAL_PRESENT[x]),')'")
+							}
+						}
+					}
+					ACTIVE(myMatrix.LAST_SENT == 'N'):{
+						myMatrix.META_PART_NUMBER = fnStripCharsRight(DATA.TEXT,2)
+						IF(LEFT_STRING(myMatrix.META_PART_NUMBER,3) == 'Pno'){
+							GET_BUFFER_STRING(myMatrix.META_PART_NUMBER,3)
+						}
+						IF(LEFT_STRING(myMatrix.META_PART_NUMBER,1) == 'N'){
+							GET_BUFFER_STRING(myMatrix.META_PART_NUMBER,1)
+						}
+						SEND_STRING vdvControl,"'PROPERTY-META,TYPE,VideoMatrix'"
+						SEND_STRING vdvControl,"'PROPERTY-META,MAKE,Extron'"
+						SEND_STRING vdvControl,"'PROPERTY-META,PART,',myMatrix.META_PART_NUMBER"
+						SWITCH(myMatrix.META_PART_NUMBER){
+							CASE '60-1493-01':myMatrix.MODEL_ID = MODEL_DXP44HD4K
+							CASE '60-1494-01':myMatrix.MODEL_ID = MODEL_DXP84HD4k
+							CASE '60-1495-01':myMatrix.MODEL_ID = MODEL_DXP88HD4k
+							CASE '60-1496-01':myMatrix.MODEL_ID = MODEL_DXP168HD4K
+							CASE '60-1497-01':myMatrix.MODEL_ID = MODEL_DXP1616HD4K
+							CASE '60-220-06': myMatrix.MODEL_ID = MODEL_CROSSPOINT
+							CASE '60-1515-01':myMatrix.MODEL_ID = MODEL_DTPCP844K
+							CASE '60-1381-01':myMatrix.MODEL_ID = MODEL_DTPCP1084K
+							CASE '60-1382-01':myMatrix.MODEL_ID = MODEL_DTPCP864K
+							CASE '60-1583-01':myMatrix.MODEL_ID = MODEL_DTPCP824K
+						}
+						SWITCH(myMatrix.MODEL_ID){
+							CASE MODEL_DXP44HD4K:	myMatrix.META_MODEL = 'DXP44HD4K'
+							CASE MODEL_DXP84HD4k:	myMatrix.META_MODEL = 'DXP84HD4K'
+							CASE MODEL_DXP88HD4k:	myMatrix.META_MODEL = 'DXP88HD4K'
+							CASE MODEL_DXP168HD4K:	myMatrix.META_MODEL = 'DXP168HD4K'
+							CASE MODEL_DXP1616HD4K:	myMatrix.META_MODEL = 'DXP1616HD4K'
+							CASE MODEL_CROSSPOINT:	myMatrix.META_MODEL = 'CROSSPOINT'
+							CASE MODEL_DTPCP844K:	myMatrix.META_MODEL = 'DTPCP844K'
+							CASE MODEL_DTPCP1084K:	myMatrix.META_MODEL = 'DTPCP1084K'
+							CASE MODEL_DTPCP864K:	myMatrix.META_MODEL = 'DTPCP864K'
+							CASE MODEL_DTPCP824K:	myMatrix.META_MODEL = 'DTPCP824K'
+							DEFAULT:						myMatrix.META_MODEL = 'NOT IMPLEMENTED'
+						}
+						SWITCH(myMatrix.MODEL_ID){
+							CASE MODEL_DXP44HD4K:
+							CASE MODEL_DXP84HD4k:
+							CASE MODEL_DXP88HD4k:
+							CASE MODEL_DXP168HD4K:
+							CASE MODEL_DXP1616HD4K:
+							CASE MODEL_DTPCP844K:
+							CASE MODEL_DTPCP1084K:
+							CASE MODEL_DTPCP864K:
+							CASE MODEL_DTPCP824K:	myMatrix.HAS_NETWORK = TRUE
+							DEFAULT:				  		myMatrix.HAS_NETWORK = FALSE
+
+						}
+						SWITCH(myMatrix.MODEL_ID){
+							CASE MODEL_DXP44HD4K:
+							CASE MODEL_DXP84HD4k:
+							CASE MODEL_DXP88HD4k:
+							CASE MODEL_DXP168HD4K:
+							CASE MODEL_DXP1616HD4K:
+							CASE MODEL_DTPCP1084K:
+							CASE MODEL_DTPCP864K:
+							CASE MODEL_DTPCP824K:
+							CASE MODEL_DTPCP844K:	myMatrix.HAS_AUDIO = TRUE
+							DEFAULT:						myMatrix.HAS_AUDIO = FALSE
+						}
+						SWITCH(myMatrix.MODEL_ID){
+							CASE MODEL_DTPCP824K:	SEND_STRING vdvControl, 'RANGE--100,12'
+							DEFAULT:						SEND_STRING vdvControl, 'RANGE-0,100'
+						}
+						SEND_STRING vdvControl,"'PROPERTY-META,MODEL,',myMatrix.META_MODEL"
+						IF(!myMatrix.HAS_NETWORK){
+							SEND_STRING vdvControl,"'PROPERTY-META,NET_MAC,N/A'"
+							SEND_STRING vdvControl,"'PROPERTY-STATE,NET_IP,N/A'"
+						}
+						fnPoll()
+					}
+					ACTIVE(myMatrix.LAST_SENT == 'Q'):{
+						myMatrix.META_FIRMWARE = fnStripCharsRight(DATA.TEXT,2)
+						IF(LEFT_STRING(myMatrix.META_FIRMWARE,3) == 'Ver'){
+							GET_BUFFER_STRING(myMatrix.META_FIRMWARE,3)
+						}
+						SEND_STRING vdvControl,"'PROPERTY-META,FW1,',myMatrix.META_FIRMWARE"
+					}
+					ACTIVE(myMatrix.LAST_SENT == 'I'):{
+						IF(FIND_STRING(DATA.TEXT,'DTPCP',1)){
+							REMOVE_STRING(DATA.TEXT,'DTPCP',1)
+							SWITCH(fnStripCharsRight(DATA.TEXT,2)){
+								CASE '108':{
+									myMatrix.VID_MTX_SIZE[1] = 10
+									myMatrix.VID_MTX_SIZE[2] = 8
+									myMatrix.AUD_MTX_SIZE[1] = 10
+									myMatrix.AUD_MTX_SIZE[2] = 8
+								}
+								CASE '86':{
+									myMatrix.VID_MTX_SIZE[1] = 8
+									myMatrix.VID_MTX_SIZE[2] = 6
+									myMatrix.AUD_MTX_SIZE[1] = 8
+									myMatrix.AUD_MTX_SIZE[2] = 6
+								}
+							}
+						}
+						ELSE{
+							GET_BUFFER_CHAR(DATA.TEXT)	// REMOVE 'V'
+							myMatrix.VID_MTX_SIZE[1] = ATOI(GET_BUFFER_STRING(DATA.TEXT,2))
+							GET_BUFFER_CHAR(DATA.TEXT)	// REMOVE 'X'
+							myMatrix.VID_MTX_SIZE[2] = ATOI(GET_BUFFER_STRING(DATA.TEXT,2))
+							GET_BUFFER_CHAR(DATA.TEXT)	// REMOVE ' '
+							GET_BUFFER_CHAR(DATA.TEXT)	// REMOVE 'A'
+							myMatrix.AUD_MTX_SIZE[1] = ATOI(GET_BUFFER_STRING(DATA.TEXT,2))
+							GET_BUFFER_CHAR(DATA.TEXT)	// REMOVE 'X'
+							myMatrix.AUD_MTX_SIZE[2] = ATOI(GET_BUFFER_STRING(DATA.TEXT,2))
+						}
+					}
+					ACTIVE(myMatrix.LAST_SENT == 'S'):{
+						// System Status Poll
+					}
+					ACTIVE(myMatrix.LAST_SENT[2] == 'V'):{
+						myMatrix.AUDIO[ATOI("myMatrix.LAST_SENT[1]")].GAIN = ATOI(DATA.TEXT)
+					}
+					ACTIVE(myMatrix.LAST_SENT[2] == 'Z'):{
+						myMatrix.AUDIO[ATOI("myMatrix.LAST_SENT[1]")].MUTE = ATOI("DATA.TEXT[1]")
+					}
+					ACTIVE(myMatrix.LAST_SENT == '*Q'):{
+						myMatrix.META_FIRMWARE_FULL = fnStripCharsRight(DATA.TEXT,2)
+						IF(LEFT_STRING(myMatrix.META_FIRMWARE_FULL,3) == 'Bld'){
+							GET_BUFFER_STRING(myMatrix.META_FIRMWARE_FULL,3)
+						}
+						IF(LEFT_STRING(myMatrix.META_FIRMWARE_FULL,6) == 'Ver*0 '){
+							GET_BUFFER_STRING(myMatrix.META_FIRMWARE_FULL,6)
+						}
+						SEND_STRING vdvControl,"'PROPERTY-META,FW2,',myMatrix.META_FIRMWARE_FULL"
+					}
+					ACTIVE(myMatrix.LAST_SENT == "$1B,'CH',$0D"):{
+						myMatrix.META_MAC = fnStripCharsRight(DATA.TEXT,2)
+						SEND_STRING vdvControl,"'PROPERTY-META,NET_MAC,',myMatrix.META_MAC"
+						fnPoll()
+					}
+					ACTIVE(myMatrix.LAST_SENT == "$1B,'CI',$0D"):{
+						IF(myMatrix.META_IP != fnStripCharsRight(DATA.TEXT,2)){
+							myMatrix.META_IP = fnStripCharsRight(DATA.TEXT,2)
+							SEND_STRING vdvControl,"'PROPERTY-STATE,NET_IP,',myMatrix.META_IP"
+						}
+					}
+					ACTIVE(1):{	// Referenced Notifications
+						SELECT{
+							ACTIVE(FIND_STRING(DATA.TEXT,'Vol',1)):{
+								STACK_VAR INTEGER OUTPUT
+								GET_BUFFER_STRING(DATA.TEXT,3)	// Remove 'Out'
+								OUTPUT = ATOI(REMOVE_STRING(DATA.TEXT,' ',1))
+								GET_BUFFER_STRING(DATA.TEXT,3)	// Remove 'Vol'
+								myMatrix.AUDIO[OUTPUT].GAIN = ATOI(DATA.TEXT)
+							}
+							ACTIVE(LEFT_STRING(DATA.TEXT,3) == 'Amt'):{
+								GET_BUFFER_STRING(DATA.TEXT,3)
+								//myMatrix.MUTE = ATOI(DATA.TEXT)
+							}
+							ACTIVE(LEFT_STRING(DATA.TEXT,3) == 'DsG'):{
+								STACK_VAR INTEGER o
+								STACK_VAR CHAR v[10]
+								//DsG50100*-730$0D$0A
+								GET_BUFFER_STRING(DATA.TEXT,3)
+								o = ATOI(GET_BUFFER_STRING(DATA.TEXT,5))
+								GET_BUFFER_CHAR(DATA.TEXT)
+								v = DATA.TEXT
+								SET_LENGTH_ARRAY(v,LENGTH_ARRAY(v)-3)
+								SWITCH(o){
+									CASE 50100:myMatrix.AUDIO[1].GAIN = ATOI(v)
+									CASE 50200:myMatrix.AUDIO[2].GAIN = ATOI(v)
+								}
+								//myMatrix.MUTE = ATOI(DATA.TEXT)
+							}
+						}
+					}
+				}
+				myMatrix.LAST_SENT = ''
+				IF(TIMELINE_ACTIVE(TLID_SEND)){TIMELINE_KILL(TLID_SEND)}
+				fnSendFromQueue()
+				IF(TIMELINE_ACTIVE(TLID_COMMS)){ TIMELINE_KILL(TLID_COMMS) }
+				TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
+			}
 		}
 	}
 }
