@@ -155,6 +155,9 @@ DEFINE_TYPE STRUCTURE uSX{
 	CHAR 		DIAL_STRING[255]
 	INTEGER	ContentRx
 	INTEGER	ContentTx
+	INTEGER  ContentLocal[6]
+	INTEGER  ContentLocalRemote[6]
+	INTEGER  ContentLocalSource[6]
 	// Presets
 	INTEGER	PRESETS_LOADING
 	uPreset	PRESET[MAX_PRESETS]
@@ -180,6 +183,7 @@ DEFINE_TYPE STRUCTURE uSX{
 	uRecentCall RecentCalls[MAX_RECENT_CALLS]
 	INTEGER     RecentCallsLoading
 	INTEGER     RecentCallSelected
+	INTEGER     NumberOfInProgressCalls
 	// Directory
 	uDir		DIRECTORY
 	// Touch10
@@ -501,8 +505,15 @@ DEFINE_FUNCTION fnCloseTCPConnection(){
 }
 
 DEFINE_FUNCTION fnQueueTx(CHAR pCommand[1000], CHAR pParam[1000]){
-	fnDebug(DEBUG_DEVELOP,'fnQueueTX',"'[',ITOA(LENGTH_ARRAY(mySX.Tx)),']',pCommand,' ', pParam,$0D")
-	mySX.Tx = "mySX.Tx,pCommand,' ', pParam,$0D"
+	// When sending RAW commands, the pParam field is empty
+	IF(LENGTH_ARRAY(pParam)){
+		fnDebug(DEBUG_DEVELOP,'fnQueueTX',"'[',ITOA(LENGTH_ARRAY(mySX.Tx)),']',pCommand,' ', pParam,$0D")
+		mySX.Tx = "mySX.Tx,pCommand,' ', pParam,$0D"
+	}
+	ELSE{
+		fnDebug(DEBUG_DEVELOP,'fnQueueTX',"'[',ITOA(LENGTH_ARRAY(mySX.Tx)),']',pCommand,$0D")
+		mySX.Tx = "mySX.Tx,pCommand,$0D"
+	}
 	fnSendTx()
 	fnInitPoll()
 }
@@ -1002,6 +1013,67 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 							}
 						}
 					}
+					// *s Standby State: Off
+					/*
+						This is the response for xStatus Conference Presentation Mode:
+						*s Conference Presentation Mode: Off
+						** end
+						Off/Sending/Receiving
+					*/
+					CASE 'Conference':{
+						SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
+							CASE 'Presentation':{
+								SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
+									CASE 'Mode:':{
+										SWITCH(fnRemoveWhiteSpace(pDATA)){
+											CASE 'Sending':{
+												mySX.ContentRx = FALSE
+												mySX.ContentTx = TRUE
+											}
+											CASE 'Receiving':{
+												mySX.ContentTx = FALSE
+												mySX.ContentRx = TRUE
+											}
+											CASE 'Off':{
+												mySX.ContentRx = FALSE
+												mySX.ContentTx = FALSE
+											}
+										}
+									}
+									CASE 'LocalInstance':{
+										STACK_VAR INTEGER n
+										n = ATOI(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1))
+										SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,':',1),1)){
+											CASE 'SendingMode':{
+												SWITCH(fnRemoveWhiteSpace(pDATA)){
+													CASE 'LocalOnly':{
+														mySX.ContentLocalRemote[n] = FALSE
+														mySX.ContentLocal[n]       = TRUE
+													}
+													CASE 'LocalRemote':{
+														mySX.ContentLocal[n]       = FALSE
+														mySX.ContentLocalRemote[n] = TRUE
+													}
+													CASE 'Off':{
+														mySX.ContentLocal[n]       = FALSE
+														mySX.ContentLocalRemote[n] = FALSE
+													}
+												}
+											}
+											CASE '(ghost=True)':{//Conference Presentation LocalInstance 1 (ghost=True):
+												mySX.ContentLocal[n]       = FALSE
+												mySX.ContentLocalRemote[n] = FALSE
+												mySX.ContentLocalSource[n] = 0
+											}
+											CASE 'Source':{
+												mySX.ContentLocalSource[n] = ATOI(pDATA)
+											}
+										}
+									}
+								}
+							}
+						}
+					}
 					CASE 'Preset':{
 						STACK_VAR INTEGER Preset
 						Preset = ATOI(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1))
@@ -1216,6 +1288,10 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 					}
 					CASE 'SystemUnit':{
 						SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,':',1),1)){
+							CASE 'State NumberOfInProgressCalls':{
+								mySX.NumberOfInProgressCalls = ATOI(fnRemoveQuotes( fnRemoveWhiteSpace( pDATA ) ) )
+								SEND_STRING vdvControl[1], "'STATUS-IN_PROGRESS_CALLS,',ITOA(mySX.NumberOfInProgressCalls)"
+							}
 							CASE 'Software Version':{
 								mySX.META_SW_VER = fnRemoveQuotes( fnRemoveWhiteSpace( pDATA ) )
 								SWITCH(UPPER_STRING(LEFT_STRING(mySX.META_SW_VER,2))){
@@ -1356,7 +1432,7 @@ DEFINE_PROGRAM{
 	[vdvControl[1],236] = CALL_RINGING
 	[vdvControl[1],237] = CALL_DIALLING
 	[vdvControl[1],238] = CALL_CONNECTED
-
+	[vdvControl[1],239] = mySX.NumberOfInProgressCalls
 }
 
 /******************************************************************************
@@ -1366,6 +1442,7 @@ DEFINE_START{
 	mySX.isIP = !(dvVC.NUMBER)
 	CREATE_BUFFER dvVC, mySX.Rx
 	TIMELINE_CREATE(TLID_TIMER,TLT_TIMER,LENGTH_ARRAY(TLT_TIMER),TIMELINE_ABSOLUTE,TIMELINE_REPEAT)
+	SET_VIRTUAL_LEVEL_COUNT(vdvControl[1],20)
 }
 /******************************************************************************
 	Device Events
@@ -1807,6 +1884,9 @@ DEFINE_EVENT DATA_EVENT[vdvControl[1]]{
 					IF(FIND_STRING(DATA.TEXT,',',1)){
 						SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
 							CASE 'POS':fnQueueTx('xCommand Video',"'Selfview Set PIPPosition: ',fnGetSelfviewString(ATOI(DATA.TEXT))")
+							CASE 'FULLSCREEN':{
+								fnQueueTx('xCommand Video',"'Selfview Set FullscreenMode: ',DATA.TEXT")
+							}
 						}
 					}
 					ELSE{
@@ -1978,6 +2058,18 @@ DEFINE_PROGRAM{
 		[vdvControl[1],198] = (mySX.MIC_MUTE)
 		[vdvControl[1],199] = (mySX.VOL_MUTE)
 		SEND_LEVEL vdvControl[1],1,mySX.VOL
+		[vdvControl[1],211] = (mySX.ContentLocal[1] || mySX.ContentLocalRemote[1])
+		[vdvControl[1],212] = (mySX.ContentLocal[2] || mySX.ContentLocalRemote[2])
+		[vdvControl[1],213] = (mySX.ContentLocal[3] || mySX.ContentLocalRemote[3])
+		[vdvControl[1],214] = (mySX.ContentLocal[4] || mySX.ContentLocalRemote[4])
+		[vdvControl[1],215] = (mySX.ContentLocal[5] || mySX.ContentLocalRemote[5])
+		[vdvControl[1],216] = (mySX.ContentLocal[6] || mySX.ContentLocalRemote[6])
+		SEND_LEVEL vdvControl[1],11,mySX.ContentLocalSource[1]
+		SEND_LEVEL vdvControl[1],12,mySX.ContentLocalSource[2]
+		SEND_LEVEL vdvControl[1],13,mySX.ContentLocalSource[3]
+		SEND_LEVEL vdvControl[1],14,mySX.ContentLocalSource[4]
+		SEND_LEVEL vdvControl[1],15,mySX.ContentLocalSource[5]
+		SEND_LEVEL vdvControl[1],16,mySX.ContentLocalSource[6]
 		[vdvControl[1],241] = (mySX.ContentTx)
 		[vdvControl[1],242] = (mySX.ContentRx)
 		[vdvControl[1],247] = (mySX.PRESENTERTRACK.TRACKING && mySX.PRESENTERTRACK.ENABLED)
@@ -1986,6 +2078,7 @@ DEFINE_PROGRAM{
 		[vdvControl[1],250] = (mySX.PRESENTERTRACK.ENABLED)
 		[vdvControl[1],251] = (TIMELINE_ACTIVE(TLID_COMMS))
 		[vdvControl[1],252] = (TIMELINE_ACTIVE(TLID_COMMS))
+		[vdvControl[1],254] = (mySX.CONN_STATE == CONN_CONNECTED)
 		[vdvControl[1],255] = (mySX.POWER)
 	}
 }
@@ -3010,7 +3103,7 @@ DEFINE_EVENT BUTTON_EVENT[tp,btnRemote]{
 			CASE 37:cButtonCmd = 'Down' 			//	Down
 			CASE 38:cButtonCmd = 'Left' 			//	Left
 			CASE 39:cButtonCmd = 'Right'			//	Right
-			CASE 40:cButtonCmd = 'Ok' 		//	Enter
+			CASE 40:cButtonCmd = 'Ok' 		      //	Enter
 			CASE 41:cButtonCmd = 'F1' 				// Function Key 1
 			CASE 42:cButtonCmd = 'F2' 				// Function Key 2
 			CASE 43:cButtonCmd = 'F3' 				// Function Key 3
