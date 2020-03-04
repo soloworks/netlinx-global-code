@@ -2182,62 +2182,12 @@ DEFINE_FUNCTION fnUpdatePanel(INTEGER pPanel){
 		RETURN
 	}
 
-	// Populate Now Fields
-	SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNowSubject),',0,',WC_TP_ENCODE(myRoom.SLOTS[myRoom.SLOT_CURRENT].SUBJECT)"
+	IF(myRoom.SLOT_CURRENT){// Avoid pesky Index = 0 ref errors!
+		// Populate Now Fields
+		SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNowSubject),',0,',WC_TP_ENCODE(myRoom.SLOTS[myRoom.SLOT_CURRENT].SUBJECT)"
 
-	pStartTime = myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_START_TIME_HHMM
-	pEndTime   = myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_END_TIME_HHMM
-	IF(LEFT_STRING(pStartTime,3) = '24:'){
-		GET_BUFFER_STRING(pStartTime,2)
-		pStartTime = "'00',pStartTime"
-	}
-	IF(LEFT_STRING(pEndTime,3) = '24:'){
-		GET_BUFFER_STRING(pEndTime,2)
-		pEndTime = "'00',pEndTime"
-		//pEndTime = "'23:59'"
-	}
-	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNowStart),',0,',pStartTime"
-	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNowEnd),  ',0,',pEndTime"
-	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNowDuration),  ',0,',myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_DURATION_TEXT"
-	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNowRemaining), ',0,',myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT"
-
-	// Populate Now Organiser
-	SWITCH(myRoom.NOW_PANE_MODE){
-
-		CASE NOW_PANE_MODE_1:{
-			SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNowOrganiser),',0,',WC_TP_ENCODE(myRoom.SLOTS[myRoom.SLOT_CURRENT].ORGANISER)"
-		}
-		CASE NOW_PANE_MODE_2:{
-			SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNowOrganiser),',0,',WC_TP_ENCODE(myRoom.LOC_NAME)"
-		}
-		CASE NOW_PANE_MODE_3:{
-			SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNowOrganiser),',0,',WC_TP_ENCODE(CH_TO_WC('Walk Up Meeting'))"
-		}
-		DEFAULT:{
-			IF(!myRoom.SLOTS[myRoom.SLOT_CURRENT].isQUICKBOOK && !myRoom.SLOTS[myRoom.SLOT_CURRENT].isAUTOBOOK){
-				SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNowOrganiser),',0,',WC_TP_ENCODE(myRoom.SLOTS[myRoom.SLOT_CURRENT].ORGANISER)"
-			}
-			ELSE{
-				SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNowOrganiser),',0,',WC_TP_ENCODE(myRoom.SLOTS[myRoom.SLOT_CURRENT].SUBJECT)"
-			}
-		}
-	}
-
-	// Send Diagnostics Details - Meeting Remaining Limits
-	SEND_COMMAND tp[pPanel],"'^BMF-',ITOA(lvlMeetingRemain),',0,%GL0%GH',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_DURATION_MINS)"
-
-	// Send Diagnostics Details - Meeting Remaining Timer Value
-	//SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(lvlMeetingRemain),',0,',fnSecondsToDurationTextLocal(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS,0,'Level Remain Secs')"
-	SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(lvlMeetingRemain),',0,',myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT"
-
-	IF(myRoom.SLOTS[myRoom.SLOT_CURRENT+1].SLOT_END_REF){
-		SEND_COMMAND tp[pPanel],"'^SHO-',ITOA(addNextSubject),'.',ITOA(addNextDuration),',1'"
-		// Populate Next Subject
-		SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNextSubject),  ',0,',WC_TP_ENCODE(myRoom.SLOTS[myRoom.SLOT_CURRENT+1].SUBJECT)"
-		SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNextOrganiser),',0,',WC_TP_ENCODE(myRoom.SLOTS[myRoom.SLOT_CURRENT+1].ORGANISER)"
-
-		pStartTime = myRoom.SLOTS[myRoom.SLOT_CURRENT+1].SLOT_START_TIME_HHMM
-		pEndTime   = myRoom.SLOTS[myRoom.SLOT_CURRENT+1].SLOT_END_TIME_HHMM
+		pStartTime = myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_START_TIME_HHMM
+		pEndTime   = myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_END_TIME_HHMM
 		IF(LEFT_STRING(pStartTime,3) = '24:'){
 			GET_BUFFER_STRING(pStartTime,2)
 			pStartTime = "'00',pStartTime"
@@ -2245,33 +2195,85 @@ DEFINE_FUNCTION fnUpdatePanel(INTEGER pPanel){
 		IF(LEFT_STRING(pEndTime,3) = '24:'){
 			GET_BUFFER_STRING(pEndTime,2)
 			pEndTime = "'00',pEndTime"
+			//pEndTime = "'23:59'"
 		}
-		SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNextStart),',0,',pStartTime"
-		SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNextEnd),  ',0,',pEndTime"
-		myRoom.SLOTS[myRoom.SLOT_CURRENT+1].SLOT_DURATION_TEXT = fnSecondsToDurationTextLocal(myRoom.SLOTS[myRoom.SLOT_CURRENT+1].SLOT_DURATION_SECS,0,'Next Duration Secs')
-		SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNextDuration), ',0,',myRoom.SLOTS[myRoom.SLOT_CURRENT+1].SLOT_DURATION_TEXT"
-		fnDebug(DEBUG_LOG,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'next pStartTime = ',   pStartTime")
-		fnDebug(DEBUG_LOG,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'next pEndTime = ',     pEndTime")
-		fnDebug(DEBUG_LOG,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'next .DURATIN_TEXT = ',myRoom.SLOTS[myRoom.SLOT_CURRENT+1].SLOT_DURATION_TEXT")
-	}
-	ELSE{
-		SEND_COMMAND tp[pPanel],"'^SHO-',ITOA(addNextSubject),'.',ITOA(addNextDuration),',0'"
-	}
+		SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNowStart),',0,',pStartTime"
+		SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNowEnd),  ',0,',pEndTime"
+		SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNowDuration),  ',0,',myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_DURATION_TEXT"
+		SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNowRemaining), ',0,',myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT"
 
-	// Populate Quick Book End Time
-	IF(myRMSPanel[pPanel].MODE == MODE_QUICKBOOK){
-		#IF_DEFINED _DEV_MODE
-			IF(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_END_REF == myRoom.SLOTS[myRoom.SLOT_CURRENT+1].SLOT_START_REF){// If there is a booking immediately following this one
-				SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addQuickBookInstDur-1),',0,Bookable until ',myRoom.QUICKBOOK_LAST_CHANCE_HHMM"
+		// Populate Now Organiser
+		SWITCH(myRoom.NOW_PANE_MODE){
+
+			CASE NOW_PANE_MODE_1:{
+				SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNowOrganiser),',0,',WC_TP_ENCODE(myRoom.SLOTS[myRoom.SLOT_CURRENT].ORGANISER)"
 			}
-			ELSE{
-				SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addQuickBookInstDur-1),',0,Bookable until ',myRoom.QUICKBOOK_END_TIME_HHMM"
+			CASE NOW_PANE_MODE_2:{
+				SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNowOrganiser),',0,',WC_TP_ENCODE(myRoom.LOC_NAME)"
 			}
-			SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addQuickBookInstDur  ),',0,Available until ',myRoom.QUICKBOOK_END_TIME_HHMM"
-		#ELSE
-			SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addQuickBookInstDur-1),',0,Not in Dev Mode'"
-			SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addQuickBookInstDur),  ',0,Until ',myRoom.QUICKBOOK_END_TIME_HHMM"
-		#END_IF
+			CASE NOW_PANE_MODE_3:{
+				SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNowOrganiser),',0,',WC_TP_ENCODE(CH_TO_WC('Walk Up Meeting'))"
+			}
+			DEFAULT:{
+				IF(!myRoom.SLOTS[myRoom.SLOT_CURRENT].isQUICKBOOK && !myRoom.SLOTS[myRoom.SLOT_CURRENT].isAUTOBOOK){
+					SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNowOrganiser),',0,',WC_TP_ENCODE(myRoom.SLOTS[myRoom.SLOT_CURRENT].ORGANISER)"
+				}
+				ELSE{
+					SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNowOrganiser),',0,',WC_TP_ENCODE(myRoom.SLOTS[myRoom.SLOT_CURRENT].SUBJECT)"
+				}
+			}
+		}
+
+		// Send Diagnostics Details - Meeting Remaining Limits
+		SEND_COMMAND tp[pPanel],"'^BMF-',ITOA(lvlMeetingRemain),',0,%GL0%GH',ITOA(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_DURATION_MINS)"
+
+		// Send Diagnostics Details - Meeting Remaining Timer Value
+		//SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(lvlMeetingRemain),',0,',fnSecondsToDurationTextLocal(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_SECS,0,'Level Remain Secs')"
+		SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(lvlMeetingRemain),',0,',myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_REMAIN_TEXT"
+
+		IF(myRoom.SLOTS[myRoom.SLOT_CURRENT+1].SLOT_END_REF){
+			SEND_COMMAND tp[pPanel],"'^SHO-',ITOA(addNextSubject),'.',ITOA(addNextDuration),',1'"
+			// Populate Next Subject
+			SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNextSubject),  ',0,',WC_TP_ENCODE(myRoom.SLOTS[myRoom.SLOT_CURRENT+1].SUBJECT)"
+			SEND_COMMAND tp[pPanel],"'^UNI-',ITOA(addNextOrganiser),',0,',WC_TP_ENCODE(myRoom.SLOTS[myRoom.SLOT_CURRENT+1].ORGANISER)"
+
+			pStartTime = myRoom.SLOTS[myRoom.SLOT_CURRENT+1].SLOT_START_TIME_HHMM
+			pEndTime   = myRoom.SLOTS[myRoom.SLOT_CURRENT+1].SLOT_END_TIME_HHMM
+			IF(LEFT_STRING(pStartTime,3) = '24:'){
+				GET_BUFFER_STRING(pStartTime,2)
+				pStartTime = "'00',pStartTime"
+			}
+			IF(LEFT_STRING(pEndTime,3) = '24:'){
+				GET_BUFFER_STRING(pEndTime,2)
+				pEndTime = "'00',pEndTime"
+			}
+			SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNextStart),',0,',pStartTime"
+			SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNextEnd),  ',0,',pEndTime"
+			myRoom.SLOTS[myRoom.SLOT_CURRENT+1].SLOT_DURATION_TEXT = fnSecondsToDurationTextLocal(myRoom.SLOTS[myRoom.SLOT_CURRENT+1].SLOT_DURATION_SECS,0,'Next Duration Secs')
+			SEND_COMMAND tp[pPanel],"'^TXT-',ITOA(addNextDuration), ',0,',myRoom.SLOTS[myRoom.SLOT_CURRENT+1].SLOT_DURATION_TEXT"
+			fnDebug(DEBUG_LOG,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'next pStartTime = ',   pStartTime")
+			fnDebug(DEBUG_LOG,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'next pEndTime = ',     pEndTime")
+			fnDebug(DEBUG_LOG,'FUNCTION',"'fnUpdatePanel(','pPanel=',ITOA(pPanel),')'","'next .DURATIN_TEXT = ',myRoom.SLOTS[myRoom.SLOT_CURRENT+1].SLOT_DURATION_TEXT")
+		}
+		ELSE{
+			SEND_COMMAND tp[pPanel],"'^SHO-',ITOA(addNextSubject),'.',ITOA(addNextDuration),',0'"
+		}
+
+		// Populate Quick Book End Time
+		IF(myRMSPanel[pPanel].MODE == MODE_QUICKBOOK){
+			#IF_DEFINED _DEV_MODE
+				IF(myRoom.SLOTS[myRoom.SLOT_CURRENT].SLOT_END_REF == myRoom.SLOTS[myRoom.SLOT_CURRENT+1].SLOT_START_REF){// If there is a booking immediately following this one
+					SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addQuickBookInstDur-1),',0,Bookable until ',myRoom.QUICKBOOK_LAST_CHANCE_HHMM"
+				}
+				ELSE{
+					SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addQuickBookInstDur-1),',0,Bookable until ',myRoom.QUICKBOOK_END_TIME_HHMM"
+				}
+				SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addQuickBookInstDur  ),',0,Available until ',myRoom.QUICKBOOK_END_TIME_HHMM"
+			#ELSE
+				SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addQuickBookInstDur-1),',0,Not in Dev Mode'"
+				SEND_COMMAND tp[pPanel], "'^TXT-',ITOA(addQuickBookInstDur),  ',0,Until ',myRoom.QUICKBOOK_END_TIME_HHMM"
+			#END_IF
+		}
 	}
 
 	// Populate the Cal Popup
@@ -2530,11 +2532,16 @@ DEFINE_PROGRAM{
 
 	// Send Levels to Panel
 	SEND_LEVEL tp,lvlRoomOccupied,myRoom.OCCUPANCY_TIMEOUT.COUNTER
-	IF(myRoom.SLOTS[myRoom.SLOT_CURRENT].isAUTOBOOK){// Set lvlNoShowTimer to zero
-		SEND_LEVEL tp,lvlNoShowTimer,0
+	IF(myRoom.SLOT_CURRENT){
+		IF(myRoom.SLOTS[myRoom.SLOT_CURRENT].isAUTOBOOK){
+			SEND_LEVEL tp,lvlNoShowTimer,0 // Set lvlNoShowTimer to zero
+		}
+		ELSE{
+			SEND_LEVEL tp,lvlNoShowTimer,myRoom.NOSHOW_TIMEOUT.COUNTER
+		}
 	}
 	ELSE{
-		SEND_LEVEL tp,lvlNoShowTimer,myRoom.NOSHOW_TIMEOUT.COUNTER
+		SEND_LEVEL tp,lvlNoShowTimer,0 // Set lvlNoShowTimer to zero
 	}
 	SEND_LEVEL tp,lvlQuickBookStandoffTimer,myRoom.QUICKBOOK_TIMEOUT.COUNTER
 	SEND_LEVEL tp,lvlAutoBookActionTimer,myRoom.AUTOBOOK_ACTION.COUNTER
