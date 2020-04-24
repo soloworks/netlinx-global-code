@@ -6,7 +6,7 @@
 	TODO: HTTP/S
 
 	Required CallBack Function:
-	DEFINE_FUNCTION eventHTTPResponse(uResponse r){}
+	DEFINE_FUNCTION eventHTTPResponse(uHTTPResponse r){}
 
 ******************************************************************************/
 DEFINE_CONSTANT
