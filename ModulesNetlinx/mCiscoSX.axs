@@ -15,6 +15,7 @@ INTEGER MAX_PRESETS      = 15
 INTEGER MAX_CAMERAS      =  7
 INTEGER MAX_PERIPHERAL   = 10
 INTEGER MAX_RECENT_CALLS = 15
+INTEGER MAX_PANELS_UI    = 4
 
 DEFINE_TYPE STRUCTURE uPeripheral{
 	INTEGER INDEX
@@ -114,6 +115,21 @@ DEFINE_TYPE STRUCTURE uDir{
 	CHAR		  PREFERED_METHOD[10]	// Prefered protocol from Dircetory list (optional)
 }
 
+DEFINE_TYPE STRUCTURE uVidInput{
+	CHAR NAME[50]
+}
+
+DEFINE_TYPE STRUCTURE uUIPanel{
+	CHAR ID[128]
+	CHAR XML[8192]
+}
+
+DEFINE_TYPE STRUCTURE uUI{
+	uExtSource   ExtSources[8]
+	INTEGER      ExtSourceHide
+	uUIPanel     Panel[MAX_PANELS_UI]
+}
+
 DEFINE_TYPE STRUCTURE uSX{
 	INTEGER  CARRIER_ENABLED
 	// Meta Data
@@ -131,6 +147,7 @@ DEFINE_TYPE STRUCTURE uSX{
 	LONG		SYS_UPTIME
 	CHAR 		SYS_IP[15]
 	INTEGER	hasSpeakerTrack
+	uVidInput VidInput[6]
 
 	// Control State
 	INTEGER	MIC_MUTE
@@ -176,16 +193,16 @@ DEFINE_TYPE STRUCTURE uSX{
 	CHAR 		IP_HOST[15]
 	INTEGER 	IP_PORT
 	// Call State
-	uCall		   ACTIVE_CALLS[MAX_CALLS]
-	uRecentCall RecentCalls[MAX_RECENT_CALLS]
-	INTEGER     RecentCallsLoading
-	INTEGER     RecentCallSelected
+	uCall		    ACTIVE_CALLS[MAX_CALLS]
+	uRecentCall  RecentCalls[MAX_RECENT_CALLS]
+	INTEGER      RecentCallsLoading
+	INTEGER      RecentCallSelected
 	// Directory
-	uDir		DIRECTORY
-	// Touch10
-	uExtSource   ExtSources[8]
-	INTEGER      ExtSourceHide
+	uDir		    DIRECTORY
+	// External Device Monitoring
 	uPeripherals PERIPHERALS
+	// Touch10 Interface
+	uUI          UI
 }
 
 
@@ -499,9 +516,15 @@ DEFINE_FUNCTION fnCloseTCPConnection(){
 	}
 }
 
-DEFINE_FUNCTION fnQueueTx(CHAR pCommand[1000], CHAR pParam[1000]){
-	fnDebug(DEBUG_DEVELOP,'fnQueueTX',"'[',ITOA(LENGTH_ARRAY(mySX.Tx)),']',pCommand,' ', pParam,$0D")
-	mySX.Tx = "mySX.Tx,pCommand,' ', pParam,$0D"
+DEFINE_FUNCTION fnQueueTx(CHAR pCommand[256], CHAR pParam[8192]){
+	IF(LENGTH_ARRAY(pParam)){
+		mySX.Tx = "mySX.Tx,pCommand,' ', pParam,$0D"
+		fnDebug(DEBUG_DEVELOP,'fnQueueTX',"'[',ITOA(LENGTH_ARRAY(mySX.Tx)),']',pCommand,' ', pParam,$0D")
+	}
+	ELSE{
+		mySX.Tx = "mySX.Tx,pCommand,$0D"
+		fnDebug(DEBUG_DEVELOP,'fnQueueTX',"'[',ITOA(LENGTH_ARRAY(mySX.Tx)),']',pCommand,$0D")
+	}
 	fnSendTx()
 	fnInitPoll()
 }
@@ -561,6 +584,7 @@ DEFINE_FUNCTION fnPoll(){
 }
 DEFINE_FUNCTION fnInitData(){
 	STACK_VAR CHAR pParams[500]
+	STACK_VAR INTEGER i
 	// Populate System Variables
 	STACK_VAR DEV_INFO_STRUCT sDeviceInfo
 	STACK_VAR IP_ADDRESS_STRUCT sNetworkInfo
@@ -596,6 +620,11 @@ DEFINE_FUNCTION fnInitData(){
 	fnQueueTx('xFeedback register','/Status/Peripherals')
 
 	fnQueueTx('xConfiguration','Peripherals Profile Touchpanels: 0')
+	FOR(i = 1; i <= 6; i++){
+		IF(mySX.VidInput[i].NAME != ''){
+			fnQueueTx('xConfiguration',"'Video Input Connector ',ITOA(i),' Name: "',mySX.VidInput[i].NAME,'"'")
+		}
+	}
 
 	fnQueueTx('xStatus','Audio')
 	fnQueueTx('xStatus','Call')
@@ -607,21 +636,32 @@ DEFINE_FUNCTION fnInitData(){
 	fnQueueTx('xStatus','SystemUnit')
 
 
-	fnQueueTx('xCommand UserInterface Presentation ExternalSource','RemoveAll')
 	// Init GUI bits if required
-	IF(mySX.ExtSources[1].IDENTIFIER != ''){
+	
+	// Handle External Sources if defined
+	fnQueueTx('xCommand UserInterface Presentation ExternalSource','RemoveAll')
+	IF(mySX.UI.ExtSources[1].IDENTIFIER != ''){
 		STACK_VAR INTEGER s
 		FOR(s = 1; s <= 8; s++){
-			IF(mySX.ExtSources[s].IDENTIFIER != ''){
+			IF(mySX.UI.ExtSources[s].IDENTIFIER != ''){
 				pParams = 'Add'
-				pParams = "pParams,' ConnectorId: ',ITOA(mySX.ExtSources[s].CONNECTOR_ID)"
-				pParams = "pParams,' SourceIdentifier: "',mySX.ExtSources[s].IDENTIFIER,'"'"
-				pParams = "pParams,' Name: "',mySX.ExtSources[s].NAME,'"'"
-				pParams = "pParams,' Type: ',mySX.ExtSources[s].TYPE"
+				pParams = "pParams,' ConnectorId: ',ITOA(mySX.UI.ExtSources[s].CONNECTOR_ID)"
+				pParams = "pParams,' SourceIdentifier: "',mySX.UI.ExtSources[s].IDENTIFIER,'"'"
+				pParams = "pParams,' Name: "',mySX.UI.ExtSources[s].NAME,'"'"
+				pParams = "pParams,' Type: ',mySX.UI.ExtSources[s].TYPE"
 				fnQueueTx('xCommand UserInterface Presentation ExternalSource',pParams)
 			}
 		}
 		fnSetExtSourceSignals(0)
+	}
+	
+	// Handle Additional panels if defined
+	FOR(i = 1; i <= MAX_PANELS_UI; i++){
+		IF(LENGTH_ARRAY(mySX.UI.Panel[i].ID)){
+			fnQueueTx('xCommand',"'UserInterface Extensions Panel Save PanelId: "',mySX.UI.Panel[i].ID,'"'")
+			fnQueueTx(mySX.UI.Panel[i].XML,'')
+			fnQueueTx('.','')
+		}
 	}
 
 	// Query and process connected peripherals
@@ -1697,6 +1737,15 @@ DEFINE_EVENT DATA_EVENT[vdvControl[1]]{
 								}
 							}
 						}
+						CASE 'INPUT':{
+							STACK_VAR INTEGER i
+							i = ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1))
+							SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
+								CASE 'NAME':{
+									mySX.VidInput[i].NAME = DATA.TEXT
+								}
+							}
+						}
 					}
 				}
 				CASE 'RAW': 	fnQueueTx(DATA.TEXT,'')
@@ -1891,10 +1940,10 @@ DEFINE_EVENT DATA_EVENT[vdvControl[1]]{
 					STACK_VAR CHAR pTITLE[32]
 					STACK_VAR CHAR pBODY[255]
 					STACK_VAR CHAR pTIME[4]
-					SWITCH(fnGetCSV(DATA.TEXT,1)){
+					SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
 						CASE 'SET':{
-							pWIDGET = fnGetCSV(DATA.TEXT,2)
-							pVALUE  = fnGetCSV(DATA.TEXT,3)
+							pWIDGET = fnGetCSV(DATA.TEXT,1)
+							pVALUE  = fnGetCSV(DATA.TEXT,2)
 							fnDebug(DEBUG_DEVELOP,'Cisco Rx INTERFACE_API-',"'SET,',pWIDGET,',',pVALUE")
 							SWITCH(pVALUE){
 								CASE '':
@@ -1905,27 +1954,39 @@ DEFINE_EVENT DATA_EVENT[vdvControl[1]]{
 							}
 						}
 						CASE 'MESSAGE':{
-							pTITLE  = fnGetCSV(DATA.TEXT,2)
-							pBODY   = fnGetCSV(DATA.TEXT,3)
-							pTIME   = fnGetCSV(DATA.TEXT,4)
+							pTITLE  = fnGetCSV(DATA.TEXT,1)
+							pBODY   = fnGetCSV(DATA.TEXT,2)
+							pTIME   = fnGetCSV(DATA.TEXT,3)
 							fnDebug(DEBUG_DEVELOP,'Cisco Rx INTERFACE_API-',"'MESSAGE,',pTITLE,',',pBODY,',',pTIME")
 							fnQueueTx("'xCommand UserInterface Message Alert Display'",
 							"'Title: "',pTITLE,'" Text: "',pBODY,'" Duration: ',pTIME")
 						}
 						CASE 'EXTSOURCE':{
-							IF(fnGetCSV(DATA.TEXT,2) == 'HIDE'){
-								mySX.ExtSourceHide = TRUE
+							IF(fnGetCSV(DATA.TEXT,1) == 'HIDE'){
+								mySX.UI.ExtSourceHide = TRUE
 							}
 							ELSE{
 								STACK_VAR INTEGER x
 								FOR(x = 1; x <= 8; x++){
-									IF(mySX.ExtSources[x].IDENTIFIER == ''){
-										mySX.ExtSources[x].CONNECTOR_ID = ATOI(fnGetCSV(DATA.TEXT,2))
-										mySX.ExtSources[x].IDENTIFIER = fnGetCSV(DATA.TEXT,3)
-										mySX.ExtSources[x].NAME = fnGetCSV(DATA.TEXT,4)
-										mySX.ExtSources[x].TYPE = fnGetCSV(DATA.TEXT,5)
+									IF(mySX.UI.ExtSources[x].IDENTIFIER == ''){
+										mySX.UI.ExtSources[x].CONNECTOR_ID = ATOI(fnGetCSV(DATA.TEXT,1))
+										mySX.UI.ExtSources[x].IDENTIFIER = fnGetCSV(DATA.TEXT,2)
+										mySX.UI.ExtSources[x].NAME = fnGetCSV(DATA.TEXT,3)
+										mySX.UI.ExtSources[x].TYPE = fnGetCSV(DATA.TEXT,4)
 										BREAK
 									}
+								}
+							}
+						}
+						CASE 'PANEL':{
+							// Allow adding a panel using raw XML
+							STACK_VAR INTEGER x
+							FOR(x = 1; x <= MAX_PANELS_UI; x++){
+								IF(mySX.UI.Panel[x].ID == ''){
+									mySX.UI.Panel[x].ID = REMOVE_STRING(DATA.TEXT,',',1)
+									SET_LENGTH_ARRAY(mySX.UI.Panel[x].ID,LENGTH_ARRAY(mySX.UI.Panel[x].ID)-1)
+									mySX.UI.Panel[x].XML = DATA.TEXT
+									BREAK
 								}
 							}
 						}
@@ -3055,11 +3116,11 @@ DEFINE_CONSTANT
 INTEGER chnExtSourceSignal[] = {11,12,13,14,15,16,17,18,19,20}
 DEFINE_EVENT CHANNEL_EVENT[vdvControl[1],chnExtSourceSignal]{
 	ON:{
-		mySX.ExtSources[GET_LAST(chnExtSourceSignal)].SIGNAL = TRUE
+		mySX.UI.ExtSources[GET_LAST(chnExtSourceSignal)].SIGNAL = TRUE
 		fnSetExtSourceSignals(GET_LAST(chnExtSourceSignal))
 	}
 	OFF:{
-		mySX.ExtSources[GET_LAST(chnExtSourceSignal)].SIGNAL = FALSE
+		mySX.UI.ExtSources[GET_LAST(chnExtSourceSignal)].SIGNAL = FALSE
 		fnSetExtSourceSignals(GET_LAST(chnExtSourceSignal))
 	}
 }
@@ -3076,13 +3137,13 @@ DEFINE_FUNCTION fnSetExtSourceSignals(INTEGER src){
 		RETURN
 	}
 
-	IF(mySX.ExtSources[src].IDENTIFIER != ''){
+	IF(mySX.UI.ExtSources[src].IDENTIFIER != ''){
 		pParams = 'Set'
-		pParams = "pParams,' SourceIdentifier: "',mySX.ExtSources[src].IDENTIFIER,'"'"
-		SWITCH(mySX.ExtSources[src].SIGNAL){
+		pParams = "pParams,' SourceIdentifier: "',mySX.UI.ExtSources[src].IDENTIFIER,'"'"
+		SWITCH(mySX.UI.ExtSources[src].SIGNAL){
 			CASE TRUE:  pParams = "pParams,' State: Ready'"
 			CASE FALSE:{
-				SWITCH(mySX.ExtSourceHide){
+				SWITCH(mySX.UI.ExtSourceHide){
 					CASE TRUE:  pParams = "pParams,' State: Hidden'"
 					CASE FALSE: pParams = "pParams,' State: NotReady'"
 				}
