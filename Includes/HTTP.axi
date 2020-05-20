@@ -204,20 +204,23 @@ DEFINE_FUNCTION CHAR[10000] fnBuildHTTPRequest(uHTTPRequest r){
 /******************************************************************************
 	IP Data Handling
 ******************************************************************************/
+DEFINE_VARIABLE 
+CHAR _HeaderETX[] = {$0D,$0A}
+
 DEFINE_EVENT DATA_EVENT[ipHTTP]{
 	STRING:{
 		fnDebug(HTTP.DEBUG,DEBUG_DEV,"'HTTP DATA_EVENT STRING Called'")
 		// Process the Header
-		IF(!HTTP.RESPONSE_HEADERS_PROCESSED && FIND_STRING(HTTP.Rx,"$0D,$0A,$0D,$0A",1)){
+		IF(!HTTP.RESPONSE_HEADERS_PROCESSED && FIND_STRING(HTTP.Rx,"_HeaderETX,_HeaderETX",1)){
 			STACK_VAR CHAR HEAD_LINE[500]
 
 			// Gather HTTP Code
-			HEAD_LINE = fnStripCharsRight(REMOVE_STRING(HTTP.Rx,"$0D,$0A",1),2)
+			HEAD_LINE = fnStripCharsRight(REMOVE_STRING(HTTP.Rx,"_HeaderETX",1),2)
 			HTTP.RESPONSE.CODE = ATOI(fnGetSplitStringValue(HEAD_LINE,' ',2))
 
 			// Store rest of Headers
-			WHILE(FIND_STRING(HTTP.Rx,"$0D,$0A",1)){
-				HEAD_LINE = fnStripCharsRight(REMOVE_STRING(HTTP.Rx,"$0D,$0A",1),2)
+			WHILE(FIND_STRING(HTTP.Rx,"_HeaderETX",1)){
+				HEAD_LINE = fnStripCharsRight(REMOVE_STRING(HTTP.Rx,"_HeaderETX",1),2)
 				IF(HEAD_LINE != ''){
 					STACK_VAR INTEGER x
 					fnDebug(HTTP.DEBUG,DEBUG_STD,"'Header->',HEAD_LINE")
