@@ -112,7 +112,7 @@ DEFINE_FUNCTION fnChangeChannel(INTEGER CH){
 ******************************************************************************/
 DEFINE_FUNCTION eventHTTPResponse(uHTTPResponse r){
 	// Process Feedback
-	
+
 	WHILE(FIND_STRING(r.body,"$0A",1)){
 		STACK_VAR CHAR l[200]
 		STACK_VAR INTEGER isCurrent
@@ -141,8 +141,8 @@ DEFINE_FUNCTION eventHTTPResponse(uHTTPResponse r){
 			}
 		}
 	}
-	
-	// Reset comms loop	
+
+	// Reset comms loop
 	IF(r.code == 200){
 		IF(TIMELINE_ACTIVE(TLID_COMMS)){TIMELINE_KILL(TLID_COMMS)}
 		TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,1,TIMELINE_ABSOLUTE,TIMELINE_ONCE)
