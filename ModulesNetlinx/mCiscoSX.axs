@@ -15,7 +15,6 @@ INTEGER MAX_PRESETS      = 15
 INTEGER MAX_CAMERAS      =  7
 INTEGER MAX_PERIPHERAL   = 10
 INTEGER MAX_RECENT_CALLS = 15
-INTEGER MAX_PANELS_UI    = 4
 
 DEFINE_TYPE STRUCTURE uPeripheral{
 	INTEGER INDEX
@@ -119,15 +118,9 @@ DEFINE_TYPE STRUCTURE uVidInput{
 	CHAR NAME[50]
 }
 
-DEFINE_TYPE STRUCTURE uUIPanel{
-	CHAR ID[128]
-	CHAR XML[8192]
-}
-
 DEFINE_TYPE STRUCTURE uUI{
 	uExtSource   ExtSources[8]
 	INTEGER      ExtSourceHide
-	uUIPanel     Panel[MAX_PANELS_UI]
 }
 
 DEFINE_TYPE STRUCTURE uSX{
@@ -516,7 +509,7 @@ DEFINE_FUNCTION fnCloseTCPConnection(){
 	}
 }
 
-DEFINE_FUNCTION fnQueueTx(CHAR pCommand[256], CHAR pParam[8192]){
+DEFINE_FUNCTION fnQueueTx(CHAR pCommand[256], CHAR pParam[4096]){
 	IF(LENGTH_ARRAY(pParam)){
 		mySX.Tx = "mySX.Tx,pCommand,' ', pParam,$0D"
 		fnDebug(DEBUG_DEVELOP,'fnQueueTX',"'[',ITOA(LENGTH_ARRAY(mySX.Tx)),']',pCommand,' ', pParam,$0D")
@@ -582,96 +575,95 @@ DEFINE_FUNCTION fnPoll(){
 	pParams = "pParams,' ID: "',fnHexToString(GET_UNIQUE_ID()),'"'"
 	fnQueueTx('xCommand Peripherals',pParams)
 }
-DEFINE_FUNCTION fnInitData(){
-	STACK_VAR CHAR pParams[500]
+
+// fnInitData requests initial connection data from the Cisco
+DEFINE_FUNCTION fnInitData(INTEGER pStage){
+	// Local Variables
 	STACK_VAR INTEGER i
-	// Populate System Variables
-	STACK_VAR DEV_INFO_STRUCT sDeviceInfo
-	STACK_VAR IP_ADDRESS_STRUCT sNetworkInfo
+	fnDebug(DEBUG_DEVELOP,'Function',FORMAT('fnInitData(Stage%02d)',pStage))
+	SWITCH(pStage){
+		// Stage 1 - All registrations and system feedback initial state requests
+		CASE 1:{
+			STACK_VAR CHAR pParams[500]
+			// Populate System Variables
+			STACK_VAR DEV_INFO_STRUCT sDeviceInfo
+			STACK_VAR IP_ADDRESS_STRUCT sNetworkInfo
 
-	// Turn off Echo
-	fnQueueTx('echo','off')
+			// Turn off Echo
+			fnQueueTx('echo','off')
 
-	// Register AMX as addition to SX
-	DEVICE_INFO(DATA.DEVICE, sDeviceInfo)
-	GET_IP_ADDRESS(0:1:0,sNetworkInfo)
-	pParams = 'Connect'
-	pParams = "pParams,' ID: "',fnHexToString(GET_UNIQUE_ID()),'"'"
-	pParams = "pParams,' Name: "AMX Control System"'"
-	pParams = "pParams,' NetworkAddress: "',sNetworkInfo.IPADDRESS,'"'"
-	pParams = "pParams,' SerialNumber: "',fnRemoveNonPrintableChars(sDeviceInfo.SERIAL_NUMBER),'"'"
-	pParams = "pParams,' SoftwareInfo: "',sDeviceInfo.VERSION,'"'"
-	pParams = "pParams,' HardwareInfo: "',sDeviceInfo.DEVICE_ID_STRING,'"'"
-	pParams = "pParams,' Type: ControlSystem'"
-	fnQueueTx('xCommand Peripherals',pParams)
+			// Register AMX as addition to SX
+			DEVICE_INFO(DATA.DEVICE, sDeviceInfo)
+			GET_IP_ADDRESS(0:1:0,sNetworkInfo)
+			pParams = 'Connect'
+			pParams = "pParams,' ID: "',fnHexToString(GET_UNIQUE_ID()),'"'"
+			pParams = "pParams,' Name: "AMX Control System"'"
+			pParams = "pParams,' NetworkAddress: "',sNetworkInfo.IPADDRESS,'"'"
+			pParams = "pParams,' SerialNumber: "',fnRemoveNonPrintableChars(sDeviceInfo.SERIAL_NUMBER),'"'"
+			pParams = "pParams,' SoftwareInfo: "',sDeviceInfo.VERSION,'"'"
+			pParams = "pParams,' HardwareInfo: "',sDeviceInfo.DEVICE_ID_STRING,'"'"
+			pParams = "pParams,' Type: ControlSystem'"
+			fnQueueTx('xCommand Peripherals',pParams)
 
-	fnQueueTx('xFeedback deregister','/Status/Diagnostics')
-	fnQueueTx('xFeedback register','/Status/SystemUnit')
-	fnQueueTx('xFeedback register','/Event')
-	fnQueueTx('xFeedback register','/Status/Audio')
-	fnQueueTx('xFeedback register','/Status/Video/Input')
-	fnQueueTx('xFeedback register','/Status/Video/Selfview')
-	fnQueueTx('xFeedback register','/Status/Call')
-	fnQueueTx('xFeedback register','/Status/Camera')
-	fnQueueTx('xFeedback register','/Status/Cameras')
-	fnQueueTx('xFeedback register','/Status/Conference')
-	fnQueueTx('xFeedback register','/Status/Network')
-	fnQueueTx('xFeedback register','/Status/Standby')
-	fnQueueTx('xFeedback register','/Status/Peripherals')
+			fnQueueTx('xFeedback deregister','/Status/Diagnostics')
+			fnQueueTx('xFeedback register','/Status/SystemUnit')
+			fnQueueTx('xFeedback register','/Event')
+			fnQueueTx('xFeedback register','/Status/Audio')
+			fnQueueTx('xFeedback register','/Status/Video/Input')
+			fnQueueTx('xFeedback register','/Status/Video/Selfview')
+			fnQueueTx('xFeedback register','/Status/Call')
+			fnQueueTx('xFeedback register','/Status/Camera')
+			fnQueueTx('xFeedback register','/Status/Cameras')
+			fnQueueTx('xFeedback register','/Status/Conference')
+			fnQueueTx('xFeedback register','/Status/Network')
+			fnQueueTx('xFeedback register','/Status/Standby')
+			fnQueueTx('xFeedback register','/Status/Peripherals')
 
-	fnQueueTx('xConfiguration','Peripherals Profile Touchpanels: 0')
-	FOR(i = 1; i <= 6; i++){
-		IF(mySX.VidInput[i].NAME != ''){
-			fnQueueTx('xConfiguration',"'Video Input Connector ',ITOA(i),' Name: "',mySX.VidInput[i].NAME,'"'")
-		}
-	}
-
-	fnQueueTx('xStatus','Audio')
-	fnQueueTx('xStatus','Call')
-	fnQueueTx('xStatus','Video Input')
-	fnQueueTx('xStatus','Video Selfview')
-	fnQueueTx('xStatus','Conference')
-	fnQueueTx('xStatus','Network')
-	fnQueueTx('xStatus','Standby')
-	fnQueueTx('xStatus','SystemUnit')
-
-
-	// Init GUI bits if required
-	
-	// Handle External Sources if defined
-	fnQueueTx('xCommand UserInterface Presentation ExternalSource','RemoveAll')
-	IF(mySX.UI.ExtSources[1].IDENTIFIER != ''){
-		STACK_VAR INTEGER s
-		FOR(s = 1; s <= 8; s++){
-			IF(mySX.UI.ExtSources[s].IDENTIFIER != ''){
-				pParams = 'Add'
-				pParams = "pParams,' ConnectorId: ',ITOA(mySX.UI.ExtSources[s].CONNECTOR_ID)"
-				pParams = "pParams,' SourceIdentifier: "',mySX.UI.ExtSources[s].IDENTIFIER,'"'"
-				pParams = "pParams,' Name: "',mySX.UI.ExtSources[s].NAME,'"'"
-				pParams = "pParams,' Type: ',mySX.UI.ExtSources[s].TYPE"
-				fnQueueTx('xCommand UserInterface Presentation ExternalSource',pParams)
+			fnQueueTx('xStatus','Audio')
+			fnQueueTx('xStatus','Call')
+			fnQueueTx('xStatus','Video Input')
+			fnQueueTx('xStatus','Video Selfview')
+			fnQueueTx('xStatus','Conference')
+			fnQueueTx('xStatus','Network')
+			fnQueueTx('xStatus','Standby')
+			fnQueueTx('xStatus','SystemUnit')
+			
+			fnQueueTx('xConfiguration','Peripherals Profile Touchpanels: 0')
+			FOR(i = 1; i <= 6; i++){
+				IF(mySX.VidInput[i].NAME != ''){
+					fnQueueTx('xConfiguration',"'Video Input Connector ',ITOA(i),' Name: "',mySX.VidInput[i].NAME,'"'")
+				}
 			}
 		}
-		fnSetExtSourceSignals(0)
-	}
-	
-	// Handle Additional panels if defined
-	FOR(i = 1; i <= MAX_PANELS_UI; i++){
-		IF(LENGTH_ARRAY(mySX.UI.Panel[i].ID)){
-			fnQueueTx('xCommand',"'UserInterface Extensions Panel Save PanelId: "',mySX.UI.Panel[i].ID,'"'")
-			fnQueueTx(mySX.UI.Panel[i].XML,'')
-			fnQueueTx('.','')
+		// Stage 2 - Touch 10 Configurations
+		CASE 2:{
+			STACK_VAR CHAR pParams[500]
+			// Handle External Sources if defined
+			fnQueueTx('xCommand UserInterface Presentation ExternalSource','RemoveAll')
+			IF(mySX.UI.ExtSources[1].IDENTIFIER != ''){
+				STACK_VAR INTEGER s
+				FOR(s = 1; s <= 8; s++){
+					IF(mySX.UI.ExtSources[s].IDENTIFIER != ''){
+						pParams = 'Add'
+						pParams = "pParams,' ConnectorId: ',ITOA(mySX.UI.ExtSources[s].CONNECTOR_ID)"
+						pParams = "pParams,' SourceIdentifier: "',mySX.UI.ExtSources[s].IDENTIFIER,'"'"
+						pParams = "pParams,' Name: "',mySX.UI.ExtSources[s].NAME,'"'"
+						pParams = "pParams,' Type: ',mySX.UI.ExtSources[s].TYPE"
+						fnQueueTx('xCommand UserInterface Presentation ExternalSource',pParams)
+					}
+				}
+				fnSetExtSourceSignals(0)
+			}
+		}
+		// Stage 3 - Query and process connected peripherals
+		CASE 3:{
+			fnClearPeripherals()
+			fnQueueTx('xCommand peripherals list','Connected: True')
+			// Stage 4 - Get latest Recent Calls list
+			fnQueueTx('xCommand CallHistory Recents',"'Limit: ',ITOA(MAX_RECENT_CALLS),' DetailLevel: Full'")
+			fnInitPoll()
 		}
 	}
-
-	// Query and process connected peripherals
-	fnClearPeripherals()
-	fnQueueTx('xCommand peripherals list','Connected: True')
-
-	// Get latest Recent Calls list
-	fnQueueTx('xCommand CallHistory Recents',"'Limit: ',ITOA(MAX_RECENT_CALLS),' DetailLevel: Full'")
-
-	fnInitPoll()
 }
 DEFINE_FUNCTION fnResetData(){
 	STACK_VAR INTEGER x
@@ -717,7 +709,7 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 			}
 			ELSE{
 				mySX.Tx = ''
-				fnInitData()
+				fnInitData(1)
 			}
 		}
 	}
@@ -769,7 +761,7 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 	ELSE{
 		SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
 			CASE 'xStatus':{	// echoing - Re-init
-				fnInitData()
+				fnInitData(1)
 			}
 			CASE '*r':{
 				SWITCH(fnStripCharsRight(REMOVE_STRING(pDATA,' ',1),1)){
@@ -778,6 +770,9 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 					}
 					CASE 'SelfviewSetResult':{
 
+					}
+					CASE 'ExternalSourceRemoveAllResult':{
+						fnInitData(3) // Trigger Stage 3
 					}
 					// Recent Call List
 					CASE 'CallHistoryRecentsResult':{
@@ -1272,6 +1267,8 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 									}
 								}
 								SEND_STRING vdvControl[1], "'PROPERTY-META,SOFTWARE,',mySX.META_SW_VER"
+								// Run Stage 2 of Init
+								fnInitData(2)
 							}
 							CASE 'ProductPlatform':{
 								mySX.META_MODEL   = fnRemoveQuotes( fnRemoveWhiteSpace( pDATA ) )
@@ -1306,7 +1303,7 @@ DEFINE_FUNCTION INTEGER fnProcessFeedback(CHAR pDATA[]){
 									mySX.SYS_TEMP = ATOF(fnRemoveQuotes( fnRemoveWhiteSpace( pDATA ) ))
 									SEND_STRING vdvControl[1], "'PROPERTY-STATE,TEMP,',FTOA(mySX.SYS_TEMP)"
 								}
-								IF(mySX.META_SN == ''){ fnInitData() }
+								IF(mySX.META_SN == ''){ fnInitData(1) }
 							}
 							CASE 'Uptime':{
 								IF(mySX.SYS_UPTIME != ATOI(fnRemoveQuotes( fnRemoveWhiteSpace( pDATA ) ))){
@@ -1501,7 +1498,7 @@ DEFINE_EVENT DATA_EVENT[dvVC]{
 				mySX.PEND = FALSE
 				mySX.CONN_STATE = CONN_CONNECTED
 				WAIT 10{
-					fnInitData()
+					fnInitData(1)
 				}
 			}
 			ELSE{
@@ -1596,7 +1593,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl[1]]{
 				CASE 'DEVELOPER':{
 					SWITCH(DATA.TEXT){
 						CASE 'INIT':{
-							fnInitData()
+							fnInitData(1)
 						}
 						CASE 'DISCONNECT':{
 							fnCloseTCPConnection()
@@ -1652,7 +1649,7 @@ DEFINE_EVENT DATA_EVENT[vdvControl[1]]{
 						CASE 'BAUD':{
 							mySX.BAUD = DATA.TEXT;
 							SEND_COMMAND dvVC, "'SET BAUD ',mySX.BAUD,' N 8 1 485 DISABLE'"
-							fnInitData()
+							fnInitData(1)
 						}
 						CASE 'DEBUG':{
 							SWITCH(DATA.TEXT){
@@ -1975,18 +1972,6 @@ DEFINE_EVENT DATA_EVENT[vdvControl[1]]{
 										mySX.UI.ExtSources[x].TYPE = fnGetCSV(DATA.TEXT,4)
 										BREAK
 									}
-								}
-							}
-						}
-						CASE 'PANEL':{
-							// Allow adding a panel using raw XML
-							STACK_VAR INTEGER x
-							FOR(x = 1; x <= MAX_PANELS_UI; x++){
-								IF(mySX.UI.Panel[x].ID == ''){
-									mySX.UI.Panel[x].ID = REMOVE_STRING(DATA.TEXT,',',1)
-									SET_LENGTH_ARRAY(mySX.UI.Panel[x].ID,LENGTH_ARRAY(mySX.UI.Panel[x].ID)-1)
-									mySX.UI.Panel[x].XML = DATA.TEXT
-									BREAK
 								}
 							}
 						}
