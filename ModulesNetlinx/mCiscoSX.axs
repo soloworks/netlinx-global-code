@@ -115,7 +115,9 @@ DEFINE_TYPE STRUCTURE uDir{
 }
 
 DEFINE_TYPE STRUCTURE uVidInput{
-	CHAR NAME[50]
+	CHAR    Name[50]
+	CHAR    Selection[20]
+	CHAR    Visibility[20]
 }
 
 DEFINE_TYPE STRUCTURE uUI{
@@ -627,11 +629,17 @@ DEFINE_FUNCTION fnInitData(INTEGER pStage){
 			fnQueueTx('xStatus','Network')
 			fnQueueTx('xStatus','Standby')
 			fnQueueTx('xStatus','SystemUnit')
-			
+
 			fnQueueTx('xConfiguration','Peripherals Profile Touchpanels: 0')
 			FOR(i = 1; i <= 6; i++){
 				IF(mySX.VidInput[i].NAME != ''){
 					fnQueueTx('xConfiguration',"'Video Input Connector ',ITOA(i),' Name: "',mySX.VidInput[i].NAME,'"'")
+				}
+				IF(mySX.VidInput[i].Selection != ''){
+					fnQueueTx('xConfiguration',"'Video Input Connector ',ITOA(i),' PresentationSelection: ',mySX.VidInput[i].Selection")
+				}
+				IF(mySX.VidInput[i].Visibility != ''){
+					fnQueueTx('xConfiguration',"'Video Input Connector ',ITOA(i),' Visibility: ',mySX.VidInput[i].Visibility")
 				}
 			}
 		}
@@ -1739,7 +1747,13 @@ DEFINE_EVENT DATA_EVENT[vdvControl[1]]{
 							i = ATOI(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1))
 							SWITCH(fnStripCharsRight(REMOVE_STRING(DATA.TEXT,',',1),1)){
 								CASE 'NAME':{
-									mySX.VidInput[i].NAME = DATA.TEXT
+									mySX.VidInput[i].Name = DATA.TEXT
+								}
+								CASE 'SELECTION':{
+									mySX.VidInput[i].Selection = DATA.TEXT
+								}
+								CASE 'VISIBILITY':{
+									mySX.VidInput[i].Visibility = DATA.TEXT
 								}
 							}
 						}
