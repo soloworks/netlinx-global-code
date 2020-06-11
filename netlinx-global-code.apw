@@ -740,8 +740,8 @@
 <FilePathName>ModulesNetlinx\mZeeVee.axs</FilePathName>
 <Comments></Comments>
 </File>
-<File CompileType="Netlinx" Type="Module"><Identifier>mZeeVeeZvMXEPlus</Identifier>
-<FilePathName>ModulesNetlinx\mZeeVeeZvMXEPlus.axs</FilePathName>
+<File CompileType="Netlinx" Type="Module"><Identifier>mZeeVeeMXEPlus</Identifier>
+<FilePathName>ModulesNetlinx\mZeeVeeMXEPlus.axs</FilePathName>
 <Comments></Comments>
 </File>
 <File CompileType="Netlinx" Type="Module"><Identifier>mZero88ChilliNet</Identifier>
