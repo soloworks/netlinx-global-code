@@ -397,9 +397,12 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 					}
 				}
 				CASE 'INPUT':{
+					STACK_VAR CHAR pIN[3]
+					pIN = ITOA(ATOI(DATA.TEXT))
+					IF(pIN != '0'){pIN = "'I',pIN"}
 					SWITCH(fnModel()){
-						CASE MODEL_MMX:fnAddToQueue('CALL',"'/MEDIA/VIDEO/XP:switch(I',DATA.TEXT,':O',ITOA(i),')'")
-						CASE MODEL_MX2:fnAddToQueue('CALL',"'/MEDIA/XP/VIDEO:switch(I',DATA.TEXT,':O',ITOA(i),')'")
+						CASE MODEL_MMX:fnAddToQueue('CALL',"'/MEDIA/VIDEO/XP:switch(',pIN,':O',ITOA(i),')'")
+						CASE MODEL_MX2:fnAddToQueue('CALL',"'/MEDIA/XP/VIDEO:switch(',pIN,':O',ITOA(i),')'")
 					}
 				}
 				//CASE 'VOLUME':{
