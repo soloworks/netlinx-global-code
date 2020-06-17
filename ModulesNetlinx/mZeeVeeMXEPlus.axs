@@ -102,6 +102,7 @@ DEFINE_FUNCTION fnChangeChannel(INTEGER CH){
 	// Queue Request
 	fnAddToHTTPQueue(r)
 	// Force Feedback pending Polling update
+	mySTB.PreviousChannel = mySTB.CurrentChannel
 	mySTB.CurrentChannel = ch
 	// Reset Poll
 	fnInitPoll()
@@ -124,7 +125,7 @@ DEFINE_FUNCTION eventHTTPResponse(uHTTPResponse r){
 		}
 		// Detect current channel
 		isCurrent = (LEFT_STRING(l,3) == ' * ')
-		IF(isCurrent){GET_BUFFER_STRING(l,3)}
+		GET_BUFFER_STRING(l,3)
 		// Remove "Channel Number " string
 		REMOVE_STRING(l,'Channel Number ',1)
 		// Get Channel Number
