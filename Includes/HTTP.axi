@@ -196,7 +196,7 @@ DEFINE_FUNCTION CHAR[10000] fnBuildHTTPRequest(uHTTPRequest r){
 		}
 	}
 	(** Combine **)
-	fnDebug(HTTP.DEBUG,DEBUG_DEV,"'fnBuildSocketRequest','Returning'")
+	fnDebug(HTTP.DEBUG,DEBUG_DEV,"'fnBuildHTTPRequest','Returning'")
 	RETURN c
 
 }
@@ -204,7 +204,7 @@ DEFINE_FUNCTION CHAR[10000] fnBuildHTTPRequest(uHTTPRequest r){
 /******************************************************************************
 	IP Data Handling
 ******************************************************************************/
-DEFINE_VARIABLE 
+DEFINE_VARIABLE
 CHAR _HeaderETX[] = {$0D,$0A}
 
 DEFINE_EVENT DATA_EVENT[ipHTTP]{
@@ -267,10 +267,10 @@ DEFINE_EVENT DATA_EVENT[ipHTTP]{
 		}
 		HTTP.Tx[_REQ_QUEUE_SIZE] = blankRequest
 
-		fnDebug(HTTP.DEBUG,DEBUG_DEV,"'DATA_EVENT ONLINE Ended'")
+		fnDebug(HTTP.DEBUG,DEBUG_DEV,"'HTTP DATA_EVENT ONLINE Ended'")
 	}
 	ONERROR:{
-		fnDebug(HTTP.DEBUG,DEBUG_DEV,"'DATA_EVENT ONERROR Called'")
+		fnDebug(HTTP.DEBUG,DEBUG_DEV,"'HTTP DATA_EVENT ONERROR Called'")
 
 		SWITCH(DATA.NUMBER){
 			CASE 14:{}
@@ -279,8 +279,8 @@ DEFINE_EVENT DATA_EVENT[ipHTTP]{
 			}
 		}
 
-		fnDebug(HTTP.DEBUG,DEBUG_STD,"'Carrier Error ',ITOA(DATA.NUMBER),':',DATA.TEXT")
-		fnDebug(HTTP.DEBUG,DEBUG_DEV,"'DATA_EVENT ONERROR Ended'")
+		fnDebug(HTTP.DEBUG,DEBUG_STD,"'HTTP IP Error ',ITOA(DATA.NUMBER),':',DATA.TEXT")
+		fnDebug(HTTP.DEBUG,DEBUG_DEV,"'HTTP DATA_EVENT ONERROR Ended'")
 	}
 }
 
