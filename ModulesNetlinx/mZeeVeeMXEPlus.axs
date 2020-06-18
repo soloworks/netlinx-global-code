@@ -23,6 +23,7 @@ LONG    TLID_POLL     = 1
 LONG    TLID_COMMS    = 2
 
 DEFINE_TYPE STRUCTURE uSTB{
+   CHAR     Firmware[10]
 	INTEGER  CurrentChannel
 	INTEGER  PreviousChannel
 	CHAR     ChannelName[_MAX_CHANNELS][20]
@@ -118,9 +119,17 @@ DEFINE_FUNCTION eventHTTPResponse(uHTTPResponse r){
 		STACK_VAR CHAR l[200]
 		STACK_VAR INTEGER isCurrent
 		STACK_VAR INTEGER chanNumber
+		// Get Current Line
 		l = fnStripCharsRight(REMOVE_STRING(r.body,"$0A",1),1)
+		// Handle bad channel number line
 		IF(l == 'Invalid Channel Number'){
 			SEND_STRING vdvControl,'ERROR: Invalid Channel Number'
+			RETURN
+		}
+		// Handle Firmware Line
+		IF(fnComparePrefix(l,'Firmware version: ')){
+			REMOVE_STRING(l,'Firmware version: ',1)
+			mySTB.Firmware = l
 			RETURN
 		}
 		// Detect current channel
