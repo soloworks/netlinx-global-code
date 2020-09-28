@@ -311,7 +311,7 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 	STRING:{
 		IF(!myMatrix.Comms.Disabled){
 			// Debug Out
-			fnDebug(myMatrix.Debug,DEBUG_STD,"'RAW->AMX::', DATA.TEXT")
+			fnDebug(myMatrix.Debug,DEBUG_DEV,"'RAW->AMX::', DATA.TEXT")
 			// Loop whilst a line is present in the buffer
 			WHILE(FIND_STRING(myMatrix.Comms.Rx,"$0D,$0A",1)){
 				fnProcessFeedback(fnStripCharsRight(REMOVE_STRING(myMatrix.Comms.Rx,"$0D,$0A",1),2))
