@@ -18,11 +18,12 @@ DEFINE_START{
 }
 
 DEFINE_CONSTANT
-INTEGER _MAX_CHANNELS = 250
+INTEGER _MAX_CHANNELS = 8
 LONG    TLID_POLL     = 1
 LONG    TLID_COMMS    = 2
 
 DEFINE_TYPE STRUCTURE uSTB{
+   CHAR     Firmware[10]
 	INTEGER  CurrentChannel
 	INTEGER  PreviousChannel
 	CHAR     ChannelName[_MAX_CHANNELS][20]
@@ -102,6 +103,7 @@ DEFINE_FUNCTION fnChangeChannel(INTEGER CH){
 	// Queue Request
 	fnAddToHTTPQueue(r)
 	// Force Feedback pending Polling update
+	mySTB.PreviousChannel = mySTB.CurrentChannel
 	mySTB.CurrentChannel = ch
 	// Reset Poll
 	fnInitPoll()
@@ -117,14 +119,22 @@ DEFINE_FUNCTION eventHTTPResponse(uHTTPResponse r){
 		STACK_VAR CHAR l[200]
 		STACK_VAR INTEGER isCurrent
 		STACK_VAR INTEGER chanNumber
+		// Get Current Line
 		l = fnStripCharsRight(REMOVE_STRING(r.body,"$0A",1),1)
+		// Handle bad channel number line
 		IF(l == 'Invalid Channel Number'){
 			SEND_STRING vdvControl,'ERROR: Invalid Channel Number'
 			RETURN
 		}
+		// Handle Firmware Line
+		IF(fnComparePrefix(l,'Firmware version: ')){
+			REMOVE_STRING(l,'Firmware version: ',1)
+			mySTB.Firmware = l
+			RETURN
+		}
 		// Detect current channel
 		isCurrent = (LEFT_STRING(l,3) == ' * ')
-		IF(isCurrent){GET_BUFFER_STRING(l,3)}
+		GET_BUFFER_STRING(l,3)
 		// Remove "Channel Number " string
 		REMOVE_STRING(l,'Channel Number ',1)
 		// Get Channel Number
