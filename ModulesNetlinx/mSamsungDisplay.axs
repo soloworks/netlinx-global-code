@@ -440,6 +440,12 @@ DEFINE_EVENT DATA_EVENT[vdvControl]{
 						CASE 'OFF':{ fnAddToQueue($5D,"$00");mySamsungDisplay.LOCKED = FALSE }
 					}
 				}
+				CASE 'NETWORKSTANDBY':{
+					SWITCH(DATA.TEXT){
+						CASE 'ON': { fnAddToQueue($B5,"$01")  }
+						CASE 'OFF':{ fnAddToQueue($B5,"$00")  }
+					}
+				}
 				CASE 'OSD':{
 					SWITCH(DATA.TEXT){
 						CASE 'ON':{  fnAddToQueue($70,"$01");mySamsungDisplay.OSD = TRUE  }
