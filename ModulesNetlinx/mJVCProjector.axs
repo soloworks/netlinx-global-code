@@ -26,7 +26,6 @@ DEFINE_CONSTANT
 	(** Timeline Constants **)
 LONG TLID_POLL 		= 1
 LONG TLID_COMMS		= 2
-LONG TLID_TIMEOUT		= 3
 
 INTEGER IP_STATE_OFFLINE		= 0
 INTEGER IP_STATE_CONNECTING	= 1
@@ -47,7 +46,7 @@ VOLATILE uJVCProj myJVCProj
 	(** Timeline Times **)
 LONG 		TLT_POLL[]		= {30000};	// Poll every 15 seconds
 LONG 		TLT_COMMS[]		= {90000};	// Comms is dead if nothing recieved for 60s
-LONG 		TLT_TIMEOUT[]	= {15000};	// Delay by 2 seconds, then start polling
+LONG 		TLT_TIMEOUT[]	= {45000};	// Delay by 2 seconds, then start polling
 /******************************************************************************
 	Startup Code
 ******************************************************************************/
@@ -75,7 +74,9 @@ DEFINE_FUNCTION fnInitPoll(){
 }
 	(** Send Poll Command **)
 DEFINE_FUNCTION fnPoll(){
+	fnDebug('fnPoll','Called')
 	fnAddToQueue($3F,$50,$57,$00)	// Power Query
+	fnInitPoll()
 }
 
 DEFINE_FUNCTION fnAddToQueue(INTEGER pType, INTEGER pCMD1, INTEGER pCMD2, INTEGER pData){
@@ -88,19 +89,16 @@ DEFINE_FUNCTION fnAddToQueue(INTEGER pType, INTEGER pCMD1, INTEGER pCMD2, INTEGE
 }
 	(** Send a command **)
 DEFINE_FUNCTION fnSendFromQueue(){
+	fnDebug('fnSendFromQueue','Called')
 	IF(myJVCProj.IP_STATE == IP_STATE_CONNECTED && FIND_STRING(myJVCProj.Tx,"$0A",1)){
 		STACK_VAR CHAR _ToSend[255]
 		_ToSend = REMOVE_STRING(myJVCProj.Tx,"$0A",1)
 		fnDebug('->JVC',"_ToSend")
-		SEND_STRING dvDevice, _ToSend;
-		fnInitPoll()
+		SEND_STRING dvDevice, _ToSend
 	}
 	ELSE IF(myJVCProj.isIP && myJVCProj.IP_STATE == IP_STATE_OFFLINE){
 		fnOpenConnection()
 	}
-	IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){ TIMELINE_KILL(TLID_TIMEOUT) }
-	TIMELINE_CREATE(TLID_TIMEOUT,TLT_TIMEOUT,LENGTH_ARRAY(TLT_TIMEOUT),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
-
 }
 	(** Send Debug to terminal **)
 DEFINE_FUNCTION fnDebug(CHAR Msg[], CHAR MsgData[]){
@@ -176,13 +174,14 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 		myJVCProj.IP_STATE = IP_STATE_OFFLINE
 		myJVCProj.Tx = ''
 		myJVCProj.Rx = ''
-		IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){ TIMELINE_KILL(TLID_TIMEOUT) }
 	}
 	ONLINE:{
 		IF(myJVCProj.isIP){
+			// IP Control
 			myJVCProj.IP_STATE = IP_STATE_ESTABLISHED
 		}
 		ELSE{
+			// RS232 Control
 			myJVCProj.IP_STATE = IP_STATE_CONNECTED
 			SEND_COMMAND dvDevice, 'SET MODE DATA'
 			SEND_COMMAND dvDevice, 'SET BAUD 19200 N 8 1 485 DISABLE'
@@ -191,9 +190,6 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 	}
 	ONERROR:{
 		STACK_VAR CHAR _MSG[255]
-		IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){
-			TIMELINE_KILL(TLID_TIMEOUT)
-		}
 		SWITCH(DATA.NUMBER){
 			CASE 2:{ _MSG = 'General Failure'}					// General Failure - Out Of Memory
 			CASE 4:{ _MSG = 'Unknown Host'}						// Unknown Host
@@ -208,8 +204,13 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 			CASE 16:{_MSG = 'Too many open Sockets'}			// Too many open sockets
 			CASE 17:{_MSG = 'Local port not Open'}				// Local Port Not Open
 		}
+		SWITCH(DATA.NUMBER){
+			CASE 14:{}
+			DEFAULT: myJVCProj.IP_STATE = IP_STATE_OFFLINE
+		}
 		fnDebug("'JVC IP Error:[',myJVCProj.IP_HOST,']'","'[',ITOA(DATA.NUMBER),'][',_MSG,']'")
-		fnResetModule()
+		myJVCProj.Tx = ''
+		myJVCProj.Rx = ''
 	}
 	STRING:{
 		fnDebug('JVC->',DATA.TEXT);
@@ -229,9 +230,6 @@ DEFINE_EVENT DATA_EVENT[dvDevice]{
 				fnProcessFeedback(fnStripCharsRight(REMOVE_STRING(myJVCProj.Rx,"$0A",1),1))
 			}
 		}
-
-		IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){ TIMELINE_KILL(TLID_TIMEOUT) }
-		TIMELINE_CREATE(TLID_TIMEOUT,TLT_TIMEOUT,LENGTH_ARRAY(TLT_TIMEOUT),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
 	}
 }
 /******************************************************************************
@@ -273,14 +271,8 @@ DEFINE_PROGRAM{
 ******************************************************************************/
 	(** Activated on each Poll interval **)
 DEFINE_EVENT TIMELINE_EVENT[TLID_POLL]{
+	fnDebug('TIMELINE_EVENT','TLID_POLL')
 	fnPoll();
-}
-	(** Close connection after X amount of inactivity **)
-DEFINE_EVENT TIMELINE_EVENT[TLID_TIMEOUT]{
-	fnResetModule()
-	IF(myJVCProj.isIP && myJVCProj.IP_STATE != IP_STATE_OFFLINE){
-		fnCloseConnection()
-	}
 }
 DEFINE_FUNCTION fnResetModule(){
 	myJVCProj.Tx = ''
@@ -288,6 +280,7 @@ DEFINE_FUNCTION fnResetModule(){
 }
 	(** Comms Timeout **)
 DEFINE_EVENT TIMELINE_EVENT[TLID_COMMS]{
+	fnDebug('TIMELINE_EVENT','TLID_COMMS')
 	fnResetModule()
 }
 /******************************************************************************
