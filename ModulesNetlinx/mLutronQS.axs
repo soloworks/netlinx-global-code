@@ -303,11 +303,11 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 							ELSE{
 								pActNo = ATOI(pDATA)
 							}
-							SEND_STRING 0,"ID,':',ITOA(pCompNo),':',ITOA(pActNo)"
+							//SEND_STRING 0,"ID,':',ITOA(pCompNo),':',ITOA(pActNo)"
+							// Do Code Related Stuff
 							SWITCH(pActNo){
 								CASE 3:{	// Push Event
 									myLutronQS.DEVICE[x].BTN[pCompNo] = TRUE
-									SEND_STRING vdvControl[x],"'BUTTON-PRESS,',ITOA(pCompNo)"
 								}
 								CASE 4:	// Release Event
 								CASE 6:{	// Multi-Tap
@@ -318,6 +318,14 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 								CASE 9:{	// LED State
 									myLutronQS.DEVICE[x].LED[pCompNo-80] = ATOI(pDATA)
 								}
+							}
+							// Do Device Feedback
+							
+							SWITCH(pActNo){
+								CASE 3:SEND_STRING vdvControl[x],"'BUTTON-PRESS,',ITOA(pCompNo)" 	// Push Event
+								CASE 4:SEND_STRING vdvControl[x],"'BUTTON-RELEASE,',ITOA(pCompNo)" 	// Push Event
+								CASE 5:SEND_STRING vdvControl[x],"'BUTTON-HOLD,',ITOA(pCompNo)" 	// Push Event
+								CASE 6:SEND_STRING vdvControl[x],"'BUTTON-DPRESS,',ITOA(pCompNo)" 	// Push Event
 							}
 						}
 					}
