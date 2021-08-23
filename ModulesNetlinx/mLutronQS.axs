@@ -503,7 +503,7 @@ DEFINE_EVENT DATA_EVENT[dvLutron]{
 		fnDebug(DEBUG_DEV,"'->RAW[',ITOA(LENGTH_ARRAY(DATA.TEXT)),']'",DATA.TEXT)
 
 		IF(FIND_STRING(myLutronQS.Rx,'login:',1)) {
-			IF(myLutronQS.USERNAME = ''){
+			IF(myLutronQS.USERNAME == ''){
 				myLutronQS.LOGIN_ATTEMPT = myLutronQS.LOGIN_ATTEMPT + 1
 				SWITCH(myLutronQS.LOGIN_ATTEMPT){
 					CASE 1:{
@@ -527,8 +527,11 @@ DEFINE_EVENT DATA_EVENT[dvLutron]{
 			myLutronQS.RX = ''
 		}
 		ELSE IF(FIND_STRING(myLutronQS.Rx,'password:',1)) {
-			fnDebug(DEBUG_DEV,'RAW->',"'lutron',$0D,$0A")
-			SEND_STRING dvLutron,"'lutron',$0D,$0A"
+			IF(myLutronQS.PASSWORD == ''){
+				myLutronQS.PASSWORD = 'lutron'
+			}
+			fnDebug(DEBUG_DEV,'RAW->',"myLutronQS.PASSWORD,$0D,$0A")
+			SEND_STRING dvLutron,"myLutronQS.PASSWORD,$0D,$0A"
 			myLutronQS.RX = ''
 		}
 		ELSE IF(FIND_STRING(myLutronQS.Rx,'connection established',1)) {
