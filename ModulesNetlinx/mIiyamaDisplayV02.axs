@@ -18,18 +18,18 @@ DEFINE_TYPE STRUCTURE uConn{
 	CHAR 		Tx[10][30]
 	CHAR 		Rx[500]
 	INTEGER 	DEBUG
-
+	
 }
 DEFINE_TYPE STRUCTURE uIiyamaDisplay{
 	(** System MetaData **)
 	CHAR   	MODEL[50]
 	CHAR	 	SERIAL_NO[20]
-
+	
 	SINTEGER GAIN_VALUE			// Current Volume Level
 	INTEGER	GAIN_PEND_STATE	// True if Volume Send is Pending
 	SINTEGER	GAIN_PEND_VALUE	// Value for a pending Volume
 	INTEGER	MUTE					// Current Audio Mute State
-
+	
 	uConn    CONN
 }
 DEFINE_CONSTANT
@@ -70,7 +70,7 @@ DEFINE_START{
 	Utility Functions - Communications
 ******************************************************************************/
 DEFINE_FUNCTION fnOpenTCPConnection(){
-	fnDebug(DEBUG_STD,'CONN->KRA',"myIiyamaDisplayV02.CONN.IP_HOST,':',ITOA(myIiyamaDisplayV02.CONN.IP_PORT)")
+	fnDebug(DEBUG_STD,'CONN->Iiyama',"myIiyamaDisplayV02.CONN.IP_HOST,':',ITOA(myIiyamaDisplayV02.CONN.IP_PORT)")
 	myIiyamaDisplayV02.CONN.STATE = CONN_STATE_CONNECTING
 	ip_client_open(dvDevice.port, myIiyamaDisplayV02.CONN.IP_HOST, myIiyamaDisplayV02.CONN.IP_PORT, IP_TCP)
 }
@@ -127,7 +127,7 @@ DEFINE_FUNCTION fnAddToQueue(CHAR pDataCtrl, CHAR pData[]){
 			BREAK
 		}
 	}
-
+	
 	// Send command
 	fnSendFromQueue()
 	fnInitPoll()
@@ -162,12 +162,12 @@ DEFINE_EVENT TIMELINE_EVENT[TLID_TIMEOUT]{
 
 DEFINE_FUNCTION fnProcessFeedback(CHAR pData[]){
 	fnDebug(DEBUG_STD,'Iiyama->',fnBytesToString(pData))
-
-
+	
+	
 	// Reset
 	myIiyamaDisplayV02.CONN.PEND = FALSE
 	fnSendFromQueue()
-
+	
 	IF(TIMELINE_ACTIVE(TLID_TIMEOUT)){TIMELINE_KILL(TLID_TIMEOUT)}
 	IF(TIMELINE_ACTIVE(TLID_COMMS)){TIMELINE_KILL(TLID_COMMS)}
 	TIMELINE_CREATE(TLID_COMMS,TLT_COMMS,LENGTH_ARRAY(TLT_COMMS),TIMELINE_ABSOLUTE,TIMELINE_ONCE)
@@ -288,3 +288,4 @@ DEFINE_PROGRAM{
 /******************************************************************************
 	EoF
 ******************************************************************************/
+

@@ -364,6 +364,10 @@
 <FilePathName>ModulesNetlinx\mIiyamaDisplayV02.axs</FilePathName>
 <Comments></Comments>
 </File>
+<File CompileType="Netlinx" Type="Module"><Identifier>mIiyamaDisplayV03</Identifier>
+<FilePathName>ModulesNetlinx\mIiyamaDisplayV03.axs</FilePathName>
+<Comments></Comments>
+</File>
 <File CompileType="Netlinx" Type="Module"><Identifier>mInFocusProjector</Identifier>
 <FilePathName>ModulesNetlinx\mInFocusProjector.axs</FilePathName>
 <Comments></Comments>
