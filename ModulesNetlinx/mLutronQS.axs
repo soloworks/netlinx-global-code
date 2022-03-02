@@ -46,7 +46,7 @@ DEFINE_TYPE STRUCTURE uLutronQS{
 	CHAR		BAUD[10]
 	INTEGER	USE_SN_AS_ID
 	// State
-	uDevice 	DEVICE[50]
+	uDevice 	DEVICE[60]
 }
 /******************************************************************************
 	Constants
@@ -108,6 +108,16 @@ LONG TLID_COMMS_47 	= 147
 LONG TLID_COMMS_48 	= 148
 LONG TLID_COMMS_49 	= 149
 LONG TLID_COMMS_50 	= 150
+LONG TLID_COMMS_51 	= 151
+LONG TLID_COMMS_52 	= 152
+LONG TLID_COMMS_53 	= 153
+LONG TLID_COMMS_54 	= 154
+LONG TLID_COMMS_55 	= 155
+LONG TLID_COMMS_56 	= 156
+LONG TLID_COMMS_57 	= 157
+LONG TLID_COMMS_58 	= 158
+LONG TLID_COMMS_59 	= 159
+LONG TLID_COMMS_60 	= 160
 // IP States
 INTEGER IP_STATE_OFFLINE		= 0
 INTEGER IP_STATE_CONNECTING	= 1
@@ -123,6 +133,7 @@ INTEGER TYPE_DEVICE		= 2
 INTEGER TYPE_OUTPUT		= 3
 INTEGER TYPE_GROUPS		= 4
 INTEGER TYPE_AREA			= 5
+INTEGER TYPE_SHADEGRP	= 6
 /******************************************************************************
 	Variables
 ******************************************************************************/
@@ -200,6 +211,12 @@ DEFINE_FUNCTION fnSendOutputCommand(CHAR pID[10], INTEGER pAction, CHAR _param[]
 	IF(_param <> ''){cmd = "cmd,',',_PARAM"}
 	fnAddToQueue(cmd)
 }
+DEFINE_FUNCTION fnSendShadeGrpCommand(CHAR pID[10], INTEGER pAction, CHAR _param[]){
+	STACK_VAR CHAR cmd[100]
+	cmd = "'#SHADEGRP,',pID,',',ITOA(pAction)"
+	IF(_param <> ''){cmd = "cmd,',',_PARAM"}
+	fnAddToQueue(cmd)
+}
 DEFINE_FUNCTION fnSendTimeclockQuery(CHAR pID[10], INTEGER pAction){
 	STACK_VAR CHAR cmd[100]
 	cmd = "'?TIMECLOCK,',pID,',',ITOA(pAction)"
@@ -266,6 +283,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 										CASE 'TIMECLOCK':	myLutronQS.DEVICE[x].TYPE = TYPE_TIMECLOCK
 										CASE 'OUTPUT':		myLutronQS.DEVICE[x].TYPE = TYPE_OUTPUT
 										CASE 'DEVICE':		myLutronQS.DEVICE[x].TYPE = TYPE_DEVICE
+										CASE 'SHADEGRP':	myLutronQS.DEVICE[x].TYPE = TYPE_SHADEGRP
 									}
 									SWITCH(pTYPE){
 										CASE 'DEVICE':{
@@ -320,7 +338,7 @@ DEFINE_FUNCTION fnProcessFeedback(CHAR pDATA[]){
 								}
 							}
 							// Do Device Feedback
-							
+
 							SWITCH(pActNo){
 								CASE 3:SEND_STRING vdvControl[x],"'BUTTON-PRESS,',ITOA(pCompNo)" 	// Push Event
 								CASE 4:SEND_STRING vdvControl[x],"'BUTTON-RELEASE,',ITOA(pCompNo)" 	// Push Event
@@ -666,13 +684,32 @@ DATA_EVENT[vdvControl]{
 			}
 			CASE 'LEVEL':
 			CASE 'SHADE':{
-				SWITCH(DATA.TEXT){
-					CASE 'RAISE':	fnSendDeviceCommand(myLutronQS.DEVICE[d].ID,0,18,'')
-					CASE 'LOWER':	fnSendDeviceCommand(myLutronQS.DEVICE[d].ID,0,19,'')
-					CASE 'STOP':	fnSendDeviceCommand(myLutronQS.DEVICE[d].ID,0,20,'')
-					DEFAULT:			fnSendDeviceCommand(myLutronQS.DEVICE[d].ID,0,14,DATA.TEXT)
+				SWITCH(myLutronQS.DEVICE[d].TYPE){
+					CASE TYPE_DEVICE:{
+						SWITCH(DATA.TEXT){
+							CASE 'RAISE':	fnSendDeviceCommand(myLutronQS.DEVICE[d].ID,0,18,'')
+							CASE 'LOWER':	fnSendDeviceCommand(myLutronQS.DEVICE[d].ID,0,19,'')
+							CASE 'STOP':	fnSendDeviceCommand(myLutronQS.DEVICE[d].ID,0,20,'')
+							DEFAULT:			fnSendDeviceCommand(myLutronQS.DEVICE[d].ID,0,14,DATA.TEXT)
+						}
+					}
+					CASE TYPE_SHADEGRP:{
+						SWITCH(DATA.TEXT){
+							CASE 'RAISE':	fnSendShadeGrpCommand(myLutronQS.DEVICE[d].ID,2,'')
+							CASE 'LOWER':	fnSendShadeGrpCommand(myLutronQS.DEVICE[d].ID,3,'')
+							CASE 'STOP':	fnSendShadeGrpCommand(myLutronQS.DEVICE[d].ID,4,'')
+						}
+					}
+					CASE TYPE_OUTPUT:{
+						SWITCH(DATA.TEXT){
+							CASE 'RAISE':	fnSendOutputCommand(myLutronQS.DEVICE[d].ID,2,'')
+							CASE 'LOWER':	fnSendOutputCommand(myLutronQS.DEVICE[d].ID,3,'')
+							CASE 'STOP':	fnSendOutputCommand(myLutronQS.DEVICE[d].ID,4,'')
+						}
+					}
 				}
 			}
+			//CASE 'PULSE':	fnSendDeviceCommand(myLutronQS.DEVICE[d].ID,ATOI(DATA.TEXT),,'01')
 			CASE 'PRESS':	fnSendDeviceCommand(myLutronQS.DEVICE[d].ID,ATOI(DATA.TEXT),3,'')
 			CASE 'RELEASE':fnSendDeviceCommand(myLutronQS.DEVICE[d].ID,ATOI(DATA.TEXT),4,'')
 			CASE 'RAW':{
